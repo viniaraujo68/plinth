@@ -33,12 +33,12 @@
   --color-base-300: light-dark(#f2f0ea, #1a1d25);
   --color-base-content: light-dark(#1b1d22, #d9e1f6);
 
-  --color-primary: light-dark(#6b3fa0, #7444ad);
+  --color-primary: light-dark(#5d3ac4, #6f4bd4);
   --color-primary-content: #ffffff;
-  --color-secondary: light-dark(#4a2a72, #efe8f6);
-  --color-secondary-content: light-dark(#ffffff, #4a2a72);
-  --color-accent: light-dark(#efe8f6, #242833);
-  --color-accent-content: light-dark(#4a2a72, #e7e9ee);
+  --color-secondary: light-dark(#432a8f, #e7e1fa);
+  --color-secondary-content: light-dark(#ffffff, #432a8f);
+  --color-accent: light-dark(#e7e1fa, #242833);
+  --color-accent-content: light-dark(#432a8f, #b6a2ee);
   --color-neutral: light-dark(#1b1d22, #e7e9ee);
   --color-neutral-content: light-dark(#faf9f5, #0c0d11);
 
