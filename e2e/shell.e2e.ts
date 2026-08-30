@@ -98,6 +98,23 @@ test("remembers the collapsed sidebar across a reload", async ({ page }) => {
   await expect(page.locator(`${wide} .plinth-shell`)).toHaveClass(/collapsed/);
 });
 
+test("gives each shell on the page its own copy of the avatar mask", async ({ page }) => {
+  await page.goto("/shell");
+
+  const avatar = page.locator(`${wide} .avatar-initials`);
+  await expect(avatar).toHaveText("AL");
+  await expect(avatar).toHaveCSS("clip-path", /url\(/);
+
+  // Two shells share this page, and a shared id would have pointed both at whichever definition
+  // the parser reached first — invisible here, and wrong the moment the two differ.
+  const masks = await page
+    .locator(".avatar-initials")
+    .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).clipPath));
+
+  expect(masks).toHaveLength(2);
+  expect(new Set(masks).size).toBe(2);
+});
+
 test("renders the breadcrumb trail of the current match", async ({ page }) => {
   await page.goto("/shell");
 

@@ -309,6 +309,26 @@ it("renders the name, the address and the initials of a signed-in user", async (
   expect(document.querySelector(".avatar-initials")?.textContent).toBe("AL");
 });
 
+it("cuts the avatar to the mark's silhouette rather than to a disc", () => {
+  render(Harness, { routing: routingAt("/dashboard"), width: WIDE, user: new TestUser() });
+
+  const avatar = document.querySelector<HTMLElement>(".avatar-initials")!;
+  const clip = getComputedStyle(avatar).clipPath;
+
+  // No radius left to round: the shape is the clip now, and a leftover circle would fight it.
+  expect(getComputedStyle(avatar).borderRadius).toBe("0px");
+
+  const id = /url\(["']?#(?<id>[^"')]+)/u.exec(clip)?.groups?.id;
+  expect(id).toBeDefined();
+
+  // The reference has to resolve inside the same tree the shell rendered, which is the half of
+  // this that a computed value alone cannot tell you.
+  const definition = document.getElementById(id!);
+  expect(definition?.tagName).toBe("clipPath");
+  // Normalised units are what let one declaration fit an avatar of any size.
+  expect(definition?.getAttribute("clipPathUnits")).toBe("objectBoundingBox");
+});
+
 it("hides the sign-out control when the context has nowhere to sign out to", () => {
   render(Harness, { routing: routingAt("/dashboard"), width: WIDE, user: new TestUser() });
 

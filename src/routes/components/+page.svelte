@@ -70,6 +70,11 @@
       summary: "Manual reload, an auto-refresh schedule and the age of what is on screen.",
     },
     {
+      href: resolve("/components/skeleton"),
+      name: "Skeleton",
+      summary: "A placeholder block with a sweep of the brand colour crossing it.",
+    },
+    {
       href: resolve("/components/toast"),
       name: "Toast",
       summary: "A queue any module can push to, rendered by one host near the app root.",

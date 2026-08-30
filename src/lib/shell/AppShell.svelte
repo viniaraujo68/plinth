@@ -6,6 +6,7 @@
   import type { Snippet } from "svelte";
   import type { ClassValue } from "svelte/elements";
   import Dialog from "../components/Dialog.svelte";
+  import { PICK_CLIP_PATH } from "../components/pick.js";
   import { tooltip } from "../attachments/tooltip.js";
   import { getRoutingContext, resolvePathname, type ResolvedRoute } from "../routing.svelte.js";
   import { getUserContext } from "../user/context.js";
@@ -126,6 +127,11 @@
     return `${first}${last}`.toUpperCase();
   };
 
+  /* Per instance, not a constant: a page can mount two shells against one routing context — the
+     showcase mounts exactly two — and a duplicated id would point both avatars at whichever
+     `<clipPath>` the parser saw first. */
+  const avatarClip = $props.id();
+
   let sheet = $state<Dialog>();
 
   $effect(() => {
@@ -243,7 +249,18 @@ shell rather than to the window, and the content area reserves its height plus
       {#if user.status === "authenticated" && user.data}
         {@const data = user.data}
         <div class="user-card">
-          <span class="avatar-initials" aria-hidden="true">{initials(data.name)}</span>
+          <!-- A `<clipPath>` rather than CSS `clip-path: path()`, because `path()` takes user
+               units and never scales: it would fit one avatar size and no other.
+               `clipPathUnits="objectBoundingBox"` reads the same outline in 0..1 and follows
+               whatever box the span turns out to be. -->
+          <svg class="avatar-clip" aria-hidden="true" focusable="false">
+            <clipPath id={avatarClip} clipPathUnits="objectBoundingBox">
+              <path d={PICK_CLIP_PATH} />
+            </clipPath>
+          </svg>
+          <span class="avatar-initials" aria-hidden="true" style:clip-path="url(#{avatarClip})">
+            {initials(data.name)}
+          </span>
           <span class="user-identity collapsible">
             <span class="user-name">{data.name}</span>
             <span class="user-email">{data.email}</span>
@@ -532,17 +549,35 @@ shell rather than to the window, and the content area reserves its height plus
     padding: 0.625rem;
   }
 
+  /* Carries the definition only; the shape is painted by the span that references it. Zero-sized
+     rather than `display: none`, which is the one way of hiding it that some engines take as
+     licence to skip the subtree the reference needs. */
+  .avatar-clip {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+
   .avatar-initials {
     display: flex;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 9999px;
-    background-color: color-mix(in oklch, var(--color-primary) 15%, transparent);
-    color: var(--color-primary);
+    /* Wider than the circle it replaces: the outline is inset inside its own 32-unit square, so
+       the pick drawn in a 2rem box would have come out visibly smaller than the disc did. */
+    width: 2.5rem;
+    height: 2.5rem;
+    /* The silhouette tapers to a point at the top, which puts its mass below the middle of the
+       box. A few pixels of head room is what centres the initials in the shape rather than in the
+       box that contains it. */
+    padding-top: 0.25rem;
+    /* Solid, where the disc was a 15% wash: a clipped shape is only readable by its edge, and a
+       wash that faint leaves the edge to guesswork. `--color-primary-content` is the pair the
+       theme guarantees against it in both modes. */
+    background-color: var(--color-primary);
+    color: var(--color-primary-content);
     font-size: 0.75rem;
+    font-weight: 500;
   }
 
   .user-identity {

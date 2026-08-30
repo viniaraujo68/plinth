@@ -10,7 +10,14 @@ export { default as Logo } from "./Logo.svelte";
 export { default as Modal } from "./Modal.svelte";
 export { default as Paginator } from "./Paginator.svelte";
 export { default as RefreshButton } from "./RefreshButton.svelte";
+export { default as Skeleton } from "./Skeleton.svelte";
 export { default as Tooltip } from "./Tooltip.svelte";
+
+// The mark's outline as data. `Logo` and the shell's avatar already read it from here, and an app
+// that wants the same silhouette -- a placeholder cut to the pick, an avatar of its own -- has no
+// other way to get it than copying the curve out of the library, which is how two versions of one
+// shape start existing.
+export { PICK_CLIP_PATH, PICK_PATH } from "./pick.js";
 
 // The half of `date-range.js` a consumer of the picker has a use for: the two prop types, the
 // preset list and the reserved id they are written against, and the three conversions anyone

@@ -254,7 +254,9 @@ base URL, how auth is injected, and how the backend spells an error body.
 
 The components entry point ships `AsyncButton`, `Copyable`, `DateRangePicker`, `Dialog`,
 `Dropdown`, `ErrorDisplay`, `ErrorPage`, `LoadingButton`, `Logo`, `Modal`, `Paginator`,
-`RefreshButton` and `Tooltip`. Every one of them has a page in the showcase.
+`RefreshButton`, `Skeleton` and `Tooltip`. Every one of them has a page in the showcase.
+It also exports the mark's outline as data — `PICK_PATH` and `PICK_CLIP_PATH` — for anything
+that wants the pick as a silhouette of its own.
 
 ## Development
 

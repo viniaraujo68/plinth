@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { HTMLAttributes } from "svelte/elements";
+  import { PICK_PATH } from "./pick.js";
 
   type Props = HTMLAttributes<HTMLDivElement> & {
     /** Runs the orbit. Leave it off for a static placeholder mark. */
@@ -39,9 +40,7 @@ whatever it is standing in for is what should be announced, so wrap it in the li
   style:--logo-color={color}
 >
   <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-    <path
-      d="M16 3.6 C17.8 3.6 19 5 20 7 L25.1 17.2 C26.6 20 27 22 26.3 23.7 C24.7 27 20.9 28.6 16 28.6 C11.1 28.6 7.3 27 5.7 23.7 C5 22 5.4 20 6.9 17.2 L12 7 C13 5 14.2 3.6 16 3.6 Z"
-    />
+    <path d={PICK_PATH} />
   </svg>
 </div>
 
