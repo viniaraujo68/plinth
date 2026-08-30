@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # `registry-url` is what writes the .npmrc that `npm publish` authenticates against; without
+      # it NODE_AUTH_TOKEN is read by nothing and the publish fails as anonymous.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      - run: npx playwright install chromium --with-deps
+
+      # The tag is the release, so the gate runs again here rather than trusting that the commit
+      # already went green on main: a tag can point anywhere.
+      - run: npm run check
+
+      - run: npm run lint
+
+      - run: npm run test:unit -- --run
+
+      # `prepack` builds dist and runs publint, so the tarball is packed from a fresh build.
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -28,7 +28,7 @@ whatever it is standing in for is what should be announced, so wrap it in the li
 `aria-busy` container that owns the loading state.
 
 ```svelte
-<div class="grid place-items-center" role="status" aria-label="Loading cessions">
+<div class="grid place-items-center" role="status" aria-label="Loading orders">
   <Logo class="text-4xl" animated />
 </div>
 ```

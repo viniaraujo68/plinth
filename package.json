@@ -1,17 +1,23 @@
 {
   "name": "@viniaraujo68/plinth",
   "version": "0.1.0",
-  "description": "A personal Svelte 5 design system: theme, shell, primitives and formatters.",
+  "description": "A personal Svelte 5 design system: theme, application shell, interface primitives, routing metadata, a fetch wrapper and locale-aware formatters.",
   "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/viniaraujo68/plinth.git"
   },
+  "homepage": "https://viniaraujo68.github.io/plinth",
+  "bugs": {
+    "url": "https://github.com/viniaraujo68/plinth/issues"
+  },
   "keywords": [
     "svelte",
+    "svelte5",
     "sveltekit",
     "design-system",
+    "component-library",
     "tailwindcss",
     "daisyui"
   ],

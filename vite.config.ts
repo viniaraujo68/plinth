@@ -5,6 +5,13 @@ import adapter from "@sveltejs/adapter-static";
 import devtoolsJson from "vite-plugin-devtools-json";
 import tailwindcss from "@tailwindcss/vite";
 
+// GitHub Pages serves the showcase from a project subpath, and the deploy workflow is the only
+// place that says so. Everything else -- dev, preview, the end-to-end run -- leaves it unset and
+// keeps the root, which is why no showcase file has to know which one it is: `resolve()` applies
+// whatever this ends up being. The cast is the environment's untyped string meeting SvelteKit's
+// `"" | "/${string}"`; the workflow is what guarantees the leading slash.
+const BASE_PATH = (process.env.BASE_PATH ?? "") as "" | `/${string}`;
+
 export default defineConfig({
   // The theme declares every color once through `light-dark()`. Lightning CSS -- which Vite runs
   // to minify CSS -- rewrites that into a pair of inherited `--lightningcss-*` guard variables
@@ -34,13 +41,16 @@ export default defineConfig({
       // prerenderable should break the build instead of silently degrading to client routing.
       adapter: adapter(),
 
+      paths: { base: BASE_PATH },
+
       prerender: {
         handleHttpError: ({ referrer, message }) => {
           // The shell demo renders a fake application's navigation, and navigation means real
           // `<a href>`s -- to routes that exist only inside that demo's own config. The crawler
           // follows them and finds nothing, which is correct and expected. Every broken link
-          // anywhere else still fails the build.
-          if (referrer === "/shell") return;
+          // anywhere else still fails the build. Matched by suffix because the base path is
+          // already on the referrer when one is configured.
+          if (referrer !== null && referrer.endsWith("/shell")) return;
           throw new Error(message);
         },
       },
