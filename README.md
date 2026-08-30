@@ -26,7 +26,10 @@ the same import specifiers, which are what every example below uses.
 
 The package declares `svelte` and `@sveltejs/kit` as peer dependencies; Tailwind 4 and daisyUI 5
 are the consumer's own, because the theme is a stylesheet the consumer imports rather than a
-bundle the library emits.
+bundle the library emits. The `svelte` floor is `^5.57.0`, and it is a real floor rather than a
+precaution: the user context is built on the `[get, set, has]` form of `createContext`, which
+5.56 does not have — there `has` is `undefined` and the first component that reads the context
+throws.
 
 ## Setup
 

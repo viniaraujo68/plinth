@@ -19,11 +19,13 @@
     /** `null` in the second frame: two shells on one page would otherwise fight over the same
      * remembered collapse state, and only one of them has a sidebar to remember it for. */
     storageKey?: string | null;
+    /** Driven from the page so the bar's slot rule can be watched rather than described. */
+    bottomBarSlots?: number;
     /** Called with the pathname of whatever nav entry was clicked. */
     onnavigate: (pathname: string) => void;
   }
 
-  const { routing, user, navLabel, storageKey, onnavigate }: Props = $props();
+  const { routing, user, navLabel, storageKey, bottomBarSlots = 5, onnavigate }: Props = $props();
 
   /**
    * The shell emits real `<a href>`s, because that is what navigation is. The fake app they point
@@ -54,7 +56,7 @@ the same user store — the only difference between them is how wide the box aro
 <div class="h-full" {@attach demoRouter}>
   <UserProvider {user}>
     <RoutingProvider {routing}>
-      <AppShell {navLabel} {storageKey} bottomBarSlots={5}>
+      <AppShell {navLabel} {storageKey} {bottomBarSlots}>
         {#snippet brand({ collapsed })}
           <!-- The brand is entirely the app's: the library ships no mark, no wordmark and no link
              out to anywhere. Collapsing hands the snippet the state so it can shorten itself
@@ -88,7 +90,9 @@ the same user store — the only difference between them is how wide the box aro
         {/snippet}
 
         {#snippet footer()}
-          <!-- The theme picker is dropped in by the app, not hardcoded by the shell. -->
+          <!-- The theme picker is dropped in by the app, not hardcoded by the shell. It reaches
+               the sidebar's footer on a wide viewport and the sheet on a narrow one, where using
+               it deliberately leaves the sheet open: a setting is not a destination. -->
           <ThemeToggle iconOnly />
         {/snippet}
 

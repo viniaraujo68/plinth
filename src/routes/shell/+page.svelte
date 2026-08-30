@@ -23,6 +23,11 @@
 
   let demoRouteId = $state<DemoId>("/orders/[id]/lines/[line]");
 
+  // Enough slots to hold every entry the demo can render, so the "More" item can be watched
+  // staying behind for the sheet's sake alone.
+  const SLOT_CHOICES = [5, 8];
+  let barSlots = $state(5);
+
   // A hand-rolled stand-in for SvelteKit's `page`. `RoutingContext` reads its source structurally,
   // which is what lets one instance be driven from a form here and from a test elsewhere.
   const demoSource: RoutingSource = {
@@ -63,8 +68,9 @@
     <h1 class="text-3xl font-semibold tracking-tight">Shell</h1>
     <p class="max-w-2xl text-base-content/70">
       One route declaration, two navigations. On a wide viewport the shell is a collapsible sidebar;
-      on a narrow one it is a fixed bottom bar with the entries that do not fit folded into a sheet.
-      Neither form is chosen by JavaScript — there is no resize listener and no
+      on a narrow one it is a fixed bottom bar, with the entries that do not fit — and everything a
+      bar has no room for at all, the brand, the footer controls and the user block — folded into a
+      sheet. Neither form is chosen by JavaScript — there is no resize listener and no
       <code class="kbd kbd-sm">matchMedia</code>, only a container query on the shell's own root,
       which is why nothing flashes the wrong layout on the first paint.
     </p>
@@ -86,6 +92,15 @@
         <select class="select w-64 select-sm" bind:value={demoRouteId} data-testid="route-select">
           {#each DEMO_IDS as id (id)}
             <option value={id}>{id}</option>
+          {/each}
+        </select>
+      </label>
+
+      <label class="flex flex-col gap-1 text-sm">
+        <span class="text-base-content/60">Bottom bar slots</span>
+        <select class="select w-40 select-sm" bind:value={barSlots} data-testid="bar-slots">
+          {#each SLOT_CHOICES as count (count)}
+            <option value={count}>{count}</option>
           {/each}
         </select>
       </label>
@@ -123,13 +138,20 @@
     </div>
 
     <p class="max-w-2xl text-sm text-base-content/70">
-      Signing out drops the user block from the sidebar footer. Taking
+      Signing out drops the user block from the sidebar footer <em>and</em> from the sheet. Taking
       <code class="kbd kbd-sm">reports:read</code> away drops the Reports entry from both forms and
       from the sheet — the gate is declared once, on the route, and the bottom bar counts what will
       actually render before deciding what overflows. Turning off "context can sign out" removes the
       sign-out control entirely: a
       <code class="kbd kbd-sm">UserContext</code> with no <code class="kbd kbd-sm">logout</code> gets
       no button rather than a dead one.
+    </p>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      "Bottom bar slots" is <code class="kbd kbd-sm">bottomBarSlots</code>, and it caps what the bar
+      renders with "More" counted in. At eight, with
+      <code class="kbd kbd-sm">reports:read</code> taken away, the seven remaining entries all fit and
+      nothing overflows — yet "More" stays, because on a phone the sheet is the only place the brand,
+      the theme toggle and the user block have to go.
     </p>
   </section>
 
@@ -147,6 +169,7 @@
         routing={demoRouting}
         user={account}
         navLabel="Wide demo navigation"
+        bottomBarSlots={barSlots}
         onnavigate={goDemo}
       />
     </div>
@@ -170,6 +193,7 @@
         user={account}
         navLabel="Mobile demo navigation"
         storageKey={null}
+        bottomBarSlots={barSlots}
         onnavigate={goDemo}
       />
     </div>
@@ -179,6 +203,12 @@
       it is the same thing, and here it means the bar stays inside the frame. The sheet is a real
       <code class="kbd kbd-sm">&lt;dialog&gt;</code>, so it goes to the top layer, which
       <em>is</em> the window: expect it to cover this page rather than the frame.
+    </p>
+    <p class="max-w-2xl text-sm text-base-content/60">
+      Open it and the whole sidebar is there in order: the brand as its header, then the entries
+      that did not fit, then the theme toggle, then Ada and her sign-out button. Cycle the theme
+      from inside — the sheet stays put, because a setting is not somewhere you went. Choosing an
+      entry is, so that dismisses it.
     </p>
   </section>
 

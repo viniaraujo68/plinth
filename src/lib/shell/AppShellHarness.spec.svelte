@@ -15,6 +15,8 @@
     /** Renders icons through the snippet instead of the default `<span class={meta.icon}>`. */
     customIcons?: boolean;
     withBrand?: boolean;
+    /** A stand-in for the language or theme toggle an app drops into the footer slot. */
+    withFooter?: boolean;
   }
 
   const {
@@ -25,7 +27,10 @@
     storageKey,
     customIcons = false,
     withBrand = false,
+    withFooter = false,
   }: Props = $props();
+
+  let footerClicks = $state(0);
 
   // Both contexts are installed once and then mutate internally, exactly as an app's root layout
   // does it; reading the props untracked says so.
@@ -39,6 +44,7 @@
     {bottomBarSlots}
     {storageKey}
     brand={withBrand ? brand : undefined}
+    footer={withFooter ? footer : undefined}
     icon={customIcons ? icon : undefined}
   >
     <p>page body</p>
@@ -47,6 +53,17 @@
 
 {#snippet brand()}
   <span data-testid="brand">Acme</span>
+{/snippet}
+
+{#snippet footer()}
+  <button
+    type="button"
+    data-testid="footer-control"
+    data-clicks={footerClicks}
+    onclick={() => (footerClicks += 1)}
+  >
+    Language
+  </button>
 {/snippet}
 
 {#snippet icon(route: ResolvedRoute)}

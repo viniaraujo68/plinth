@@ -70,6 +70,9 @@ class TestUser implements UserContext {
     roles.length === 0 || (this.signedIn && roles.every((role) => this.roles.includes(role)));
 }
 
+/** A sign-out that goes nowhere, for the cases that only care the control is there. */
+const signOut = () => undefined;
+
 // The two forms are both in the markup at all times; only the container query decides which one is
 // displayed. Querying by class rather than by role is deliberate: it can see the hidden form too,
 // which is what several of these assertions are actually about.
@@ -84,10 +87,21 @@ const sidebarLabels = () => sidebarLinks().map((link) => link.textContent?.trim(
 const barLinks = () => [...document.querySelectorAll<HTMLElement>(".shell-bottom-bar .bar-link")];
 const barLabels = () => barLinks().map((link) => link.textContent?.trim() ?? "");
 const sheetLinks = () => [...document.querySelectorAll<HTMLAnchorElement>(".plinth-sheet a")];
-const currentLabels = () =>
-  [...document.querySelectorAll<HTMLElement>('.shell-sidebar [aria-current="page"]')].map(
+
+const currentIn = (scope: string) => () =>
+  [...document.querySelectorAll<HTMLElement>(`${scope} [aria-current="page"]`)].map(
     (element) => element.textContent?.trim() ?? "",
   );
+const currentLabels = currentIn(".shell-sidebar");
+const barCurrentLabels = currentIn(".shell-bottom-bar");
+const sheetCurrentLabels = currentIn(".plinth-sheet");
+
+/** The sheet's sections, in the order the document holds them. */
+const SHEET_SECTIONS = ["sheet-header", "sheet-list", "sheet-footer", "sheet-user"] as const;
+const sheetSections = () =>
+  [...document.querySelectorAll<HTMLElement>(".plinth-sheet *")]
+    .map((element) => SHEET_SECTIONS.find((name) => element.classList.contains(name)))
+    .filter((name) => name !== undefined);
 
 const STORAGE_KEY = "plinth-test:sidebar";
 
@@ -152,6 +166,40 @@ it("marks nothing when the route did not match anything declared", () => {
   expect(currentLabels()).toEqual([]);
   // No trail means no Home entry either -- it is derived off the match, never re-declared.
   expect(sidebarLabels()).not.toContain("Home");
+});
+
+it("marks exactly one bottom bar entry, and never Home away from the root", () => {
+  render(Harness, {
+    routing: routingAt("/orders/[id]/lines/[line]", { id: "7", line: "3" }),
+    width: NARROW,
+  });
+
+  // The bar used to answer this with trail membership, which made Home — a prefix of every route
+  // id — permanently current, and current alongside whatever else matched.
+  expect(barCurrentLabels()).toEqual(["Orders"]);
+});
+
+it("marks Home in the bottom bar only on the exact root", () => {
+  render(Harness, { routing: routingAt("/"), width: NARROW });
+
+  expect(barCurrentLabels()).toEqual(["Home"]);
+});
+
+it("marks nothing in the bottom bar when the route matched nothing declared", () => {
+  render(Harness, { routing: routingAt(null), width: NARROW });
+
+  expect(barCurrentLabels()).toEqual([]);
+});
+
+it("marks the current entry in the sheet it overflowed into, and nowhere else", async () => {
+  render(Harness, { routing: routingAt("/settings"), width: NARROW });
+
+  // Settings does not ride the bar at all, so nothing there is current — least of all Home.
+  expect(barCurrentLabels()).toEqual([]);
+
+  await page.getByRole("button", { name: "More" }).click();
+
+  await expect.poll(sheetCurrentLabels).toEqual(["Settings"]);
 });
 
 it("hands meta.icon straight to markup as a class by default", () => {
@@ -225,11 +273,90 @@ it("fills the bottom bar to its slot count and folds the rest behind More", () =
   expect(barLabels()).toEqual(["Home", "Dashboard", "Orders", "Customers", "More"]);
 });
 
-it("uses every slot when the entries fit exactly", () => {
+it("uses every slot when the entries fit and the sheet would have nothing else to carry", () => {
   render(Harness, { routing: routingAt("/dashboard"), width: NARROW, bottomBarSlots: 8 });
 
   expect(barLabels()).toHaveLength(8);
   expect(barLabels()).not.toContain("More");
+});
+
+it("shows More with nothing overflowing when the sheet carries the footer slot", () => {
+  render(Harness, {
+    routing: routingAt("/dashboard"),
+    width: NARROW,
+    bottomBarSlots: 10,
+    withFooter: true,
+  });
+
+  // Eight entries into ten slots: "More" takes the ninth, which no entry wanted, so the nav loses
+  // nothing to it.
+  expect(barLabels()).toEqual([
+    "Home",
+    "Dashboard",
+    "Orders",
+    "Customers",
+    "Invoices",
+    "Reports",
+    "Inventory",
+    "Settings",
+    "More",
+  ]);
+  expect(sheetLinks()).toHaveLength(0);
+});
+
+it("shows More for the brand alone", () => {
+  render(Harness, {
+    routing: routingAt("/dashboard"),
+    width: NARROW,
+    bottomBarSlots: 10,
+    withBrand: true,
+  });
+
+  expect(barLabels()).toContain("More");
+});
+
+it("shows More for a signed-in user alone", () => {
+  render(Harness, {
+    routing: routingAt("/dashboard"),
+    width: NARROW,
+    bottomBarSlots: 10,
+    user: new TestUser(),
+  });
+
+  expect(barLabels()).toContain("More");
+});
+
+it("shows no More item when the sheet would hold nothing at all", () => {
+  render(Harness, {
+    routing: routingAt("/dashboard"),
+    width: NARROW,
+    bottomBarSlots: 10,
+    user: new TestUser({ status: "anonymous" }),
+  });
+
+  expect(barLabels()).not.toContain("More");
+});
+
+it("buys the More slot from the nav only once the bar is full", () => {
+  render(Harness, {
+    routing: routingAt("/dashboard"),
+    width: NARROW,
+    bottomBarSlots: 8,
+    withFooter: true,
+  });
+
+  // Eight entries into eight slots with something to put in the sheet: the cap is a cap, so the
+  // last entry moves in behind "More" rather than the bar growing a ninth item.
+  expect(barLabels()).toEqual([
+    "Home",
+    "Dashboard",
+    "Orders",
+    "Customers",
+    "Invoices",
+    "Reports",
+    "Inventory",
+    "More",
+  ]);
 });
 
 it("lists the overflow in the sheet the More item opens", async () => {
@@ -254,6 +381,149 @@ it("closes the sheet from its own close button", async () => {
   await page.getByRole("button", { name: "Close" }).click();
 
   await expect.poll(() => sheetLinks().length).toBe(0);
+});
+
+it("carries the brand, the overflow, the footer slot and the user block, in that order", async () => {
+  render(Harness, {
+    routing: routingAt("/dashboard"),
+    width: NARROW,
+    withBrand: true,
+    withFooter: true,
+    user: new TestUser({ logout: signOut }),
+  });
+
+  await page.getByRole("button", { name: "More" }).click();
+
+  await expect
+    .poll(sheetSections)
+    .toEqual(["sheet-header", "sheet-list", "sheet-footer", "sheet-user"]);
+  // The brand heads the sheet; the sidebar it belongs to is not on screen at this width.
+  expect(document.querySelector('.plinth-sheet [data-testid="brand"]')).not.toBeNull();
+  expect(document.querySelector('.plinth-sheet [data-testid="footer-control"]')).not.toBeNull();
+  expect(document.querySelector(".plinth-sheet .user-name")?.textContent?.trim()).toBe(
+    "Ada Lovelace",
+  );
+  expect(document.querySelector(".plinth-sheet .user-email")?.textContent?.trim()).toBe(
+    "ada@example.test",
+  );
+  expect(document.querySelector('.plinth-sheet [aria-label="Sign out"]')).not.toBeNull();
+});
+
+it("shows the user's name in the sheet even while the sidebar is remembered collapsed", async () => {
+  localStorage.setItem(STORAGE_KEY, "true");
+
+  render(Harness, {
+    routing: routingAt("/dashboard"),
+    width: NARROW,
+    storageKey: STORAGE_KEY,
+    user: new TestUser({ logout: signOut }),
+  });
+
+  await page.getByRole("button", { name: "More" }).click();
+
+  // Collapsing is the sidebar's state, and the sheet renders the same block with the same
+  // `collapsible` classes on a viewport that has no sidebar to collapse.
+  await expect.poll(() => document.querySelectorAll(".plinth-sheet .user-name").length).toBe(1);
+  const identity = document.querySelector<HTMLElement>(".plinth-sheet .user-identity")!;
+  expect(getComputedStyle(identity).display).not.toBe("none");
+});
+
+it("gives the sheet's avatar a clip definition of its own", async () => {
+  render(Harness, { routing: routingAt("/dashboard"), width: NARROW, user: new TestUser() });
+
+  await page.getByRole("button", { name: "More" }).click();
+
+  await expect.poll(() => document.querySelectorAll(".avatar-initials").length).toBe(2);
+
+  // Two copies of one block are in the document while the sheet is open, and a shared id would
+  // have made the second reference resolve against the first one's definition.
+  const ids = [...document.querySelectorAll("clipPath")].map((node) => node.id);
+  expect(ids).toHaveLength(2);
+  expect(new Set(ids).size).toBe(2);
+});
+
+it("keeps the sheet open when a footer control is used", async () => {
+  render(Harness, { routing: routingAt("/dashboard"), width: NARROW, withFooter: true });
+
+  await page.getByRole("button", { name: "More" }).click();
+  await expect.poll(() => sheetLinks().length).toBe(4);
+
+  await page.getByRole("button", { name: "Language" }).click();
+
+  await expect
+    .poll(() =>
+      document
+        .querySelector('.plinth-sheet [data-testid="footer-control"]')
+        ?.getAttribute("data-clicks"),
+    )
+    .toBe("1");
+  // A setting is not a destination: dismissing here would hide the result of the tap.
+  expect(document.querySelector<HTMLDialogElement>(".plinth-sheet")?.open).toBe(true);
+});
+
+it("signs out from the sheet, and dismisses it on the way", async () => {
+  let signedOut = false;
+  render(Harness, {
+    routing: routingAt("/dashboard"),
+    width: NARROW,
+    user: new TestUser({
+      logout: () => {
+        signedOut = true;
+      },
+    }),
+  });
+
+  await page.getByRole("button", { name: "More" }).click();
+  await expect.poll(() => document.querySelectorAll('[aria-label="Sign out"]').length).toBe(2);
+
+  await page.getByRole("button", { name: "Sign out" }).click();
+
+  expect(signedOut).toBe(true);
+  await expect
+    .poll(() => document.querySelector<HTMLDialogElement>(".plinth-sheet")?.open ?? false)
+    .toBe(false);
+});
+
+it("gives every target the sheet owns at least 44px", async () => {
+  render(Harness, {
+    routing: routingAt("/dashboard"),
+    width: NARROW,
+    withFooter: true,
+    user: new TestUser({ logout: signOut }),
+  });
+
+  await page.getByRole("button", { name: "More" }).click();
+  // Seven entries once the gated one is dropped, four slots left to the nav: three overflow.
+  await expect.poll(() => sheetLinks().length).toBe(3);
+
+  // Only what this component sizes itself: the close button wears Tailwind's `size-11`, which no
+  // stylesheet in a unit run resolves.
+  const targets = [
+    ...sheetLinks(),
+    document.querySelector<HTMLElement>(".plinth-sheet .sheet-footer")!,
+    document.querySelector<HTMLElement>('.plinth-sheet [aria-label="Sign out"]')!,
+  ];
+  for (const target of targets)
+    expect(target.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+  expect(
+    document
+      .querySelector<HTMLElement>('.plinth-sheet [aria-label="Sign out"]')!
+      .getBoundingClientRect().width,
+  ).toBeGreaterThanOrEqual(44);
+});
+
+it("pays the sheet's safe-area inset out of the same custom property as the bar", async () => {
+  render(Harness, { routing: routingAt("/dashboard"), width: NARROW });
+
+  shell().style.setProperty("--plinth-safe-area-bottom", "24px");
+  await page.getByRole("button", { name: "More" }).click();
+
+  await expect
+    .poll(() => {
+      const sheet = document.querySelector<HTMLDialogElement>(".plinth-sheet");
+      return sheet ? getComputedStyle(sheet).paddingBottom : null;
+    })
+    .toBe("24px");
 });
 
 it("gives every bottom bar target at least 44px in both directions", async () => {

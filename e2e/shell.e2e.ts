@@ -60,6 +60,89 @@ test("opens the overflow sheet and navigates from it", async ({ page }) => {
   await expect(page.locator(`${wide} .shell-sidebar [aria-current='page']`)).toHaveText("Settings");
 });
 
+test("marks one entry current in each form, and Home only at the root", async ({ page }) => {
+  await page.goto("/shell");
+
+  // The demo opens deep under /orders. The root is a prefix of every route id, so a trail test
+  // would light Home up here as well as Orders.
+  await expect(page.locator(`${mobile} .shell-bottom-bar [aria-current='page']`)).toHaveText([
+    "Orders",
+  ]);
+  await expect(page.locator(`${wide} .shell-sidebar [aria-current='page']`)).toHaveText(["Orders"]);
+
+  await page.getByTestId("route-select").selectOption("/");
+
+  await expect(page.locator(`${mobile} .shell-bottom-bar [aria-current='page']`)).toHaveText([
+    "Home",
+  ]);
+  await expect(page.locator(`${wide} .shell-sidebar [aria-current='page']`)).toHaveText(["Home"]);
+});
+
+test("carries the sidebar's chrome into the sheet, in order", async ({ page }) => {
+  await page.goto("/shell");
+
+  const sheet = page.locator(`${mobile} .plinth-sheet`);
+  await page.locator(`${mobile} .bar-link`, { hasText: "More" }).click();
+  await expect(sheet).toBeVisible();
+
+  // The brand heads it, the entries that did not fit follow, then the app's footer control, then
+  // the user block — everything the bar form drops along with the sidebar.
+  await expect(sheet.locator(".sheet-header")).toContainText("Acme");
+  await expect(sheet.locator(".sheet-footer button")).toBeVisible();
+  await expect(sheet.locator(".user-name")).toHaveText("Ada Lovelace");
+  await expect(sheet.getByRole("button", { name: "Sign out" })).toBeVisible();
+});
+
+test("keeps the sheet open while a footer control is used, and closes it on sign-out", async ({
+  page,
+}) => {
+  await page.goto("/shell");
+
+  const sheet = page.locator(`${mobile} .plinth-sheet`);
+  await page.locator(`${mobile} .bar-link`, { hasText: "More" }).click();
+
+  const theme = sheet.locator(".sheet-footer button");
+  const before = await theme.getAttribute("data-preference");
+  await theme.click();
+
+  // A theme picker is a setting, not a destination: dismissing here would hide its own result.
+  await expect(theme).not.toHaveAttribute("data-preference", before!);
+  await expect(sheet).toBeVisible();
+
+  await sheet.getByRole("button", { name: "Sign out" }).click();
+
+  // Signing out is a departure, and the block the button sits in has just stopped existing.
+  await expect(sheet).toBeHidden();
+  await expect(page.locator(`${wide} .user-card`)).toHaveCount(0);
+});
+
+test("keeps More once nothing overflows, for the sake of the sheet's chrome", async ({ page }) => {
+  await page.goto("/shell");
+
+  await page.getByTestId("toggle-role").click();
+  await page.getByTestId("bar-slots").selectOption("8");
+
+  // Seven entries into eight slots: every one of them rides the bar, and "More" takes the slot
+  // none of them wanted rather than pushing an entry out of the way.
+  await expect(page.locator(`${mobile} .bar-link`)).toHaveText([
+    "Home",
+    "Dashboard",
+    "Orders",
+    "Customers",
+    "Invoices",
+    "Inventory",
+    "Settings",
+    "More",
+  ]);
+
+  await page.locator(`${mobile} .bar-link`, { hasText: "More" }).click();
+
+  const sheet = page.locator(`${mobile} .plinth-sheet`);
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator("a")).toHaveCount(0);
+  await expect(sheet.locator(".user-name")).toHaveText("Ada Lovelace");
+});
+
 test("drops a gated entry from every form at once", async ({ page }) => {
   await page.goto("/shell");
 

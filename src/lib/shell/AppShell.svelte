@@ -9,7 +9,7 @@
   import { PICK_CLIP_PATH } from "../components/pick.js";
   import { tooltip } from "../attachments/tooltip.js";
   import { getRoutingContext, resolvePathname, type ResolvedRoute } from "../routing.svelte.js";
-  import { getUserContext } from "../user/context.js";
+  import { getUserContext, type UserData } from "../user/context.js";
 
   interface Props {
     /** The routed page. The shell owns the scroll container around it. */
@@ -29,9 +29,12 @@
     /** Extra classes for the shell root — sizing, mostly. */
     class?: ClassValue;
     /**
-     * How many slots the bottom bar has. Entries beyond it collapse into a trailing "More" item
-     * that opens a sheet, so the last slot is spent on "More" only when there is an overflow:
-     * five entries fill five slots, six entries render four plus "More".
+     * How many items the bottom bar renders, the trailing "More" item counted among them. Entries
+     * that do not fit collapse into the sheet "More" opens — and so does everything the bar has no
+     * room for at all: the brand, the footer snippet and the user block. "More" therefore appears
+     * with nothing overflowing whenever any of those exist, and costs a nav slot only once the bar
+     * is genuinely full: three entries in five slots render three plus "More", five render four
+     * plus "More" and put the fifth in the sheet.
      */
     bottomBarSlots?: number;
     /** Where the collapse state is remembered. `null` turns persistence off. */
@@ -92,7 +95,6 @@
    * there is no trail and the header falls back to the brand alone.
    */
   const home = $derived(routing.matched.find((route) => route.routeId === "/" && titled(route)));
-  const homeActive = $derived(routing.routeId === "/");
 
   /**
    * The role gate `ScopedComponent` applies, applied here instead — one step earlier, because the
@@ -106,18 +108,53 @@
       .filter((route) => titled(route) && user.hasAnyRole(route.meta.requiredRoles ?? [])),
   );
 
-  /** An entry is current while the match sits anywhere on its subtree; among top-level siblings at
-   * most one can. Home is the exception — everything is below the root, so it lights up on the
-   * exact root only, and an undeclared route lights nothing at all. */
-  const isActive = (route: ResolvedRoute) =>
-    routing.matched.some((match) => match.routeId === route.routeId);
+  /**
+   * An entry is current while the match sits anywhere on its subtree; among top-level siblings at
+   * most one can. Home is the exception — everything is below the root, so trail membership would
+   * light it up on every route and leave two entries current at once; it takes the exact root
+   * instead, and an undeclared route lights nothing at all.
+   *
+   * One test, read by the sidebar, the bar and the sheet alike. Answering it in two places is
+   * precisely how the bar came to mark Home current everywhere while the sidebar did not.
+   */
+  const isCurrent = (route: ResolvedRoute) =>
+    route.routeId === "/"
+      ? routing.routeId === "/"
+      : routing.matched.some((match) => match.routeId === route.routeId);
 
   // Home leads the bottom bar rather than heading it: a bar has no header to put it in.
   const barEntries = $derived(home ? [home, ...items] : items);
   const slots = $derived(Math.max(1, bottomBarSlots));
-  const overflowing = $derived(barEntries.length > slots);
-  const barItems = $derived(overflowing ? barEntries.slice(0, slots - 1) : barEntries);
-  const overflowItems = $derived(overflowing ? barEntries.slice(slots - 1) : []);
+
+  const signedInUser = $derived(user.status === "authenticated" ? user.data : null);
+
+  /**
+   * The bar form hides the sidebar outright, and with it the brand, the footer controls and the
+   * user block. The sheet is the only place left to put them, so their mere existence is reason
+   * enough for "More" — without that, a phone has no way to reach a language picker or to sign out.
+   */
+  const sheetChrome = $derived(
+    brand !== undefined || footer !== undefined || signedInUser !== null,
+  );
+  const showMore = $derived(barEntries.length > slots || sheetChrome);
+
+  /*
+   * Slot arithmetic. `bottomBarSlots` caps what the bar renders, "More" counted among it, so the
+   * nav gets `slots - 1` items when "More" is there and all `slots` when it is not:
+   *
+   *   8 entries, 5 slots            -> 4 entries + More, 4 in the sheet (the overflow buys the slot)
+   *   8 entries, 8 slots, no chrome -> 8 entries, no More at all
+   *   3 entries, 5 slots, chrome    -> 3 entries + More, and the sheet lists no entries
+   *   5 entries, 5 slots, chrome    -> 4 entries + More, the fifth entry moves into the sheet
+   *
+   * The third line is the one a chrome-only "More" is judged on: it takes a slot the nav had no
+   * use for, and `slice` starts moving entries into the sheet only once they outgrow what is left.
+   * The fourth is the cap being a cap — on a bar already full the last slot has to be bought from
+   * the nav, and the entry that pays is still there, one tap deeper.
+   */
+  const navSlots = $derived(showMore ? slots - 1 : slots);
+  const barItems = $derived(barEntries.slice(0, navSlots));
+  const overflowItems = $derived(barEntries.slice(navSlots));
 
   const initials = (name: string) => {
     const words = name.split(/\s+/).filter(Boolean);
@@ -131,6 +168,9 @@
      showcase mounts exactly two — and a duplicated id would point both avatars at whichever
      `<clipPath>` the parser saw first. */
   const avatarClip = $props.id();
+  // The sidebar and the sheet render the same user block, and while the sheet is open both are in
+  // the document: two `<clipPath>` definitions, so two ids.
+  const sheetAvatarClip = `${avatarClip}-sheet`;
 
   let sheet = $state<Dialog>();
 
@@ -157,8 +197,15 @@ mobile form on a desktop, which is exactly what the showcase does.
 
 Entries come from `routing.children("/")`, minus plumbing (no `title`) and minus anything the user
 context gates out. Home, when declared, is derived off the trail and rendered as the sidebar's
-header entry and as the bottom bar's first item. Entries past `bottomBarSlots` collapse into a
-"More" item that opens a bottom sheet.
+header entry and as the bottom bar's first item. It is current on the exact root and nowhere else —
+every route is below it — while every other entry is current for its whole subtree, so exactly one
+entry is ever marked, in either form.
+
+The bar form has no sidebar, and so no brand, no footer and no user block. All three move into the
+sheet behind the "More" item, which is therefore shown whenever there is anything to put there —
+overflowing entries, a `brand` snippet, a `footer` snippet or a signed-in user — and not only on an
+overflow. The sheet reads brand, then the entries that did not fit, then `footer`, then the user
+block with its sign-out control. Choosing an entry dismisses it; using a footer control does not.
 
 Icons: `meta.icon` is an uninterpreted string, so by default it is handed straight to markup as
 `<span class={meta.icon}>` — the shape an icon font or an Iconify/Tailwind class wants. Pass the
@@ -214,7 +261,7 @@ shell rather than to the window, and the content area reserves its height plus
       <a
         class="nav-link"
         href={resolvePathname(home.pathname)}
-        aria-current={homeActive ? "page" : undefined}
+        aria-current={isCurrent(home) ? "page" : undefined}
         {@attach tooltip(home.label, { disabled: !collapsed })}
       >
         <span class="nav-icon">{@render routeIcon(home)}</span>
@@ -230,7 +277,7 @@ shell rather than to the window, and the content area reserves its height plus
             <a
               class="nav-link"
               href={resolvePathname(item.pathname)}
-              aria-current={isActive(item) ? "page" : undefined}
+              aria-current={isCurrent(item) ? "page" : undefined}
               {@attach tooltip(item.label, { disabled: !collapsed })}
             >
               <span class="nav-icon">{@render routeIcon(item)}</span>
@@ -246,49 +293,8 @@ shell rather than to the window, and the content area reserves its height plus
         <div class="footer-slot">{@render footer()}</div>
       {/if}
 
-      {#if user.status === "authenticated" && user.data}
-        {@const data = user.data}
-        <div class="user-card">
-          <!-- A `<clipPath>` rather than CSS `clip-path: path()`, because `path()` takes user
-               units and never scales: it would fit one avatar size and no other.
-               `clipPathUnits="objectBoundingBox"` reads the same outline in 0..1 and follows
-               whatever box the span turns out to be. -->
-          <svg class="avatar-clip" aria-hidden="true" focusable="false">
-            <clipPath id={avatarClip} clipPathUnits="objectBoundingBox">
-              <path d={PICK_CLIP_PATH} />
-            </clipPath>
-          </svg>
-          <span class="avatar-initials" aria-hidden="true" style:clip-path="url(#{avatarClip})">
-            {initials(data.name)}
-          </span>
-          <span class="user-identity collapsible">
-            <span class="user-name">{data.name}</span>
-            <span class="user-email">{data.email}</span>
-          </span>
-          {#if user.logout}
-            <!-- Only rendered when the context can actually sign out; a button that does nothing
-                 is worse than no button. -->
-            <button
-              type="button"
-              class="collapsible btn btn-square btn-ghost btn-sm"
-              aria-label={logoutLabel}
-              onclick={() => void user.logout?.()}
-            >
-              <svg
-                class="size-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-              </svg>
-            </button>
-          {/if}
-        </div>
+      {#if signedInUser}
+        {@render userBlock(signedInUser, avatarClip)}
       {/if}
     </div>
   </aside>
@@ -302,14 +308,14 @@ shell rather than to the window, and the content area reserves its height plus
       <a
         class="bar-link"
         href={resolvePathname(item.pathname)}
-        aria-current={isActive(item) ? "page" : undefined}
+        aria-current={isCurrent(item) ? "page" : undefined}
       >
         <span class="bar-icon">{@render routeIcon(item)}</span>
         <span class="bar-text">{item.label}</span>
       </a>
     {/each}
 
-    {#if overflowItems.length > 0}
+    {#if showMore}
       <button type="button" class="bar-link" aria-haspopup="dialog" onclick={() => sheet?.show()}>
         <span class="bar-icon" aria-hidden="true">
           <svg
@@ -351,23 +357,88 @@ shell rather than to the window, and the content area reserves its height plus
         ✕
       </button>
     </div>
-    <ul class="sheet-list">
-      {#each overflowItems as item (item.routeId)}
-        <li>
-          <a
-            class="sheet-link"
-            href={resolvePathname(item.pathname)}
-            aria-current={isActive(item) ? "page" : undefined}
-            onclick={() => sheet?.close()}
-          >
-            <span class="nav-icon">{@render routeIcon(item)}</span>
-            <span>{item.label}</span>
-          </a>
-        </li>
-      {/each}
-    </ul>
+    <div class="sheet-body">
+      {#if overflowItems.length > 0}
+        <ul class="sheet-list">
+          {#each overflowItems as item (item.routeId)}
+            <li>
+              <a
+                class="sheet-link"
+                href={resolvePathname(item.pathname)}
+                aria-current={isCurrent(item) ? "page" : undefined}
+                onclick={() => sheet?.close()}
+              >
+                <span class="nav-icon">{@render routeIcon(item)}</span>
+                <span>{item.label}</span>
+              </a>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+
+      {#if footer}
+        <!-- No dismissal wired here, deliberately. A footer control is a setting, not a
+             destination: a language or theme picker changes the sheet the reader is looking at and
+             is routinely used twice in a row, so closing on it would hide the result of the tap
+             that produced it. Only choosing an entry — an actual departure — dismisses the sheet. -->
+        <div class="sheet-footer">{@render footer()}</div>
+      {/if}
+
+      {#if signedInUser}
+        <div class="sheet-user">{@render userBlock(signedInUser, sheetAvatarClip)}</div>
+      {/if}
+    </div>
   </Dialog>
 </div>
+
+{#snippet userBlock(data: UserData, clipId: string)}
+  <div class="user-card">
+    <!-- A `<clipPath>` rather than CSS `clip-path: path()`, because `path()` takes user units and
+         never scales: it would fit one avatar size and no other.
+         `clipPathUnits="objectBoundingBox"` reads the same outline in 0..1 and follows whatever
+         box the span turns out to be. -->
+    <svg class="avatar-clip" aria-hidden="true" focusable="false">
+      <clipPath id={clipId} clipPathUnits="objectBoundingBox">
+        <path d={PICK_CLIP_PATH} />
+      </clipPath>
+    </svg>
+    <span class="avatar-initials" aria-hidden="true" style:clip-path="url(#{clipId})">
+      {initials(data.name)}
+    </span>
+    <span class="user-identity collapsible">
+      <span class="user-name">{data.name}</span>
+      <span class="user-email">{data.email}</span>
+    </span>
+    {#if user.logout}
+      <!-- Only rendered when the context can actually sign out; a button that does nothing is
+           worse than no button. Signing out from the sheet dismisses it, unlike a footer control:
+           this one IS a departure — the app is about to be somewhere else, and the block the
+           button sits in stops existing the moment it runs. In the sidebar the call is a no-op. -->
+      <button
+        type="button"
+        class="collapsible btn btn-square btn-ghost btn-sm"
+        aria-label={logoutLabel}
+        onclick={() => {
+          sheet?.close();
+          void user.logout?.();
+        }}
+      >
+        <svg
+          class="size-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+        </svg>
+      </button>
+    {/if}
+  </div>
+{/snippet}
 
 {#snippet routeIcon(route: ResolvedRoute)}
   {#if icon}
@@ -432,7 +503,10 @@ shell rather than to the window, and the content area reserves its height plus
     width: var(--plinth-sidebar-collapsed-width);
   }
 
-  .plinth-shell.collapsed .collapsible {
+  /* Scoped to the sidebar, because collapsing is the sidebar's state alone: the sheet renders the
+     same user block, with the same classes, on a viewport where nothing is collapsed — and a
+     remembered collapsed flag would otherwise strip the name and the sign-out button out of it. */
+  .plinth-shell.collapsed .shell-sidebar .collapsible {
     display: none;
   }
 
@@ -665,17 +739,32 @@ shell rather than to the window, and the content area reserves its height plus
     color: var(--color-base-content);
   }
 
+  /* Only while open. A bare `display: flex` on the element would override the UA's `display: none`
+     for a closed `<dialog>` and leave it on the page; `[open]` is set by `showModal()` itself. */
+  :global(dialog.plinth-sheet[open]) {
+    display: flex;
+    flex-direction: column;
+  }
+
   :global(dialog.plinth-sheet::backdrop) {
     background-color: rgb(0 0 0 / 0.4);
   }
 
   .sheet-header {
     display: flex;
+    flex-shrink: 0;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
     padding: 0.5rem 0.5rem 0.5rem 1rem;
     border-bottom: 1px solid var(--plinth-shell-line);
+  }
+
+  /* The header stays put and everything under it scrolls: the sheet now carries the footer slot
+     and the user block as well as the entries, which is more than a phone is guaranteed to fit. */
+  .sheet-body {
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .sheet-title {
@@ -687,7 +776,37 @@ shell rather than to the window, and the content area reserves its height plus
     margin: 0;
     padding: 0.5rem 0;
     list-style: none;
-    overflow-y: auto;
+  }
+
+  .sheet-footer,
+  .sheet-user {
+    /* Separated from whatever precedes it, and from nothing when it is first: the sheet's sections
+       are all optional, so the rule has to come from the section itself. */
+    border-top: 1px solid var(--plinth-shell-line);
+  }
+
+  .sheet-body > :first-child {
+    border-top: 0;
+  }
+
+  .sheet-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    /* A touch row's worth of height for whatever the app puts here; the controls themselves are
+       the app's to size, so the sheet gives them the room rather than overriding them. */
+    min-height: 2.75rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .sheet-user {
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* The same control is a 32px icon button on a pointer-driven sidebar and a touch target here. */
+  .sheet-user .btn {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
   }
 
   .sheet-link {
