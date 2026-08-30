@@ -23,3 +23,20 @@ test("reaches every component demo from the components index", async ({ page }) 
     "page",
   );
 });
+
+// The pattern demos are top-level routes the Patterns index only links to, so the tab claims them
+// through `covers` rather than through the URL. Both halves of that are asserted here.
+test("reaches every pattern demo from the patterns index", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Patterns", exact: true }).click();
+
+  const links = page.getByTestId("pattern-link");
+  await expect(links).toHaveCount(5);
+
+  await page.getByRole("link", { name: "formatters" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Formatters");
+  await expect(page.getByRole("link", { name: "Patterns", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+});

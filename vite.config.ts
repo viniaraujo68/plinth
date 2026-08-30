@@ -33,6 +33,17 @@ export default defineConfig({
       // No SPA fallback: every showcase route is prerendered, so a route that stops being
       // prerenderable should break the build instead of silently degrading to client routing.
       adapter: adapter(),
+
+      prerender: {
+        handleHttpError: ({ referrer, message }) => {
+          // The shell demo renders a fake application's navigation, and navigation means real
+          // `<a href>`s -- to routes that exist only inside that demo's own config. The crawler
+          // follows them and finds nothing, which is correct and expected. Every broken link
+          // anywhere else still fails the build.
+          if (referrer === "/shell") return;
+          throw new Error(message);
+        },
+      },
     }),
   ],
   test: {

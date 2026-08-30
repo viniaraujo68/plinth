@@ -21,18 +21,35 @@
   // never picked a theme gets the right paint with no correction on hydration.
   setThemeContext(new ThemeContext(browser ? readThemePreference() : "system"));
 
+  // `covers` exists because the pattern demos are top-level routes that the Patterns index only
+  // links to — the tab owns them for the purpose of "which section am I in" without the URLs
+  // having to be nested under it.
   const NAV = [
-    { href: resolve("/"), label: "Overview" },
-    { href: resolve("/theme"), label: "Theme" },
-    { href: resolve("/components"), label: "Components" },
+    { href: resolve("/"), label: "Overview", covers: [] as string[] },
+    { href: resolve("/theme"), label: "Theme", covers: [] as string[] },
+    { href: resolve("/components"), label: "Components", covers: [] as string[] },
+    {
+      href: resolve("/patterns"),
+      label: "Patterns",
+      covers: [
+        resolve("/routing"),
+        resolve("/user"),
+        resolve("/shell"),
+        resolve("/http"),
+        resolve("/formatters"),
+      ],
+    },
   ];
 
   // A section stays marked as current while a page below it is open, so "Components" reads as the
   // active tab on `/components/modal` too. The root is the exception: everything is below it.
-  const isCurrent = (href: string) =>
+  const covers = (href: string) =>
     href === resolve("/")
       ? page.url.pathname === href
       : page.url.pathname === href || page.url.pathname.startsWith(`${href}/`);
+
+  const isCurrent = (entry: (typeof NAV)[number]) =>
+    covers(entry.href) || entry.covers.some(covers);
 </script>
 
 <ThemeController />
@@ -44,7 +61,7 @@
     <a href={resolve("/")} class="font-mono text-sm font-medium tracking-tight">plinth</a>
     <nav class="tabs tabs-border flex-1" aria-label="Showcase sections">
       {#each NAV as entry (entry.href)}
-        <a class="tab" href={entry.href} aria-current={isCurrent(entry.href) ? "page" : undefined}>
+        <a class="tab" href={entry.href} aria-current={isCurrent(entry) ? "page" : undefined}>
           {entry.label}
         </a>
       {/each}
