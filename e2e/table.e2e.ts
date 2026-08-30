@@ -99,5 +99,35 @@ test("keeps the headers when there is nothing to show", async ({ page }) => {
   const empty = page.getByTestId("empty-table");
 
   await expect(empty.getByTestId("empty-message")).toBeVisible();
-  await expect(empty.locator("th")).toHaveCount(5);
+  await expect(empty.locator("th")).toHaveCount(6);
+});
+
+// The rank column reads nothing off its row: its only input is the position argument, which is why
+// it renumbers on a sort instead of travelling with the peak it started next to.
+test("renumbers the rank column as the sort changes", async ({ page }) => {
+  await page.goto("/table");
+
+  const ranked = (frame: string) => page.locator(`${frame} tbody tr`).first();
+
+  await expect(ranked(wide).locator("[data-label='#']")).toHaveText("1");
+  await expect(ranked(wide).locator("[data-label='Peak']")).toHaveText("Everest");
+
+  await page.locator(wide).getByRole("button", { name: "Peak" }).click();
+
+  await expect(ranked(wide).locator("[data-label='#']")).toHaveText("1");
+  await expect(ranked(wide).locator("[data-label='Peak']")).toHaveText("Denali");
+  // Both tables share the sort, so both renumber.
+  await expect(ranked(narrow).locator("[data-label='#']")).toHaveText("1");
+  await expect(page.locator(`${wide} tbody tr`).last().locator("[data-label='#']")).toHaveText("7");
+});
+
+test("names every sort control through sortLabel, pills included", async ({ page }) => {
+  await page.goto("/table");
+
+  await expect(
+    page.locator(wide).getByRole("button", { name: "Sort by Elevation", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.locator(narrow).getByRole("button", { name: "Sort by Elevation", exact: true }),
+  ).toBeVisible();
 });

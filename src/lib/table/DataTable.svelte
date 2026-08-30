@@ -22,10 +22,21 @@
     /**
      * Replaces the label/value pairs in card form, for rows that read better as a shape than as a
      * list. Never rendered in table form, so a cell snippet and this one do not compete.
+     *
+     * The second argument is the row's 0-based position in the order currently rendered, so a
+     * rank or a medal can follow the sort without the caller re-deriving it. A snippet declared
+     * with one parameter stays assignable and simply ignores it.
      */
-    card?: Snippet<[T]>;
+    card?: Snippet<[T, number]>;
     /** Accessible name of the table. A prop because the library ships no translations. */
     label?: string;
+    /**
+     * Accessible name for a sortable header's control, given the column — `Sort by Elevation`
+     * rather than `Elevation`. Absent by default, which leaves the button named by its own label.
+     * A function, and not a string, because the wording is per column and the library ships no
+     * translations.
+     */
+    sortLabel?: (column: Column<T>) => string;
     /**
      * Goes on the `<table>` itself, next to daisyUI's `table`. Density and zebra striping are
      * `table-sm` and `table-zebra` — classes the framework already has, so they are not re-exposed
@@ -44,6 +55,7 @@
     empty,
     card,
     label,
+    sortLabel,
     class: className,
   }: Props = $props();
 
@@ -82,6 +94,15 @@ Sorting is client-side and stable, so a second sort reads as a tiebreak on the f
 values sort last in both directions. `sort` is bindable: pass a value for an initial order, bind
 for a shared or persisted one.
 
+A `cell` or `card` snippet is rendered with the row and, second, the row's 0-based position in the
+order on screen — the rank column that has to follow the sort is the reason it is there, and
+re-running `sortRows` outside the table is what it replaces. Snippets that take only the row keep
+working unchanged.
+
+`sortLabel` names the sort control for a screen reader, from the column — "Sort by Elevation"
+rather than "Elevation" — on the header buttons and on the card-form pills alike, since they are
+the same element. Left out, the button is named by its own label.
+
 This is deliberately not a data grid — no filtering, no column visibility, no virtualization, no
 saved views. A table that needs those needs a different component.
 
@@ -117,6 +138,7 @@ saved views. A table that needs those needs a different component.
               <button
                 type="button"
                 class="plinth-sort"
+                aria-label={sortLabel?.(column)}
                 onclick={() => (sort = nextSort(sort, column))}
               >
                 {column.label}
@@ -141,7 +163,7 @@ saved views. A table that needs those needs a different component.
           </td>
         </tr>
       {:else}
-        {#each sorted as row (rowKey(row))}
+        {#each sorted as row, index (rowKey(row))}
           <!-- A row is not an interactive element, and dressing it as one would cost the grid
                semantics that make the table navigable in the first place. When a click handler is
                given the row takes focus and answers Enter and Space, which is the reachable part
@@ -155,7 +177,7 @@ saved views. A table that needs those needs a different component.
             onkeydown={onRowClick ? (event) => onRowKey(event, row) : undefined}
           >
             {#if card}
-              <td class="plinth-card" colspan={columns.length}>{@render card(row)}</td>
+              <td class="plinth-card" colspan={columns.length}>{@render card(row, index)}</td>
             {/if}
             {#each columns as column (column.key)}
               <td
@@ -163,7 +185,10 @@ saved views. A table that needs those needs a different component.
                 data-align={alignOf(column)}
                 class={["plinth-cell", column.numeric && "tabular-nums", column.class]}
               >
-                {#if column.cell}{@render column.cell(row)}{:else}{cellText(column, row)}{/if}
+                {#if column.cell}{@render column.cell(row, index)}{:else}{cellText(
+                    column,
+                    row,
+                  )}{/if}
               </td>
             {/each}
           </tr>
@@ -241,6 +266,16 @@ saved views. A table that needs those needs a different component.
     .plinth-table tbody,
     .plinth-table tr {
       display: block;
+    }
+
+    /* Both daisyUI and the plinth theme rule `.table` header and body cells with a
+       `border-bottom` — a rule between the rows of a grid. There is no grid here, so it lands as
+       a hairline under each sort pill and a line through the middle of every card. The card's
+       outline is the row's own border, so the cell borders go. */
+    .plinth-head,
+    .plinth-cell,
+    .plinth-card {
+      border-bottom: 0;
     }
 
     /* The headers are the only way to re-sort once the columns are gone, so they stay — as a strip

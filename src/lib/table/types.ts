@@ -52,10 +52,14 @@ export interface Column<T> {
    * Renders the cell. Without it the cell is `String(value)`, and `null`/`undefined` is an
    * em dash.
    *
+   * The second argument is the row's 0-based position in the order currently rendered, which is
+   * what a rank or a medal column follows; it changes with the sort. A snippet declared with only
+   * the row parameter stays assignable and simply ignores it.
+   *
    * Svelte hoists a template snippet that captures no state to module scope, so a `columns` array
    * declared with `const` can usually name one — but a snippet that reads `$state` is declared
    * where it appears in the template, after the instance script has run. Build the array with
    * `$derived` and the distinction stops mattering.
    */
-  cell?: Snippet<[T]>;
+  cell?: Snippet<[T, number]>;
 }

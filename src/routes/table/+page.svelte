@@ -52,6 +52,7 @@
   };
 
   const columns: Column<Peak>[] = $derived([
+    { key: "rank", label: "#", sortable: false, align: "center", cell: rank },
     { key: "name", label: "Peak" },
     { key: "range", label: "Range" },
     { key: "height", label: "Elevation", numeric: true, cell: elevation, sortBy: (r) => r.height },
@@ -63,6 +64,14 @@
   let selected = $state<Peak | undefined>();
   let useCardSnippet = $state(false);
 </script>
+
+{#snippet rank(_peak: Peak, index: number)}
+  <span
+    class={["tabular-nums", index === 0 ? "font-semibold text-primary" : "text-base-content/50"]}
+  >
+    {index + 1}
+  </span>
+{/snippet}
 
 {#snippet elevation(peak: Peak)}
   {format.number(peak.height)} m
@@ -124,6 +133,21 @@
       through <code class="kbd kbd-sm">sortBy</code>, which is the split that keeps a formatted date
       ordered by its instant and a badge ordered by its severity rather than by its spelling.
     </p>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      The leading <code class="kbd kbd-sm">#</code> column is a cell snippet that ignores its row
+      entirely: a snippet is rendered with the row and, second, its 0-based position in the order on
+      screen, so the rank follows the sort instead of being derived a second time outside the table.
+      The
+      <code class="kbd kbd-sm">card</code> snippet below gets the same pair — and a snippet declared with
+      only the row, like this page's own card, stays valid and just ignores the position.
+    </p>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      Every sort control here is named through
+      <code class="kbd kbd-sm">sortLabel</code>, so a screen reader announces "Sort by Elevation"
+      rather than the bare column label. It is a function of the column rather than a string,
+      because the library ships no translations; left out, the button keeps its own label as its
+      name.
+    </p>
 
     <div class="rounded-box border border-base-content/10 bg-base-100 p-2" data-testid="wide">
       <DataTable
@@ -133,6 +157,7 @@
         bind:sort
         class="table-zebra"
         label="Peaks"
+        sortLabel={(column) => `Sort by ${column.label}`}
         onRowClick={(peak) => (selected = peak)}
       />
     </div>
@@ -152,7 +177,10 @@
     </h2>
     <p class="max-w-2xl text-sm text-base-content/70">
       The same component, the same columns, the same bound sort state as above — the only difference
-      is the width of the box. Sorting from the pills here moves the rows in the wide table too.
+      is the width of the box. Sorting from the pills here moves the rows in the wide table too, and
+      the <code class="kbd kbd-sm">#</code> column renumbers itself in both. The pills are the same
+      button the wide table's headers use, so <code class="kbd kbd-sm">sortLabel</code> names them without
+      a second prop.
     </p>
 
     <label class="flex w-fit items-center gap-2 text-sm">
@@ -175,6 +203,7 @@
         rowKey={(peak) => peak.id}
         bind:sort
         label="Peaks, narrow"
+        sortLabel={(column) => `Sort by ${column.label}`}
         card={useCardSnippet ? peakCard : undefined}
       />
     </div>

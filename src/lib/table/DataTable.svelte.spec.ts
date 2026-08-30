@@ -3,6 +3,9 @@ import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import DataTable from "./DataTable.svelte";
 import Harness from "./DataTableHarness.spec.svelte";
+// The `.table` cell borders the card form has to clear come from outside the component, so the
+// stylesheet that draws them has to be in the page for a spec to see them at all.
+import "../theme/theme.css";
 
 const NARROW = "20rem";
 
@@ -164,4 +167,104 @@ it("hides the card snippet in table form", () => {
   const card = document.querySelector<HTMLElement>(".plinth-card");
 
   expect(card && getComputedStyle(card).display).toBe("none");
+});
+
+// daisyUI rules `.table` cells with a border-bottom that separates rows of a grid. In card form
+// there is no grid left to separate, so the rule reads as a hairline under every sort pill and a
+// line drawn through the middle of every card.
+it("clears daisyUI's cell borders in card form", () => {
+  render(Harness, { width: NARROW });
+
+  const pill = document.querySelector<HTMLElement>("thead .plinth-head.plinth-sortable");
+  const cell = document.querySelector<HTMLElement>("tbody .plinth-cell");
+
+  expect(pill && getComputedStyle(pill).borderBottomWidth).toBe("0px");
+  expect(cell && getComputedStyle(cell).borderBottomWidth).toBe("0px");
+});
+
+it("clears them off the card cell too", () => {
+  render(Harness, { width: NARROW, withCard: true });
+
+  const card = document.querySelector<HTMLElement>("tbody .plinth-card");
+
+  expect(card && getComputedStyle(card).borderBottomWidth).toBe("0px");
+});
+
+it("leaves daisyUI's cell borders alone in table form", () => {
+  render(Harness);
+
+  const head = document.querySelector<HTMLElement>("thead .plinth-head");
+  // daisyUI draws the rule on every row but the last, so the first one is the one to read.
+  const cell = document.querySelector<HTMLElement>("tbody tr:first-child .plinth-cell");
+
+  expect(head && getComputedStyle(head).borderBottomWidth).not.toBe("0px");
+  expect(cell && getComputedStyle(cell).borderBottomWidth).not.toBe("0px");
+});
+
+// The whole point of the second argument: a rank column cannot be built from the row alone, and
+// re-running `sortRows` outside the table to find the position is what it replaces.
+it("gives a cell snippet the row's position in the sorted order", async () => {
+  render(Harness, { withRank: true });
+
+  const ranks = () =>
+    rowElements().map((row) => row.querySelector("[data-label='Rank']")?.textContent?.trim());
+  const pairs = () =>
+    rowElements().map(
+      (row) =>
+        `${row.querySelector("[data-label='Rank']")?.textContent?.trim()}:${row
+          .querySelector("[data-label='Language']")
+          ?.textContent?.trim()}`,
+    );
+
+  expect(pairs()).toEqual(["1:Rust", "2:Python", "3:TypeScript"]);
+
+  await page.getByRole("button", { name: "Language" }).click();
+
+  // The positions stayed 1..3 and it is the rows that moved under them.
+  expect(ranks()).toEqual(["1", "2", "3"]);
+  expect(pairs()).toEqual(["1:Python", "2:Rust", "3:TypeScript"]);
+});
+
+it("gives a card snippet the same position", async () => {
+  render(Harness, { width: NARROW, withCard: true });
+
+  const cards = () =>
+    [...document.querySelectorAll("[data-testid='language-card']")].map((card) =>
+      card.textContent?.trim(),
+    );
+
+  expect(cards()).toEqual(["1. Rust (2010)", "2. Python (1991)", "3. TypeScript (2012)"]);
+
+  await page.getByRole("button", { name: "Language" }).click();
+
+  expect(cards()).toEqual(["1. Python (1991)", "2. Rust (2010)", "3. TypeScript (2012)"]);
+});
+
+// One button serves both forms, so the label reaches the card-form pills for free -- which is the
+// half that would otherwise be silently missed, since the pill is the only sort control on a phone.
+it("names the sort control from sortLabel in both forms", async () => {
+  render(Harness, { withSortLabel: true });
+
+  await expect.element(page.getByRole("button", { name: "Sort by Language" })).toBeInTheDocument();
+  await expect.element(page.getByRole("button", { name: "Sort by Year" })).toBeInTheDocument();
+});
+
+it("names the card-form sort pills from sortLabel too", async () => {
+  render(Harness, { width: NARROW, withSortLabel: true });
+
+  const pill = page.getByRole("button", { name: "Sort by Year" });
+  await expect.element(pill).toBeInTheDocument();
+
+  await pill.click();
+
+  expect(names()).toEqual(["TypeScript", "Rust", "Python"]);
+});
+
+it("leaves the sort control named by its own label when sortLabel is absent", async () => {
+  render(Harness);
+
+  const button = document.querySelector<HTMLElement>(".plinth-sort");
+
+  expect(button?.hasAttribute("aria-label")).toBe(false);
+  await expect.element(page.getByRole("button", { name: "Language" })).toBeInTheDocument();
 });
