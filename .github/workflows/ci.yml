@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # The client vitest project runs in a real browser, so the binary has to exist before
+      # test:unit. --with-deps pulls the shared libraries the runner image is missing.
+      - run: npx playwright install chromium --with-deps
+
+      - run: npm run check
+
+      - run: npm run lint
+
+      - run: npm run test:unit -- --run
+
+      - run: npm run build

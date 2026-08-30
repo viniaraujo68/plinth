@@ -1,0 +1,10 @@
+/* Showcase-only stylesheet: it is never published, and a consumer builds its own chain.
+   No `@source` directive is needed here because the library source lives under this project's
+   own root, which Tailwind already scans. A consumer installing the package from node_modules
+   does need one pointing at the shipped `dist`. */
+
+@import "tailwindcss";
+
+@plugin "daisyui" {
+  exclude: rootscrollgutter;
+}
