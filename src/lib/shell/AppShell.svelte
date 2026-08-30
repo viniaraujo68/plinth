@@ -537,7 +537,9 @@ shell rather than to the window, and the content area reserves its height plus
     white-space: nowrap;
   }
 
-  .plinth-shell.collapsed .brand-slot {
+  /* Scoped to the sidebar for the same reason the `collapsible` rule is: `.brand-slot` is also the
+     sheet's header, where there is no rail to centre a mark on and nothing is collapsed. */
+  .plinth-shell.collapsed .shell-sidebar .brand-slot {
     display: flex;
     justify-content: center;
     width: 100%;

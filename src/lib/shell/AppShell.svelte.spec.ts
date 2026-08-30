@@ -428,6 +428,31 @@ it("shows the user's name in the sheet even while the sidebar is remembered coll
   expect(getComputedStyle(identity).display).not.toBe("none");
 });
 
+it("leaves the sheet's brand alone while the sidebar is remembered collapsed", async () => {
+  localStorage.setItem(STORAGE_KEY, "true");
+
+  render(Harness, {
+    routing: routingAt("/dashboard"),
+    width: NARROW,
+    storageKey: STORAGE_KEY,
+    withBrand: true,
+  });
+
+  await page.getByRole("button", { name: "More" }).click();
+
+  await expect.poll(() => document.querySelectorAll(".plinth-sheet .brand-slot").length).toBe(1);
+
+  // The centring is a 4rem rail's problem, and the sheet header has no rail: a remembered collapse
+  // flag was pushing the brand into the middle of a header that lays its own children out.
+  const sheetBrand = document.querySelector<HTMLElement>(".plinth-sheet .brand-slot")!;
+  expect(getComputedStyle(sheetBrand).justifyContent).toBe("normal");
+  expect(getComputedStyle(sheetBrand).display).toBe("block");
+
+  // The rule itself still applies where it belongs, hidden sidebar or not.
+  const sidebarBrand = document.querySelector<HTMLElement>(".shell-sidebar .brand-slot")!;
+  expect(getComputedStyle(sidebarBrand).justifyContent).toBe("center");
+});
+
 it("gives the sheet's avatar a clip definition of its own", async () => {
   render(Harness, { routing: routingAt("/dashboard"), width: NARROW, user: new TestUser() });
 
