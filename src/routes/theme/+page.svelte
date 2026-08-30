@@ -131,7 +131,7 @@
     <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">Type</h2>
     <div class="card flex flex-col gap-4 rounded-box p-4">
       <div class="flex flex-col gap-1">
-        <code class="font-mono text-xs text-base-content/50">--font-sans · Geist</code>
+        <code class="font-mono text-xs text-base-content/50">--font-sans · Instrument Sans</code>
         <p class="font-sans text-2xl">Sphinx of black quartz, judge my vow.</p>
       </div>
       <div class="flex flex-col gap-1">
