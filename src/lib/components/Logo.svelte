@@ -2,22 +2,20 @@
   import type { HTMLAttributes } from "svelte/elements";
 
   type Props = HTMLAttributes<HTMLDivElement> & {
-    /** Runs the stretch cycle. Leave it off for a static placeholder mark. */
+    /** Runs the orbit. Leave it off for a static placeholder mark. */
     animated?: boolean;
-    /** Bar color. Defaults to a faint wash of the current theme's ink. */
+    /** Stroke color. Defaults to the current theme's ink. */
     color?: string;
-    /** Height of the bars, in any CSS length. Defaults to a multiple of the inherited font size,
-        which is why sizing this from the outside is a matter of `text-4xl` and nothing else. */
-    barHeight?: string;
   };
 
-  let { class: className, animated = false, color, barHeight, ...rest }: Props = $props();
+  let { class: className, animated = false, color, ...rest }: Props = $props();
 </script>
 
 <!--
 @component
-Three bars that stretch in and out of phase — the library's loading indicator, and the mark it
-falls back to when there is nothing to show yet.
+A guitar pick drawn as a single outline stroke — the library's loading indicator, and the mark it
+falls back to when there is nothing to show yet. Animated, a lit third of the outline orbits the
+perimeter; standing still, the outline is unbroken.
 
 It sizes itself from the inherited font size, so `class="text-4xl"` is the whole API for making it
 bigger, and it colors itself from `--color-base-content`, so it stays legible in either theme and
@@ -39,57 +37,76 @@ whatever it is standing in for is what should be announced, so wrap it in the li
   class={["plinth-logo", className]}
   data-animated={animated ? "" : undefined}
   style:--logo-color={color}
-  style:--logo-bar-height={barHeight}
 >
-  <div></div>
-  <div></div>
-  <div></div>
+  <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+    <path
+      d="M16 3.6 C17.8 3.6 19 5 20 7 L25.1 17.2 C26.6 20 27 22 26.3 23.7 C24.7 27 20.9 28.6 16 28.6 C11.1 28.6 7.3 27 5.7 23.7 C5 22 5.4 20 6.9 17.2 L12 7 C13 5 14.2 3.6 16 3.6 Z"
+    />
+  </svg>
 </div>
 
 <style>
-  @keyframes stretch {
+  @keyframes orbit {
+    from {
+      stroke-dashoffset: 0px;
+    }
+    to {
+      stroke-dashoffset: -71.648px;
+    }
+  }
+
+  @keyframes pulse {
     0%,
     100% {
-      transform: scaleY(100%);
+      opacity: 1;
     }
     50% {
-      transform: scaleY(50%);
+      opacity: 0.35;
     }
   }
 
   .plinth-logo {
-    --logo-color: color-mix(in oklch, var(--color-base-content) 7%, transparent);
-    --logo-bar-height: calc(10em / 9);
+    /* Full ink rather than the faint wash a solid mark could afford: a 3.5-wide stroke in a 32 box
+       covers little area, and the animated state lights only a third of that perimeter at a time,
+       so a single-digit-percent wash would leave the running dash invisible. The outline stays
+       quiet at full strength because it is hollow — the surface reads through the middle, which is
+       what keeps it from being mistaken for content. */
+    --logo-color: var(--color-base-content);
 
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: calc(var(--logo-bar-height) / 8);
 
-    div {
-      width: calc(var(--logo-bar-height) / 4);
-      height: var(--logo-bar-height);
-      background-color: var(--logo-color);
-      /* Scaling from the baseline keeps the bars sitting on one line while they stretch; the
-         default centre origin would make them breathe symmetrically and read as a pulse. */
-      transform-origin: bottom;
+    svg {
+      display: block;
+      width: 1em;
+      height: 1em;
+    }
 
-      &:nth-child(2) {
-        transform: scaleY(75%);
-      }
+    path {
+      fill: none;
+      stroke: var(--logo-color);
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     /* Presence, not value: `data-animated={false}` would still serialise to the string "false"
        and match an attribute selector, so the attribute is omitted entirely when it is off. */
-    &[data-animated] > div {
-      animation: stretch cubic-bezier(0.4, 0, 0.2, 1) 1.75s infinite;
+    &[data-animated] path {
+      /* 23.883 + 47.765 = 71.648, the path's measured length via `getTotalLength` in chromium,
+         which is also the distance the keyframes travel. The three numbers are one fact stated
+         three times and have to move together: a dash period that is not exactly the path length
+         makes the pattern restart at the path's start point — the tip — so the dash visibly snaps
+         there once per cycle. Change the `d` and all three are wrong until re-measured. */
+      stroke-dasharray: 23.883px 47.765px;
+      animation: orbit 1.7s linear infinite;
 
-      &:first-child {
-        animation-delay: -0.25s;
-      }
-
-      &:last-child {
-        animation-delay: 0.25s;
+      /* A fully static mark would remove the only feedback that something is loading, so the
+         orbit degrades to a pulse rather than to nothing. */
+      @media (prefers-reduced-motion: reduce) {
+        stroke-dasharray: none;
+        animation: pulse 1.7s ease-in-out infinite;
       }
     }
   }

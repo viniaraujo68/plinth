@@ -6,9 +6,8 @@ test("animates only the instance that asked for it", async ({ page }) => {
   const animationName = (testId: string) =>
     page
       .getByTestId(testId)
-      .locator("div")
-      .first()
-      .evaluate((bar) => getComputedStyle(bar).animationName);
+      .locator("path")
+      .evaluate((outline) => getComputedStyle(outline).animationName);
 
   await expect(page.getByTestId("static")).not.toHaveAttribute("data-animated");
   expect(await animationName("static")).toBe("none");
@@ -27,7 +26,7 @@ test("stands in for content while it loads, and announces that it is doing so", 
 
   await page.getByTestId("reload").click();
   await expect(overlay).toBeVisible();
-  await expect(overlay.locator(".plinth-logo > div")).toHaveCount(3);
+  await expect(overlay.locator(".plinth-logo path")).toHaveCount(1);
 
   await expect(overlay).toBeHidden({ timeout: 5000 });
 });

@@ -1,9 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <title>plinth</title>
   <rect width="32" height="32" rx="7" fill="#6b3fa0" />
-  <g fill="#ffffff">
-    <rect x="8" y="8" width="4" height="16" rx="1" />
-    <rect x="14" y="12" width="4" height="12" rx="1" />
-    <rect x="20" y="8" width="4" height="16" rx="1" />
-  </g>
+  <path
+    d="M16 3.6 C17.8 3.6 19 5 20 7 L25.1 17.2 C26.6 20 27 22 26.3 23.7 C24.7 27 20.9 28.6 16 28.6 C11.1 28.6 7.3 27 5.7 23.7 C5 22 5.4 20 6.9 17.2 L12 7 C13 5 14.2 3.6 16 3.6 Z"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
 </svg>

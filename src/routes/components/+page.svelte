@@ -52,7 +52,7 @@
     {
       href: resolve("/components/logo"),
       name: "Logo",
-      summary: "The placeholder mark: bars that size themselves off the font size.",
+      summary: "The placeholder mark: an outline that sizes itself off the font size.",
     },
     {
       href: resolve("/components/modal"),

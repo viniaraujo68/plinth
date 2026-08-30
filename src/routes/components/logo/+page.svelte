@@ -13,10 +13,10 @@
   <header class="flex flex-col gap-3">
     <h1 class="text-3xl font-semibold tracking-tight">Logo</h1>
     <p class="max-w-2xl text-base-content/70">
-      Three bars, out of phase. It is the loading indicator and, standing still, the mark that fills
-      an empty slot. Size comes from the font size and color from
-      <code class="kbd kbd-sm">--color-base-content</code>, so it needs no props at all in the
-      common case.
+      A guitar pick, drawn as one outline stroke. Animated, a lit third of that outline orbits the
+      perimeter; standing still, it is the mark that fills an empty slot. Size comes from the font
+      size and color from <code class="kbd kbd-sm">--color-base-content</code>, so it needs no props
+      at all in the common case.
     </p>
   </header>
 
@@ -43,8 +43,8 @@
   <section class="flex flex-col gap-4">
     <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">Scale</h2>
     <p class="max-w-2xl text-sm text-base-content/70">
-      Every dimension is derived from <code class="kbd kbd-sm">em</code>, so a type utility is the
-      whole sizing API — no width, height or viewBox to keep in step.
+      The mark is one <code class="kbd kbd-sm">em</code> square and the stroke scales with it, so a type
+      utility is the whole sizing API — nothing to keep in step from the outside.
     </p>
     <div class="flex flex-wrap items-end gap-8 rounded-box border border-base-content/10 p-6">
       {#each ["text-sm", "text-xl", "text-4xl", "text-7xl"] as size (size)}
@@ -59,9 +59,10 @@
   <section class="flex flex-col gap-4">
     <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">Color</h2>
     <p class="max-w-2xl text-sm text-base-content/70">
-      The default is a 7% wash of the theme's ink, which is what makes it read as a placeholder
-      rather than as content. <code class="kbd kbd-sm">color</code> overrides it when the indicator sits
-      on a surface that needs more contrast.
+      The default is the theme's ink at full strength: an outline this thin is already quiet, and a
+      lit third of it has to survive being a spinner. What keeps it from reading as content is that
+      it is hollow. <code class="kbd kbd-sm">color</code> overrides it when the indicator sits on a surface
+      that wants something else.
     </p>
     <div class="flex flex-wrap items-center gap-8 rounded-box border border-base-content/10 p-6">
       <Logo class="text-4xl" animated />
