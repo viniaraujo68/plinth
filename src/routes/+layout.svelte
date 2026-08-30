@@ -10,7 +10,9 @@
     ThemeController,
     ThemeToggle,
   } from "$lib/theme/index.js";
+  import { Toaster } from "$lib/toast/index.js";
   import type { Snippet } from "svelte";
+  import { toasterPosition } from "./toaster-position.svelte.js";
 
   const { children }: { children: Snippet } = $props();
 
@@ -22,7 +24,15 @@
   const NAV = [
     { href: resolve("/"), label: "Overview" },
     { href: resolve("/theme"), label: "Theme" },
+    { href: resolve("/components"), label: "Components" },
   ];
+
+  // A section stays marked as current while a page below it is open, so "Components" reads as the
+  // active tab on `/components/modal` too. The root is the exception: everything is below it.
+  const isCurrent = (href: string) =>
+    href === resolve("/")
+      ? page.url.pathname === href
+      : page.url.pathname === href || page.url.pathname.startsWith(`${href}/`);
 </script>
 
 <ThemeController />
@@ -34,11 +44,7 @@
     <a href={resolve("/")} class="font-mono text-sm font-medium tracking-tight">plinth</a>
     <nav class="tabs tabs-border flex-1" aria-label="Showcase sections">
       {#each NAV as entry (entry.href)}
-        <a
-          class="tab"
-          href={entry.href}
-          aria-current={page.url.pathname === entry.href ? "page" : undefined}
-        >
+        <a class="tab" href={entry.href} aria-current={isCurrent(entry.href) ? "page" : undefined}>
           {entry.label}
         </a>
       {/each}
@@ -48,3 +54,7 @@
 
   {@render children()}
 </div>
+
+<!-- Mounted once, outside the routed subtree, exactly as an app should: a toast fired just before
+     a navigation has to survive the page that fired it. -->
+<Toaster position={toasterPosition.value} />
