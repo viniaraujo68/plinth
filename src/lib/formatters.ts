@@ -43,7 +43,7 @@ export interface FormatterOptions {
 /**
  * Formats an instant, and passes a missing value through as `null`.
  *
- * The two signatures are what makes `{formatters.date(row.settledAt) ?? "—"}` type-check without
+ * The two signatures are what makes `{formatters.date(row.releasedAt) ?? "—"}` type-check without
  * a guard at every call site: a value that cannot be null formats to a `string`, and only a
  * nullable one widens the result.
  */

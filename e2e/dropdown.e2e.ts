@@ -35,11 +35,11 @@ test("closes itself once a form inside it is applied", async ({ page }) => {
 
   const trigger = page.getByTestId("filter-trigger");
   await trigger.click();
-  await page.getByRole("radio", { name: "settled" }).check();
+  await page.getByRole("radio", { name: "published" }).check();
   await page.getByTestId("apply-filter").click();
 
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
-  await expect(trigger).toContainText("Filter: settled");
+  await expect(trigger).toContainText("Filter: published");
 });
 
 test("opens with its content already there when driven from outside", async ({ page }) => {

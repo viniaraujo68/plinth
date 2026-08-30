@@ -21,7 +21,7 @@ test("stands in for content while it loads, and announces that it is doing so", 
 }) => {
   await page.goto("/components/logo");
 
-  const overlay = page.getByRole("status", { name: "Loading batches" });
+  const overlay = page.getByRole("status", { name: "Loading releases" });
   await expect(overlay).toBeHidden();
 
   await page.getByTestId("reload").click();

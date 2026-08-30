@@ -6,7 +6,7 @@
     disabled?: boolean;
   }
 
-  let { text = "Archives the batch", disabled = false }: Props = $props();
+  let { text = "Archives the release", disabled = false }: Props = $props();
 </script>
 
 <!--

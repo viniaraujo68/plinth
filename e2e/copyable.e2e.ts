@@ -22,7 +22,7 @@ test("copies the whole value even where the cell shows a truncated one", async (
   await page.goto("/components/copyable");
 
   const id = "b7f1c0a4-3d8e-4a11-9c22-5e6f70d81b93";
-  await page.getByRole("row").filter({ hasText: "Alpha" }).getByRole("button").click();
+  await page.getByRole("row").filter({ hasText: "Kaleidoscope" }).getByRole("button").click();
 
   expect(await clipboard(page)).toBe(id);
 });
@@ -31,7 +31,7 @@ test("leaves the content's own behavior alone", async ({ page }) => {
   await page.goto("/components/copyable");
 
   // Clicking the link must navigate, not copy -- the button is the only thing that copies.
-  await page.getByRole("row").filter({ hasText: "Bravo" }).getByRole("link").click();
+  await page.getByRole("row").filter({ hasText: "North Signal" }).getByRole("link").click();
 
   await expect(page).toHaveURL(/#0a3d9e51-77bc-4f0a-8e19-2c4b6a0f5d77$/);
 });

@@ -90,19 +90,19 @@
     <div class="relative rounded-box border border-base-content/10">
       <table class="table table-sm">
         <thead>
-          <tr><th>Batch</th><th>Status</th></tr>
+          <tr><th>Release</th><th>Status</th></tr>
         </thead>
         <tbody>
-          <tr><td class="font-mono text-xs">b7f1c0a4</td><td>settled</td></tr>
-          <tr><td class="font-mono text-xs">0a3d9e51</td><td>pending</td></tr>
-          <tr><td class="font-mono text-xs">e2c8b410</td><td>settled</td></tr>
+          <tr><td class="font-mono text-xs">b7f1c0a4</td><td>published</td></tr>
+          <tr><td class="font-mono text-xs">0a3d9e51</td><td>mastering</td></tr>
+          <tr><td class="font-mono text-xs">e2c8b410</td><td>published</td></tr>
         </tbody>
       </table>
       {#if loading}
         <div
           class="absolute inset-0 grid place-items-center rounded-box bg-base-100/70"
           role="status"
-          aria-label="Loading batches"
+          aria-label="Loading releases"
         >
           <Logo class="text-4xl" animated />
         </div>

@@ -36,7 +36,7 @@ test("places the panel in the top layer, above the sticky header", async ({ page
 test("suppresses gated tooltips without losing them", async ({ page }) => {
   await page.goto("/components/tooltip");
 
-  const hint = page.getByText("Deletes the batch and its receivables");
+  const hint = page.getByText("Deletes the album and its tracks");
 
   await page.getByRole("button", { name: "Delete" }).hover();
   await expect(hint).toBeVisible();

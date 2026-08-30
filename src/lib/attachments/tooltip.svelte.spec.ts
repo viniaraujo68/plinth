@@ -19,7 +19,7 @@ it("shows the panel while the pointer is over the host", async () => {
 
   await trigger().hover();
   await expect.poll(isOpen).toBe(true);
-  expect(panelElement()?.textContent).toBe("Archives the batch");
+  expect(panelElement()?.textContent).toBe("Archives the release");
 
   await trigger().unhover();
   await expect.poll(isOpen).toBe(false);

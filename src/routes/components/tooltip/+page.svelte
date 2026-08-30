@@ -58,11 +58,11 @@
       <Tooltip class="underline decoration-dotted underline-offset-4" data-testid="span-host">
         {#snippet tooltip()}
           <span class="flex flex-col">
-            <span class="font-medium">Settlement date</span>
-            <span class="text-base-content/60">The day the fund receives the cash.</span>
+            <span class="font-medium">Release date</span>
+            <span class="text-base-content/60">The day the album reaches listeners.</span>
           </span>
         {/snippet}
-        settlement date
+        release date
       </Tooltip>
     </div>
   </section>
@@ -100,7 +100,7 @@
         tooltipDisabled={disabled}
       >
         {#snippet tooltip()}
-          Deletes the batch and its <strong>receivables</strong>
+          Deletes the album and its <strong>tracks</strong>
         {/snippet}
         Delete
       </Tooltip>

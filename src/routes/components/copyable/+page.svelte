@@ -1,10 +1,10 @@
 <script lang="ts">
   import Copyable from "$lib/components/Copyable.svelte";
 
-  const BATCHES = [
-    { id: "b7f1c0a4-3d8e-4a11-9c22-5e6f70d81b93", fund: "Alpha", amount: "R$ 1.284.310,00" },
-    { id: "0a3d9e51-77bc-4f0a-8e19-2c4b6a0f5d77", fund: "Bravo", amount: "R$ 96.400,50" },
-    { id: "e2c8b410-9f63-4d55-a0d7-118ac3e9b204", fund: "Charlie", amount: "R$ 7.219,90" },
+  const RELEASES = [
+    { id: "b7f1c0a4-3d8e-4a11-9c22-5e6f70d81b93", artist: "Kaleidoscope", runtime: "42:17" },
+    { id: "0a3d9e51-77bc-4f0a-8e19-2c4b6a0f5d77", artist: "North Signal", runtime: "38:04" },
+    { id: "e2c8b410-9f63-4d55-a0d7-118ac3e9b204", artist: "Violet Ash", runtime: "51:36" },
   ];
 
   const WEBHOOK = "https://example.test/hooks/2f6c1b90a4e34d7f";
@@ -47,23 +47,23 @@
     <div class="overflow-x-auto rounded-box border border-base-content/10">
       <table class="table table-sm">
         <thead>
-          <tr><th>Batch</th><th>Fund</th><th class="text-right">Nominal</th></tr>
+          <tr><th>Release</th><th>Artist</th><th class="text-right">Runtime</th></tr>
         </thead>
         <tbody>
           <!-- The row carries the id its own link points at, so the link is a real destination
                rather than a dead fragment the prerenderer would reject. -->
-          {#each BATCHES as batch (batch.id)}
-            <tr id={batch.id}>
+          {#each RELEASES as release (release.id)}
+            <tr id={release.id}>
               <td>
                 <Copyable
                   class="w-32 font-mono text-xs text-base-content/70"
-                  copyableText={batch.id}
+                  copyableText={release.id}
                 >
-                  <a class="link" href="#{batch.id}">{batch.id}</a>
+                  <a class="link" href="#{release.id}">{release.id}</a>
                 </Copyable>
               </td>
-              <td><span class="badge badge-soft badge-sm badge-primary">{batch.fund}</span></td>
-              <td class="text-right font-mono tabular-nums">{batch.amount}</td>
+              <td><span class="badge badge-soft badge-sm badge-primary">{release.artist}</span></td>
+              <td class="text-right font-mono tabular-nums">{release.runtime}</td>
             </tr>
           {/each}
         </tbody>

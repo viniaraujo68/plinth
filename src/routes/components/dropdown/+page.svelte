@@ -11,7 +11,7 @@
   let status = $state("all");
   let lastAction = $state("—");
 
-  const STATUSES = ["all", "pending", "settled", "failed"];
+  const STATUSES = ["all", "queued", "published", "failed"];
 </script>
 
 <main class="mx-auto flex w-full max-w-4xl flex-col gap-12 p-6 sm:p-10">
