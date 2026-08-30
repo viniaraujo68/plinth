@@ -13,11 +13,27 @@ test("reaches every component demo from the components index", async ({ page }) 
   await page.getByRole("link", { name: "Components", exact: true }).click();
 
   const links = page.getByTestId("demo-link");
-  await expect(links).toHaveCount(13);
+  await expect(links).toHaveCount(15);
 
   await page.getByRole("link", { name: "Modal" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Modal");
   // The section tab stays marked as current on a page below it.
+  await expect(page.getByRole("link", { name: "Components", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+});
+
+// DataTable is the one component demo that lives outside `/components`, because it ships from its
+// own entry point. The Components tab therefore has to claim it through `covers`, which is the one
+// thing about that card the URL cannot check on its own.
+test("claims the top-level table demo for the components tab", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Components", exact: true }).click();
+  await page.getByRole("link", { name: "DataTable" }).click();
+
+  await expect(page).toHaveURL(/\/table$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("DataTable");
   await expect(page.getByRole("link", { name: "Components", exact: true })).toHaveAttribute(
     "aria-current",
     "page",

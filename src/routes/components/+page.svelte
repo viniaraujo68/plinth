@@ -15,6 +15,16 @@
       summary: "Puts its own text on the clipboard and says so.",
     },
     {
+      href: resolve("/table"),
+      name: "DataTable",
+      summary: "Columns described as data, sorted in the browser, cards on a narrow screen.",
+    },
+    {
+      href: resolve("/components/date-range-picker"),
+      name: "DateRangePicker",
+      summary: "Relative presets or a custom pair, emitted as two UTC instants.",
+    },
+    {
       href: resolve("/components/dialog"),
       name: "Dialog",
       summary: "A native <dialog> that mounts its content only while it is on screen.",
@@ -77,8 +87,10 @@
     <h1 class="text-3xl font-semibold tracking-tight">Components</h1>
     <p class="max-w-2xl text-base-content/70">
       The primitives, one page each. Everything here is imported from
-      <code class="kbd kbd-sm">@viniaraujo68/plinth/components</code>, except the toast queue, which
-      is its own entry at <code class="kbd kbd-sm">@viniaraujo68/plinth/toast</code>.
+      <code class="kbd kbd-sm">@viniaraujo68/plinth/components</code>, except the toast queue and
+      the table, which are their own entries at
+      <code class="kbd kbd-sm">@viniaraujo68/plinth/toast</code> and
+      <code class="kbd kbd-sm">@viniaraujo68/plinth/table</code>.
     </p>
   </header>
 

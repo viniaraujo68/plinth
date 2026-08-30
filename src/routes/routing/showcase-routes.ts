@@ -17,6 +17,7 @@ export const showcaseRoutes: RoutingConfig<RouteId> = {
     "/components": { title: "Components", icon: "icon-[lucide--shapes]" },
     "/components/async-button": { title: "AsyncButton" },
     "/components/copyable": { title: "Copyable" },
+    "/components/date-range-picker": { title: "DateRangePicker" },
     "/components/dialog": { title: "Dialog" },
     "/components/dropdown": { title: "Dropdown" },
     "/components/error-display": { title: "ErrorDisplay" },
@@ -34,6 +35,7 @@ export const showcaseRoutes: RoutingConfig<RouteId> = {
     "/theme": { title: "Theme", icon: "icon-[lucide--palette]" },
     "/routing": { title: "Routing", icon: "icon-[lucide--route]" },
     "/shell": { title: "Shell", icon: "icon-[lucide--layout-dashboard]" },
+    "/table": { title: "DataTable", icon: "icon-[lucide--table]" },
     "/user": { title: "User", icon: "icon-[lucide--user-round]" },
   },
 

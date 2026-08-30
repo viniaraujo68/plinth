@@ -21,13 +21,14 @@
   // never picked a theme gets the right paint with no correction on hydration.
   setThemeContext(new ThemeContext(browser ? readThemePreference() : "system"));
 
-  // `covers` exists because the pattern demos are top-level routes that the Patterns index only
-  // links to — the tab owns them for the purpose of "which section am I in" without the URLs
-  // having to be nested under it.
+  // `covers` exists because some demos are top-level routes that their index only links to — the
+  // tab owns them for the purpose of "which section am I in" without the URLs having to be nested
+  // under it. `/table` is one: DataTable ships from its own entry point, so it got a top-level
+  // route, but it is a component and belongs to the Components tab.
   const NAV = [
     { href: resolve("/"), label: "Overview", covers: [] as string[] },
     { href: resolve("/theme"), label: "Theme", covers: [] as string[] },
-    { href: resolve("/components"), label: "Components", covers: [] as string[] },
+    { href: resolve("/components"), label: "Components", covers: [resolve("/table")] },
     {
       href: resolve("/patterns"),
       label: "Patterns",
