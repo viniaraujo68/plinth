@@ -6,6 +6,15 @@ import devtoolsJson from "vite-plugin-devtools-json";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  // The theme declares every color once through `light-dark()`. Lightning CSS -- which Vite runs
+  // to minify CSS -- rewrites that into a pair of inherited `--lightningcss-*` guard variables
+  // whenever the target browsers predate native support. The rewrite is not equivalent: a custom
+  // property substitutes its own `var()` references on the element that DECLARES it, so the
+  // guards are resolved once at `:root` and `[data-theme]` on a nested element can no longer
+  // re-theme its subtree. Naming targets that support `light-dark()` natively keeps it intact.
+  // A consumer's own build needs the same floor.
+  build: { cssTarget: ["chrome123", "edge123", "firefox120", "safari17.5"] },
+
   plugins: [
     tailwindcss(),
     devtoolsJson(),

@@ -1,7 +1,14 @@
 /* Showcase-only stylesheet: it is never published, and a consumer builds its own chain.
    No `@source` directive is needed here because the library source lives under this project's
    own root, which Tailwind already scans. A consumer installing the package from node_modules
-   does need one pointing at the shipped `dist`. */
+   does need one pointing at the shipped `dist`.
+
+   The theme comes first, as it must in a consumer too: it is plain unlayered CSS, so it outranks
+   everything daisyUI emits into a cascade layer regardless of where it sits in the file. Import
+   order still matters for the `@import url(...)` of the fonts, which has to reach the top of the
+   generated bundle. A consumer writes `@import "@viniaraujo68/plinth/theme.css";` instead. */
+
+@import "../lib/theme/theme.css";
 
 @import "tailwindcss";
 

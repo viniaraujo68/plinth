@@ -45,6 +45,11 @@
       "types": "./dist/index.d.ts",
       "svelte": "./dist/index.js"
     },
+    "./theme": {
+      "types": "./dist/theme/index.d.ts",
+      "svelte": "./dist/theme/index.js"
+    },
+    "./theme.css": "./dist/theme/theme.css",
     "./package.json": "./package.json"
   },
   "peerDependencies": {

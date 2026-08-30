@@ -1,0 +1,390 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..800&display=swap");
+
+:root {
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --default-font-family: var(--font-sans);
+}
+
+/* The daisyUI theme-controller checkbox holds the user's PREFERENCE rather than the resolved
+   theme (see ThemeController.svelte). Unchecked is "system": `color-scheme: light dark` hands
+   the choice to the OS, which is already correct on the very first paint and keeps tracking
+   live OS changes without a line of JS. Checked pins the scheme named by the checkbox `value`.
+
+   Because every color below is declared once through `light-dark()`, the inherited
+   `color-scheme` ends up being the only switch in the whole system. That also buys subtree
+   theming for free: `light-dark()` resolves at the point of USE, not of declaration, so putting
+   [data-theme] on any element re-themes everything under it by changing `color-scheme` alone. */
+:root {
+  color-scheme: light dark;
+}
+:root:has(input.theme-controller[value="plinth-light"]:checked),
+[data-theme="plinth-light"] {
+  color-scheme: light;
+}
+:root:has(input.theme-controller[value="plinth-dark"]:checked),
+[data-theme="plinth-dark"] {
+  color-scheme: dark;
+}
+
+:root {
+  --color-base-100: light-dark(#ffffff, #14161c);
+  --color-base-200: light-dark(#faf9f5, #0c0d11);
+  --color-base-300: light-dark(#f2f0ea, #1a1d25);
+  --color-base-content: light-dark(#1b1d22, #d9e1f6);
+
+  --color-primary: light-dark(#6b3fa0, #7444ad);
+  --color-primary-content: #ffffff;
+  --color-secondary: light-dark(#4a2a72, #efe8f6);
+  --color-secondary-content: light-dark(#ffffff, #4a2a72);
+  --color-accent: light-dark(#efe8f6, #242833);
+  --color-accent-content: light-dark(#4a2a72, #e7e9ee);
+  --color-neutral: light-dark(#1b1d22, #e7e9ee);
+  --color-neutral-content: light-dark(#faf9f5, #0c0d11);
+
+  --color-info: light-dark(#2876c7, #5aa7f0);
+  --color-info-content: light-dark(#ffffff, #0c0d11);
+  --color-success: light-dark(#1c8a4c, #34b36a);
+  --color-success-content: light-dark(#ffffff, #0c0d11);
+  --color-warning: light-dark(#a67a0f, #e4b33a);
+  --color-warning-content: light-dark(#ffffff, #0c0d11);
+  --color-error: light-dark(#b64337, #e46b5b);
+  --color-error-content: light-dark(#ffffff, #0c0d11);
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+
+  /* A skin that paints its own surface re-declares --color-base-* for its subtree, so reading
+     the page values back through those names would be a cycle. These aliases are the escape
+     hatch: they keep pointing at the page, whatever a nested surface has done locally. */
+  --theme-content: var(--color-base-content);
+  --theme-surface: var(--color-base-100);
+}
+
+/* What follows re-skins daisyUI components on top of the tokens above. Wherever the selector is
+   wrapped in :where(...) it lands at zero specificity, so a Tailwind utility or a one-off
+   override at the call site still wins without needing !important. */
+
+:where(.input, .select, .textarea) {
+  background-color: var(--color-base-100);
+  border-color: color-mix(in oklch, var(--color-base-content) 15%, transparent);
+}
+:where(.input, .select, .textarea):focus-within {
+  outline-color: color-mix(in oklch, var(--color-primary) 35%, transparent);
+}
+
+.btn {
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+/* One default height for every unsized button. Square and circle are deliberately in scope:
+   left alone they keep their own height, and the moment an icon button sits next to a text
+   button in a join — or any align-items:stretch row — the whole row grows to the taller of the
+   two. --btn-p does nothing on square/circle, which zero their inline padding themselves. */
+.btn:not(:where(.btn-xs, .btn-sm, .btn-md, .btn-lg, .btn-xl)) {
+  --size: 2.125rem;
+  --btn-p: 0.875rem;
+}
+
+/* The unqualified `.btn` — no color modifier, no style modifier — is the neutral button of this
+   system: page surface, hairline border, no fill. */
+.btn:not(
+  :where(
+    .btn-primary,
+    .btn-secondary,
+    .btn-accent,
+    .btn-neutral,
+    .btn-info,
+    .btn-success,
+    .btn-warning,
+    .btn-error,
+    .btn-ghost,
+    .btn-link,
+    .btn-outline,
+    .btn-soft,
+    .btn-dash
+  )
+) {
+  --btn-bg: var(--color-base-100);
+  --btn-fg: var(--color-base-content);
+  --btn-border: color-mix(in oklch, var(--color-base-content) 15%, transparent);
+}
+.btn:not(
+    :where(
+      .btn-primary,
+      .btn-secondary,
+      .btn-accent,
+      .btn-neutral,
+      .btn-info,
+      .btn-success,
+      .btn-warning,
+      .btn-error,
+      .btn-ghost,
+      .btn-link,
+      .btn-outline,
+      .btn-soft,
+      .btn-dash
+    )
+  ):is(:hover, :focus-visible) {
+  --btn-bg: light-dark(var(--color-base-200), var(--color-base-300));
+  --btn-border: color-mix(in oklch, var(--color-base-content) 15%, transparent);
+}
+/* aria-current is excluded so a ghost button acting as the selected nav entry keeps its fill. */
+:where(.btn-ghost:not(:hover, :focus-visible, [aria-current="page"])) {
+  background-color: transparent;
+}
+
+/* Table — the dense data surface. daisyUI's own size modifiers only move body-row text and
+   padding while headers stay pinned at .875rem, which desynchronises the two halves. Setting
+   the table's ROOT font-size per size instead re-anchors the whole scale around the 13px
+   default, and the em-based header typography then follows the body automatically. */
+:where(.table) {
+  --table-line: color-mix(in oklch, var(--color-base-content) 15%, transparent);
+  --table-row-line: color-mix(in oklch, var(--color-base-content) 10%, transparent);
+  --table-ink-muted: color-mix(in oklch, var(--color-base-content) 55%, transparent);
+
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border-radius: 0;
+  background-color: var(--color-base-100);
+}
+
+:where(.table:not(.table-xs, .table-sm, .table-md, .table-lg, .table-xl)) {
+  font-size: 0.8125rem;
+}
+:where(.table:not(.table-xs, .table-sm, .table-md, .table-lg, .table-xl)) :where(th, td) {
+  padding-inline: calc(var(--spacing) * 3);
+  padding-block: calc(var(--spacing) * 2);
+}
+
+:where(.table-xs) {
+  font-size: 0.6875rem;
+}
+:where(.table-sm) {
+  font-size: 0.75rem;
+}
+:where(.table-md) {
+  font-size: 0.8125rem;
+}
+:where(.table-lg) {
+  font-size: 0.875rem;
+}
+:where(.table-xl) {
+  font-size: 1rem;
+}
+/* daisyUI sets an absolute font-size on rows, which would defeat the root-anchored scale. */
+:where(.table-xs, .table-sm, .table-md, .table-lg, .table-xl) :where(tr) {
+  font-size: inherit;
+}
+
+:where(.table-xs) :where(th, td) {
+  padding-inline: calc(var(--spacing) * 2);
+  padding-block: var(--spacing);
+}
+:where(.table-sm) :where(th, td) {
+  padding-inline: calc(var(--spacing) * 2.5);
+  padding-block: calc(var(--spacing) * 1.5);
+}
+:where(.table-md) :where(th, td) {
+  padding-inline: calc(var(--spacing) * 3);
+  padding-block: calc(var(--spacing) * 2);
+}
+:where(.table-lg) :where(th, td) {
+  padding-inline: calc(var(--spacing) * 4);
+  padding-block: calc(var(--spacing) * 3);
+}
+:where(.table-xl) :where(th, td) {
+  padding-inline: calc(var(--spacing) * 5);
+  padding-block: calc(var(--spacing) * 4);
+}
+
+/* Column headers borrow the overline micro-label treatment used by stat titles. */
+:where(.table :is(thead, tfoot)) {
+  font-size: 0.85em;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--table-ink-muted);
+}
+:where(.table thead th) {
+  background-color: var(--color-base-200);
+  white-space: normal;
+  text-wrap: wrap;
+  border-bottom: var(--border) solid var(--table-line);
+}
+
+:where(.table tbody td) {
+  vertical-align: middle;
+  border-bottom: var(--border) solid var(--table-row-line);
+}
+:where(.table tbody tr:last-child td) {
+  border-bottom: 0;
+}
+:where(.table-zebra tbody tr:nth-child(even)) {
+  background-color: var(--color-base-300);
+}
+
+/* Numbers line up only when the cell opts in, via font-mono or a data-mono marker. */
+:where(.table .font-mono, .table [data-mono]) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Badge — two sanctioned treatments:
+   - plain `.badge` stays stock solid, and reads as a counter: sidebar counts, a count baked
+     into a button, an indicator over an icon. Nothing should be nested inside one, because a
+     solid badge does not re-export the context tokens a child would read.
+   - `.badge-soft` is the tinted chip used for status and entity labels, restyled by the formula
+     below. outline and ghost collapse into the same look on purpose, so a call site that
+     reaches for the wrong modifier still lands on the sanctioned chip. Tune the knobs here. */
+:where(.badge) {
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+:where(.badge-soft, .badge-outline, .badge-ghost) {
+  --badge-hue: var(--badge-color, var(--theme-content));
+  --badge-tint: 12%;
+  --badge-line: 28%;
+  --badge-ink: var(--badge-hue);
+
+  color: var(--badge-ink);
+  background-color: color-mix(in oklch, var(--badge-hue) var(--badge-tint), transparent);
+  border-color: color-mix(in oklch, var(--badge-hue) var(--badge-line), transparent);
+
+  /* This rule paints a surface, so it owes the composition contract: re-declare the base tokens
+     that nested components read. A button or an icon dropped into a tinted badge then computes
+     its colors against the tint it actually sits on, not against the page. */
+  --color-base-content: var(--badge-ink);
+  --color-base-100: color-mix(in oklch, var(--badge-hue) var(--badge-tint), var(--theme-surface));
+  --color-base-200: color-mix(
+    in oklch,
+    var(--badge-hue) calc(min(var(--badge-tint) + 8%, 100%)),
+    var(--theme-surface)
+  );
+  --color-base-300: color-mix(
+    in oklch,
+    var(--badge-hue) calc(min(var(--badge-tint) + 14%, 100%)),
+    var(--theme-surface)
+  );
+}
+
+/* The same formula, run without a hue: `badge-soft` on its own, or paired with badge-neutral. */
+:where(.badge-soft, .badge-outline, .badge-ghost):where(
+  .badge-neutral,
+  :not(
+    .badge-primary,
+    .badge-secondary,
+    .badge-accent,
+    .badge-neutral,
+    .badge-info,
+    .badge-success,
+    .badge-warning,
+    .badge-error
+  )
+) {
+  --badge-hue: var(--theme-content);
+  --badge-tint: 5%;
+  --badge-line: 15%;
+  --badge-ink: color-mix(in oklch, var(--theme-content) 55%, transparent);
+}
+
+:where(.card) {
+  border: 1px solid color-mix(in oklch, var(--color-base-content) 15%, transparent);
+  box-shadow:
+    0 1px 0 light-dark(rgb(0 0 0 / 0.02), rgb(255 255 255 / 0.02)),
+    0 1px 2px light-dark(rgb(20 20 20 / 0.04), rgb(0 0 0 / 0.3));
+}
+
+/* Stat — the KPI card. The block is a bordered base-100 surface, the title is the overline
+   micro-label, and the value is deliberately calm: medium weight with slightly tightened
+   tracking, instead of the stock 800-weight display treatment. */
+:where(.stats) {
+  background-color: var(--color-base-100);
+  border: var(--border) solid color-mix(in oklch, var(--color-base-content) 15%, transparent);
+}
+:where(.stat) {
+  padding-block: 0.875rem;
+  padding-inline: 1rem;
+}
+:where(.stat-title) {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+:where(.stat-value) {
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Tabs — `tabs-border` is the one sanctioned variant: 13px medium type, muted when idle, and a
+   full-width 2px primary underline on the active tab. */
+:where(.tab) {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+:where(.tabs-border > .tab)::before {
+  width: 100%;
+  left: 0;
+  height: 2px;
+}
+:where(
+  .tabs-border
+    > .tab:is(
+      .tab-active,
+      [aria-selected="true"],
+      [aria-current="true"],
+      [aria-current="page"],
+      input:checked
+    )
+)::before {
+  background-color: var(--color-primary);
+  border-top: 0;
+}
+
+/* Every floating surface — dropdown, popover — gets one treatment: base-100, hairline border,
+   box radius, soft drop shadow. Content inside is therefore already on base-100, so the context
+   tokens need no adjustment. */
+:where(.dropdown-content, .dropdown[popover]) {
+  background-color: var(--color-base-100);
+  border: var(--border) solid color-mix(in oklch, var(--color-base-content) 15%, transparent);
+  border-radius: var(--radius-box);
+  box-shadow: 0 8px 24px light-dark(rgb(0 0 0 / 0.12), rgb(0 0 0 / 0.28));
+}
+
+/* Modal — the same panel, over a blurred backdrop. */
+:where(.modal-box) {
+  border: var(--border) solid color-mix(in oklch, var(--color-base-content) 15%, transparent);
+}
+:where(.modal:is(.modal-open, [open], :target)) {
+  backdrop-filter: blur(4px);
+}
+
+/* Tooltip — dropped into the same panel language instead of the stock inverted pill. */
+:where(.tooltip) {
+  --tt-bg: var(--color-base-100);
+}
+:where(.tooltip > .tooltip-content),
+:where(.tooltip[data-tip])::before {
+  color: var(--color-base-content);
+  border: var(--border) solid color-mix(in oklch, var(--color-base-content) 15%, transparent);
+  box-shadow: 0 8px 24px light-dark(rgb(0 0 0 / 0.12), rgb(0 0 0 / 0.28));
+  font-size: 0.8125rem;
+}
+
+/* Kbd — mono and muted; also the treatment for short suffix labels sitting inside a field. */
+:where(.kbd) {
+  font-family: var(--font-mono);
+  color: color-mix(in oklch, var(--color-base-content) 70%, transparent);
+}
