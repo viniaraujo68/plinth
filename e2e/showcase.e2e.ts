@@ -13,7 +13,7 @@ test("reaches every component demo from the components index", async ({ page }) 
   await page.getByRole("link", { name: "Components", exact: true }).click();
 
   const links = page.getByTestId("demo-link");
-  await expect(links).toHaveCount(16);
+  await expect(links).toHaveCount(17);
 
   await page.getByRole("link", { name: "Modal" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Modal");

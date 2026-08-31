@@ -27,6 +27,7 @@ export const showcaseRoutes: RoutingConfig<RouteId> = {
     "/components/modal": { title: "Modal" },
     "/components/paginator": { title: "Paginator" },
     "/components/refresh-button": { title: "RefreshButton" },
+    "/components/select": { title: "Select" },
     "/components/skeleton": { title: "Skeleton" },
     "/components/toast": { title: "Toast" },
     "/components/tooltip": { title: "Tooltip" },

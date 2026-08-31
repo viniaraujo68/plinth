@@ -10,6 +10,7 @@ export { default as Logo } from "./Logo.svelte";
 export { default as Modal } from "./Modal.svelte";
 export { default as Paginator } from "./Paginator.svelte";
 export { default as RefreshButton } from "./RefreshButton.svelte";
+export { default as Select } from "./Select.svelte";
 export { default as Skeleton } from "./Skeleton.svelte";
 export { default as Tooltip } from "./Tooltip.svelte";
 
@@ -33,3 +34,15 @@ export {
   type DateRange,
   type DateRangePreset,
 } from "./date-range.js";
+
+// The half of `select.ts` a consumer has a use for: the option type every caller has to name, and
+// the default matcher, so widening the search -- matching the value too, a synonym list -- can
+// compose with the accent folding instead of reimplementing it. The threshold is exported because
+// a consumer deciding `searchable` for itself should be able to ask what the component would have
+// decided.
+export {
+  matchesSelectQuery,
+  normalizeForSearch,
+  SELECT_SEARCH_THRESHOLD,
+  type SelectOption,
+} from "./select.js";

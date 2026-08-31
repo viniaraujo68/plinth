@@ -246,7 +246,7 @@ base URL, how auth is injected, and how the backend spells an error body.
 | `@viniaraujo68/plinth/theme`       | `ThemeContext`, `ThemeController`, `ThemeToggle`, the cookie helpers |
 | `@viniaraujo68/plinth/theme.css`   | The stylesheet the tokens are declared in                            |
 | `@viniaraujo68/plinth/attachments` | The `tooltip` attachment, usable on any tag                          |
-| `@viniaraujo68/plinth/components`  | The primitives, and the `DateRange` helpers                          |
+| `@viniaraujo68/plinth/components`  | The primitives, the `DateRange` and `Select` helpers                 |
 | `@viniaraujo68/plinth/shell`       | `AppShell`, `Breadcrumbs`                                            |
 | `@viniaraujo68/plinth/table`       | `DataTable` and the sorting functions behind it                      |
 | `@viniaraujo68/plinth/toast`       | The toast queue and its host                                         |
@@ -257,7 +257,7 @@ base URL, how auth is injected, and how the backend spells an error body.
 
 The components entry point ships `AsyncButton`, `Copyable`, `DateRangePicker`, `Dialog`,
 `Dropdown`, `ErrorDisplay`, `ErrorPage`, `LoadingButton`, `Logo`, `Modal`, `Paginator`,
-`RefreshButton`, `Skeleton` and `Tooltip`. Every one of them has a page in the showcase.
+`RefreshButton`, `Select`, `Skeleton` and `Tooltip`. Every one of them has a page in the showcase.
 It also exports the mark's outline as data — `PICK_PATH` and `PICK_CLIP_PATH` — for anything
 that wants the pick as a silhouette of its own.
 
