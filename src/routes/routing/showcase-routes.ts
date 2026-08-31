@@ -16,6 +16,7 @@ export const showcaseRoutes: RoutingConfig<RouteId> = {
     "/": { title: "plinth", icon: "icon-[lucide--home]" },
     "/components": { title: "Components", icon: "icon-[lucide--shapes]" },
     "/components/async-button": { title: "AsyncButton" },
+    "/components/confirm": { title: "Confirm" },
     "/components/copyable": { title: "Copyable" },
     "/components/date-range-picker": { title: "DateRangePicker" },
     "/components/dialog": { title: "Dialog" },

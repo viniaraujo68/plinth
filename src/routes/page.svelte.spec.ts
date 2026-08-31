@@ -17,6 +17,6 @@ it("lists every published entry point", async () => {
   render(Page);
 
   await expect.element(page.getByRole("table")).toBeInTheDocument();
-  await expect(page.getByRole("row").elements()).toHaveLength(13);
+  await expect(page.getByRole("row").elements()).toHaveLength(14);
   await expect(page.getByTestId("section-link").elements()).toHaveLength(3);
 });

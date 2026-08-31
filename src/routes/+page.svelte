@@ -35,6 +35,10 @@
       path: "@viniaraujo68/plinth/components",
       summary: "The primitives and the date-range helpers.",
     },
+    {
+      path: "@viniaraujo68/plinth/confirm",
+      summary: "The destructive-action confirm and its host.",
+    },
     { path: "@viniaraujo68/plinth/shell", summary: "AppShell and Breadcrumbs." },
     {
       path: "@viniaraujo68/plinth/table",

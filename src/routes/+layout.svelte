@@ -10,6 +10,7 @@
     ThemeController,
     ThemeToggle,
   } from "$lib/theme/index.js";
+  import { Confirmer } from "$lib/confirm/index.js";
   import { Toaster } from "$lib/toast/index.js";
   import type { Snippet } from "svelte";
   import { toasterPosition } from "./toaster-position.svelte.js";
@@ -74,5 +75,7 @@
 </div>
 
 <!-- Mounted once, outside the routed subtree, exactly as an app should: a toast fired just before
-     a navigation has to survive the page that fired it. -->
+     a navigation has to survive the page that fired it, and the module that asks a confirm question
+     is never the component that renders it. -->
 <Toaster position={toasterPosition.value} />
+<Confirmer />

@@ -10,6 +10,11 @@
       summary: "A button that owns the promise its click returns, and its own failure.",
     },
     {
+      href: resolve("/components/confirm"),
+      name: "Confirm",
+      summary: "An awaited yes or no, asked in one line from anywhere in the app.",
+    },
+    {
       href: resolve("/components/copyable"),
       name: "Copyable",
       summary: "Puts its own text on the clipboard and says so.",
@@ -97,8 +102,9 @@
     <h1 class="text-3xl font-semibold tracking-tight">Components</h1>
     <p class="max-w-2xl text-base-content/70">
       The primitives, one page each. Everything here is imported from
-      <code class="kbd kbd-sm">@viniaraujo68/plinth/components</code>, except the toast queue and
-      the table, which are their own entries at
+      <code class="kbd kbd-sm">@viniaraujo68/plinth/components</code>, except the confirm helper,
+      the toast queue and the table, which are their own entries at
+      <code class="kbd kbd-sm">@viniaraujo68/plinth/confirm</code>,
       <code class="kbd kbd-sm">@viniaraujo68/plinth/toast</code> and
       <code class="kbd kbd-sm">@viniaraujo68/plinth/table</code>.
     </p>

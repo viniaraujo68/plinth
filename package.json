@@ -64,6 +64,10 @@
       "types": "./dist/components/index.d.ts",
       "svelte": "./dist/components/index.js"
     },
+    "./confirm": {
+      "types": "./dist/confirm/index.d.ts",
+      "svelte": "./dist/confirm/index.js"
+    },
     "./shell": {
       "types": "./dist/shell/index.d.ts",
       "svelte": "./dist/shell/index.js"

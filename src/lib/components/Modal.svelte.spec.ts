@@ -127,3 +127,41 @@ it("refuses Escape, the backdrop and the close button when it is not dismissible
   await page.getByTestId("footer-close").click();
   await expect.poll(() => element()?.open ?? false).toBe(false);
 });
+
+const bandGap = (box: HTMLElement) => {
+  const style = getComputedStyle(box);
+  const height = (element: Element) => element.getBoundingClientRect().height;
+
+  // The box's own 1px border is not a band, and `getBoundingClientRect` counts it at both ends.
+  return (
+    height(box) -
+    parseFloat(style.borderTopWidth) -
+    parseFloat(style.borderBottomWidth) -
+    height(box.querySelector("header")!) -
+    height(box.querySelector("footer")!)
+  );
+};
+
+it("renders no body band at all when it is handed no body", async () => {
+  render(Harness, { withBody: false });
+
+  await page.getByTestId("opener").click();
+
+  expect(page.getByTestId("content").query()).toBeNull();
+
+  // Measured rather than eyeballed: the box is exactly its header and its footer, with no empty
+  // padded strip left between them, and one rule rather than two adjacent ones.
+  const box = document.querySelector<HTMLElement>(".modal-box")!;
+  expect(bandGap(box)).toBeLessThan(1);
+  expect(getComputedStyle(box.querySelector("footer")!).borderTopWidth).toBe("0px");
+});
+
+it("keeps the body band and its rule when there is a body", async () => {
+  render(Harness);
+
+  await page.getByTestId("opener").click();
+
+  const box = document.querySelector<HTMLElement>(".modal-box")!;
+  expect(bandGap(box)).toBeGreaterThan(20);
+  expect(getComputedStyle(box.querySelector("footer")!).borderTopWidth).toBe("1px");
+});

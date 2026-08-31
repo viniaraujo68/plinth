@@ -6,8 +6,13 @@
   interface Props {
     /** Names the dialog for assistive technology, and heads it visually. */
     title: string;
-    /** The scrollable body. */
-    children: Snippet;
+    /**
+     * The scrollable body. Optional: a dialog whose whole question fits in its title -- a confirm
+     * is the usual one -- would otherwise render an empty padded strip between the header and the
+     * actions. Omitted, there is no body element at all, and the header's own rule becomes the
+     * single divider above the footer.
+     */
+    children?: Snippet;
     /** Actions, laid out end-aligned under a divider. Nothing is rendered when it is omitted. */
     footer?: Snippet;
     /** Extra classes for the box -- width, max-width, a taller cap. Not for the backdrop. */
@@ -77,7 +82,7 @@
 
 <!--
 @component
-A dialog with chrome: a title, a close button, a scrollable body and an optional footer.
+A dialog with chrome: a title, a close button, an optional scrollable body and an optional footer.
 
 Composition over `Dialog`, so modality, the focus trap, Escape and returning focus to the opener
 stay the browser's job. What is added on top is everything a native modal leaves to the page, and
@@ -156,17 +161,24 @@ rarely opened modal costs nothing until it is opened.
       {/if}
     </header>
 
-    <!-- `min-h-0` is load-bearing: a flex child defaults to `min-height: auto` and refuses to
-         shrink below its content, which would push the box past its own max-height and take the
-         scrolling with it. `overscroll-contain` keeps a flick at the end of a long form from
-         scrolling the page underneath. -->
-    <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
-      {@render children()}
-    </div>
+    {#if children}
+      <!-- `min-h-0` is load-bearing: a flex child defaults to `min-height: auto` and refuses to
+           shrink below its content, which would push the box past its own max-height and take the
+           scrolling with it. `overscroll-contain` keeps a flick at the end of a long form from
+           scrolling the page underneath. -->
+      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
+        {@render children()}
+      </div>
+    {/if}
 
     {#if footer}
+      <!-- Two adjacent rules read as one thick line, so with no body between them the footer drops
+           its own and lets the header's separate the title from the actions. -->
       <footer
-        class="flex flex-none flex-wrap justify-end gap-2 border-t border-base-content/10 px-6 py-4"
+        class={[
+          "flex flex-none flex-wrap justify-end gap-2 px-6 py-4",
+          children && "border-t border-base-content/10",
+        ]}
       >
         {@render footer()}
       </footer>

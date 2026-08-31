@@ -247,6 +247,7 @@ base URL, how auth is injected, and how the backend spells an error body.
 | `@viniaraujo68/plinth/theme.css`   | The stylesheet the tokens are declared in                            |
 | `@viniaraujo68/plinth/attachments` | The `tooltip` attachment, usable on any tag                          |
 | `@viniaraujo68/plinth/components`  | The primitives, the `DateRange` and `Select` helpers                 |
+| `@viniaraujo68/plinth/confirm`     | `confirm`, `Confirmer`, the challenge helpers                        |
 | `@viniaraujo68/plinth/shell`       | `AppShell`, `Breadcrumbs`                                            |
 | `@viniaraujo68/plinth/table`       | `DataTable` and the sorting functions behind it                      |
 | `@viniaraujo68/plinth/toast`       | The toast queue and its host                                         |
@@ -260,6 +261,36 @@ The components entry point ships `AsyncButton`, `Copyable`, `DateRangePicker`, `
 `RefreshButton`, `Select`, `Skeleton` and `Tooltip`. Every one of them has a page in the showcase.
 It also exports the mark's outline as data — `PICK_PATH` and `PICK_CLIP_PATH` — for anything
 that wants the pick as a silhouette of its own.
+
+`Confirmer` is a component too, and it has its own showcase page, but it ships from
+`@viniaraujo68/plinth/confirm` rather than from the components entry point: like `Toaster` it is
+half of a pair, and the other half is a function any module calls with nothing plumbed through.
+
+```svelte
+<script lang="ts">
+  import { confirm } from "@viniaraujo68/plinth/confirm";
+
+  const remove = async (night: Night) => {
+    if (!(await confirm({ title: `Delete ${night.name}?`, danger: true }))) return;
+    await api.delete(`/nights/${night.id}`);
+  };
+</script>
+```
+
+`await confirm(...)` is the whole call site, and it replaces the browser's own `confirm()` one line
+for one line. `<Confirmer />` goes next to `<Toaster />` in the root layout and renders the queue
+over `Modal`, so modality, the focus trap, Escape and returning focus to the opener stay the
+browser's. Cancel, Escape, the close button, a click on the backdrop and the host unmounting all
+resolve `false`; only the confirm action resolves `true`. Focus opens on cancel — never on the
+destructive button — so a stray Enter cannot delete anything.
+
+A second call while one is open queues behind it rather than replacing it or rejecting: replacing
+would answer a question nobody was shown, and rejecting would throw at a call site written to read
+a boolean. `challenge` is the stronger gate — the confirm action stays disabled until that exact
+string has been typed, ends trimmed and nothing else folded — and focus opens in that input, where
+Enter confirms only once it matches. The library ships no translations, so `confirmLabel`,
+`cancelLabel`, `closeLabel` and `challengeLabel` on the host translate every confirm at once, and
+any call overrides them through its own options.
 
 ## Development
 
