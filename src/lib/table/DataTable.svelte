@@ -302,7 +302,9 @@ saved views. A table that needs those needs a different component.
       min-height: 2.75rem;
       padding: 0 0.875rem;
       border: 1px solid color-mix(in oklch, var(--color-base-content) 15%, transparent);
-      border-radius: 9999px;
+      /* The theme's own field radius, not a pill: a sort control is a control, and it should
+         match the buttons and inputs it sits among rather than inventing a second shape. */
+      border-radius: var(--radius-field, 0.5rem);
     }
 
     .plinth-head[aria-sort]:not([aria-sort="none"]) .plinth-sort {
