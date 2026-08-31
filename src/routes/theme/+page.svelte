@@ -1,7 +1,13 @@
 <script lang="ts">
-  import { getThemeContext, ThemeToggle } from "$lib/theme/index.js";
+  import { getThemeContext, ThemeToggle, type ThemePreference } from "$lib/theme/index.js";
 
   const theme = getThemeContext();
+
+  const PREFERENCES_PT: Record<ThemePreference, string> = {
+    system: "Sistema",
+    light: "Claro",
+    dark: "Escuro",
+  };
 
   const SURFACES = [
     { token: "base-100", classes: "bg-base-100 text-base-content", note: "page and panels" },
@@ -75,6 +81,36 @@
           System defers to the OS and keeps tracking it; the other two pin the scheme.
         </span>
       </div>
+    </div>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
+      Localized labels
+    </h2>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      The toggle's wording is English by default and both halves of it are props, because the
+      library ships no translations.
+      <code class="kbd kbd-sm">preferenceLabel</code> names one preference — the visible word and
+      the words inside the accessible name alike — so translating it alone is enough for most apps.
+      <code class="kbd kbd-sm">label</code> replaces the "Theme: X. Switch to Y." sentence those words
+      sit in, for a language that shape does not fit.
+    </p>
+    <div class="card flex-row flex-wrap items-center gap-4 rounded-box p-4">
+      <ThemeToggle
+        class="btn-md"
+        preferenceLabel={(preference) => PREFERENCES_PT[preference]}
+        label={(current, next) =>
+          `Tema: ${PREFERENCES_PT[current]}. Mudar para ${PREFERENCES_PT[next]}.`}
+      />
+      <span class="max-w-md text-xs text-base-content/50">
+        The same control on the same context as above — clicking either one moves both, since the
+        wording is all that differs. Its visible state reads
+        <span class="badge badge-soft badge-primary" data-testid="localized-preference">
+          {PREFERENCES_PT[theme.preference]}
+        </span>
+        and a screen reader hears the same sentence in Portuguese.
+      </span>
     </div>
   </section>
 

@@ -4,7 +4,13 @@
   import { setThemeContext, ThemeContext, type ThemePreference } from "./theme.svelte.js";
   import { untrack } from "svelte";
 
-  const { initial = "system" }: { initial?: ThemePreference } = $props();
+  interface Props {
+    initial?: ThemePreference;
+    preferenceLabel?: (preference: ThemePreference) => string;
+    label?: (current: ThemePreference, next: ThemePreference) => string;
+  }
+
+  const { initial = "system", preferenceLabel, label }: Props = $props();
 
   // The seed is read once by design; untrack says so, and keeps the compiler from warning that a
   // later change to the prop would go unnoticed.
@@ -18,4 +24,4 @@ spec renders this instead of the controller directly. Named `*.spec.svelte` so p
 -->
 
 <ThemeController />
-<ThemeToggle />
+<ThemeToggle {preferenceLabel} {label} />

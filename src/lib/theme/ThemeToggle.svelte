@@ -1,17 +1,6 @@
 <script lang="ts">
   import { getThemeContext, type ThemePreference } from "./theme.svelte.js";
 
-  interface Props {
-    /** Extra classes for the button, so a caller can size or place it. */
-    class?: string;
-    /** Hide the written preference and keep only the icon. The accessible name is unaffected. */
-    iconOnly?: boolean;
-  }
-
-  const { class: className = "", iconOnly = false }: Props = $props();
-
-  const theme = getThemeContext();
-
   // Cycling through "system" rather than flipping between the two explicit themes is the point:
   // "follow the OS" is a real choice a user can get back to, and a two-state toggle strands it.
   const NEXT: Record<ThemePreference, ThemePreference> = {
@@ -25,6 +14,41 @@
     light: "Light",
     dark: "Dark",
   };
+
+  interface Props {
+    /** Extra classes for the button, so a caller can size or place it. */
+    class?: string;
+    /** Hide the written preference and keep only the icon. The accessible name is unaffected. */
+    iconOnly?: boolean;
+    /**
+     * Names one preference — the visible text, and the words the default accessible name is built
+     * from. A function of the preference, and not three strings, because it is the same wording in
+     * both places; overriding it localizes both at once.
+     */
+    preferenceLabel?: (preference: ThemePreference) => string;
+    /**
+     * Accessible name of the button, given the preference on screen and the one a click moves to.
+     * Defaults to the English sentence around `preferenceLabel`, so a caller who only needs the
+     * three words translated can leave this alone; supply it to phrase the whole sentence.
+     */
+    label?: (current: ThemePreference, next: ThemePreference) => string;
+  }
+
+  const {
+    class: className = "",
+    iconOnly = false,
+    preferenceLabel = (preference: ThemePreference) => LABELS[preference],
+    label,
+  }: Props = $props();
+
+  const theme = getThemeContext();
+
+  const next = $derived(NEXT[theme.preference]);
+
+  const accessibleName = $derived(
+    label?.(theme.preference, next) ??
+      `Theme: ${preferenceLabel(theme.preference)}. Switch to ${preferenceLabel(next)}.`,
+  );
 </script>
 
 <!--
@@ -35,14 +59,36 @@ It only writes `preference` on the theme context; the actual repaint is done by 
 `ThemeController` checkbox, which has to be mounted once near the app root. That split is what
 lets an app place any number of pickers wherever it likes without ever duplicating the
 `theme-controller` element, whose presence is what CSS keys on.
+
+The wording is English by default and both halves of it are props, because the library ships no
+translations. `preferenceLabel` names a single preference — the visible text and the words inside
+the accessible name — and is usually the only one an app needs. `label` replaces the sentence those
+words sit in, for a language the "Theme: X. Switch to Y." shape does not fit.
+
+```svelte
+<script lang="ts">
+  import { ThemeToggle, type ThemePreference } from "@viniaraujo68/plinth/theme";
+
+  const PREFERENCES: Record<ThemePreference, string> = {
+    system: "Sistema",
+    light: "Claro",
+    dark: "Escuro",
+  };
+</script>
+
+<ThemeToggle
+  preferenceLabel={(preference) => PREFERENCES[preference]}
+  label={(current, next) => `Tema: ${PREFERENCES[current]}. Mudar para ${PREFERENCES[next]}.`}
+/>
+```
 -->
 
 <button
   type="button"
   class="btn gap-2 btn-ghost btn-sm {className}"
-  aria-label="Theme: {LABELS[theme.preference]}. Switch to {LABELS[NEXT[theme.preference]]}."
+  aria-label={accessibleName}
   data-preference={theme.preference}
-  onclick={() => (theme.preference = NEXT[theme.preference])}
+  onclick={() => (theme.preference = next)}
 >
   <!-- aria-hidden because the button already carries the whole meaning in its accessible name. -->
   <svg
@@ -68,6 +114,6 @@ lets an app place any number of pickers wherever it likes without ever duplicati
     {/if}
   </svg>
   {#if !iconOnly}
-    <span aria-hidden="true">{LABELS[theme.preference]}</span>
+    <span aria-hidden="true">{preferenceLabel(theme.preference)}</span>
   {/if}
 </button>
