@@ -3,9 +3,8 @@
   import { resolve } from "$app/paths";
   import Modal from "$lib/components/Modal.svelte";
   import Select from "$lib/components/Select.svelte";
-  import { normalizeForSearch, type SelectOption } from "$lib/components/select.js";
+  import type { SelectOption } from "$lib/components/select.js";
 
-  // Four: under the threshold, so the panel stays a plain list.
   const SIZES: readonly SelectOption[] = [
     { value: "s", label: "Small" },
     { value: "m", label: "Medium" },
@@ -13,8 +12,6 @@
     { value: "xl", label: "Extra large" },
   ];
 
-  // Eleven, and accented: the filter this component was written for. Typing `otavio` has to find
-  // `Otávio Rocha`, which is the one thing a native select cannot do.
   const LOCALS: readonly SelectOption[] = [
     { value: "araras", label: "Araras" },
     { value: "bingen", label: "Bingen" },
@@ -24,9 +21,7 @@
     { value: "itaipava", label: "Itaipava" },
     { value: "mosela", label: "Mosela" },
     { value: "nogueira", label: "Nogueira" },
-    { value: "otavio-rocha", label: "Otávio Rocha" },
     { value: "quitandinha", label: "Quitandinha" },
-    { value: "sao-goncalo", label: "São Gonçalo" },
   ];
 
   const OPEN_ITEMS = new Map([
@@ -38,23 +33,8 @@
     ["itaipava", 18],
     ["mosela", 2],
     ["nogueira", 5],
-    ["otavio-rocha", 9],
     ["quitandinha", 26],
-    ["sao-goncalo", 1],
   ]);
-
-  const AIRPORTS: readonly SelectOption[] = [
-    { value: "GIG", label: "Rio de Janeiro — Galeão" },
-    { value: "SDU", label: "Rio de Janeiro — Santos Dumont" },
-    { value: "CGH", label: "São Paulo — Congonhas" },
-    { value: "GRU", label: "São Paulo — Guarulhos" },
-    { value: "BSB", label: "Brasília" },
-    { value: "CNF", label: "Belo Horizonte — Confins" },
-    { value: "POA", label: "Porto Alegre" },
-    { value: "REC", label: "Recife" },
-    { value: "SSA", label: "Salvador" },
-    { value: "FOR", label: "Fortaleza" },
-  ];
 
   const SHIPPING: readonly SelectOption[] = [
     { value: "standard", label: "Standard — 5 to 7 days" },
@@ -64,21 +44,9 @@
     { value: "freight", label: "Freight (weight over 30 kg only)", disabled: true },
   ];
 
-  // The escape hatch: a code list is searched by its code as well as its name, which the default
-  // matcher deliberately does not do -- a value is an identifier, not something a user reads.
-  const byCodeOrCity = (option: SelectOption, query: string) => {
-    const needle = normalizeForSearch(query);
-
-    return (
-      normalizeForSearch(option.label).includes(needle) ||
-      normalizeForSearch(option.value).includes(needle)
-    );
-  };
-
   let size = $state<string | null>("m");
   let local = $state<string | null>(null);
   let busiest = $state<string | null>("centro");
-  let airport = $state<string | null>(null);
   let shipping = $state<string | null>(null);
   let modalLocal = $state<string | null>("itaipava");
 
@@ -96,10 +64,15 @@
   <header class="flex flex-col gap-3">
     <h1 class="text-3xl font-semibold tracking-tight">Select</h1>
     <p class="max-w-2xl text-base-content/70">
-      A single-select combobox for the list a native <code class="kbd kbd-sm">&lt;select&gt;</code>
-      stops being usable on. Native type-ahead only matches a prefix and resets after a second, so an
-      eleven-item filter is genuinely hard to get through; this one searches substrings, ignores accents,
-      and grows the search field by itself once the list is long enough to need it.
+      A single-select listbox for a list short enough to read: a trigger showing the current
+      selection, and a panel of options under it. No search field, no query — everything a
+      <code class="kbd kbd-sm">&lt;select&gt;</code> does, with rows this library can style, size and
+      decorate.
+    </p>
+    <p class="max-w-2xl text-base-content/70">
+      Past a couple of dozen options, scrolling stops being reasonable and
+      <a class="link" href={resolve("/components/combobox")}>Combobox</a>
+      is the one to reach for — it turns the control bar itself into the search field.
     </p>
     <p class="max-w-2xl text-base-content/70">
       The panel is a native popover, so it lives in the top layer — above a
@@ -110,11 +83,12 @@
 
   <section class="flex flex-col gap-4">
     <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
-      Short list — no search
+      The plain case
     </h2>
     <p class="max-w-2xl text-sm text-base-content/70">
-      Four options are faster to point at than to type at, so no field is rendered. The threshold is
-      eight, and <code class="kbd kbd-sm">searchable</code> overrules it either way.
+      Four options. The trigger keeps the keyboard the whole time: the arrows walk the rows, Home
+      and End jump to the ends, Enter and Space pick, and the highlighted row is pointed at with
+      <code class="kbd kbd-sm">aria-activedescendant</code> rather than focused.
     </p>
     <div class="flex flex-col gap-1.5">
       <span id="size-label" class="label text-xs">Size</span>
@@ -130,13 +104,12 @@
 
   <section class="flex flex-col gap-4">
     <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
-      Long list — search and clear
+      Placeholder and clearing
     </h2>
     <p class="max-w-2xl text-sm text-base-content/70">
-      Eleven options, so the field appears on its own. Type <code class="kbd kbd-sm">otavio</code>
-      or <code class="kbd kbd-sm">sao</code> — unaccented input finds the accented label, because the
-      default matcher folds both sides to their base letters. Clearing is the ✕, never a blank row in
-      the list.
+      Nothing selected is a state of its own, written in the trigger by
+      <code class="kbd kbd-sm">placeholder</code>. Getting back to it is the ✕, never a blank row in
+      the list, so an empty selection can never be mistaken for a real option.
     </p>
     <div class="flex flex-col gap-1.5">
       <span id="local-label" class="label text-xs">Local</span>
@@ -146,8 +119,6 @@
         aria-labelledby="local-label"
         data-testid="local"
         placeholder="Every local"
-        searchPlaceholder="Search locals"
-        emptyLabel="No local by that name"
         clearable
         class="max-w-xs"
       />
@@ -165,7 +136,7 @@
     </h2>
     <p class="max-w-2xl text-sm text-base-content/70">
       The <code class="kbd kbd-sm">option</code> snippet describes a row and only a row: the trigger keeps
-      showing the plain label, and searching keeps reading it, so a decorated list stays searchable.
+      showing the plain label, so a decorated list still collapses to something readable when it is closed.
     </p>
     <div class="flex flex-col gap-1.5">
       <span id="busiest-label" class="label text-xs">Busiest local</span>
@@ -183,32 +154,6 @@
           </span>
         {/snippet}
       </Select>
-    </div>
-  </section>
-
-  <section class="flex flex-col gap-4">
-    <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
-      Custom filter
-    </h2>
-    <p class="max-w-2xl text-sm text-base-content/70">
-      The default searches the label, because the value is an identifier and not something a person
-      reads. When it happens to be both — an airport code — <code class="kbd kbd-sm">filter</code>
-      is the escape hatch. Try <code class="kbd kbd-sm">gig</code> and then
-      <code class="kbd kbd-sm">rio</code>.
-    </p>
-    <div class="flex flex-col gap-1.5">
-      <span id="airport-label" class="label text-xs">Airport</span>
-      <Select
-        bind:value={airport}
-        options={AIRPORTS}
-        filter={byCodeOrCity}
-        aria-labelledby="airport-label"
-        data-testid="airport"
-        placeholder="Any airport"
-        searchPlaceholder="Code or city"
-        clearable
-        class="max-w-sm"
-      />
     </div>
   </section>
 
@@ -255,7 +200,7 @@
       The case a hand-rolled dropdown gets wrong. A modal
       <code class="kbd kbd-sm">&lt;dialog&gt;</code> is itself in the top layer and makes the rest of
       the page inert, so a panel positioned with a z-index ends up under the backdrop. A popover joins
-      the top layer above it, and its search field keeps the focus.
+      the top layer above it, and the trigger keeps the keyboard.
     </p>
     <div class="flex flex-wrap items-center gap-4">
       <button

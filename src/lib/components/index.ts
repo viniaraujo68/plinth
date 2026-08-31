@@ -1,4 +1,5 @@
 export { default as AsyncButton } from "./AsyncButton.svelte";
+export { default as Combobox } from "./Combobox.svelte";
 export { default as Copyable } from "./Copyable.svelte";
 export { default as DateRangePicker } from "./DateRangePicker.svelte";
 export { default as Dialog } from "./Dialog.svelte";
@@ -35,14 +36,8 @@ export {
   type DateRangePreset,
 } from "./date-range.js";
 
-// The half of `select.ts` a consumer has a use for: the option type every caller has to name, and
-// the default matcher, so widening the search -- matching the value too, a synonym list -- can
-// compose with the accent folding instead of reimplementing it. The threshold is exported because
-// a consumer deciding `searchable` for itself should be able to ask what the component would have
-// decided.
-export {
-  matchesSelectQuery,
-  normalizeForSearch,
-  SELECT_SEARCH_THRESHOLD,
-  type SelectOption,
-} from "./select.js";
+// The half of `select.ts` a consumer has a use for: the option type every caller of either
+// control has to name, and the default matcher, so widening the search -- matching the value too,
+// a synonym list -- can compose with the accent folding instead of reimplementing it. The
+// highlight walk stays private: it is how the two components drive themselves.
+export { matchesSelectQuery, normalizeForSearch, type SelectOption } from "./select.js";

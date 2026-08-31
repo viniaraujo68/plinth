@@ -10,15 +10,14 @@ import type { SelectOption } from "./select.js";
 // exercise a different element than the one that ships.
 import "../../routes/layout.css";
 
-// Three: below the automatic search threshold, so no field appears.
 const SHORT: readonly SelectOption[] = [
   { value: "centro", label: "Centro" },
   { value: "itaipava", label: "Itaipava" },
   { value: "sao-goncalo", label: "São Gonçalo" },
 ];
 
-// Eleven, the size of the filter this component was written for, with one row disabled and enough
-// accents that a Portuguese search is the normal case rather than an edge one.
+// Eleven, with one row disabled: long enough for the arrows to have somewhere to go, and the
+// longest list this control is still the right one for.
 const LONG: readonly SelectOption[] = [
   { value: "araras", label: "Araras" },
   { value: "bingen", label: "Bingen" },
@@ -34,7 +33,6 @@ const LONG: readonly SelectOption[] = [
 ];
 
 const trigger = () => page.getByRole("combobox", { name: "Local" });
-const search = () => page.getByPlaceholder("Search");
 const bound = () => page.getByTestId("bound");
 const options = () => page.getByRole("option");
 
@@ -69,75 +67,26 @@ it("opens on the trigger and closes on the trigger again", async () => {
   await expect.element(trigger()).toHaveAttribute("aria-expanded", "false");
 });
 
-it("leaves a short list without a search field", async () => {
-  render(Harness, { options: SHORT });
+it("carries no search field of its own, at any length", async () => {
+  render(Harness, { options: LONG });
 
   await trigger().click();
   await expect.element(page.getByRole("listbox")).toBeVisible();
-  expect(search().query()).toBeNull();
+
+  // The whole list, every time: filtering is `Combobox`'s job, and this control does not have a
+  // second control hidden inside its panel.
+  await expect.poll(() => options().elements().length).toBe(LONG.length);
+  expect(page.getByRole("textbox").query()).toBeNull();
 });
 
-it("gives a long list a search field and the focus to go with it", async () => {
+it("keeps the focus on the trigger while the list is open", async () => {
   render(Harness, { options: LONG });
 
   await trigger().click();
-  await expect.element(search()).toBeVisible();
-  await expect.element(search()).toHaveFocus();
-});
-
-it("takes a search field on a short list when it is asked for one", async () => {
-  render(Harness, { options: SHORT, searchable: true });
-
-  await trigger().click();
-  await expect.element(search()).toBeVisible();
-});
-
-it("goes without one on a long list when it is told to", async () => {
-  render(Harness, { options: LONG, searchable: false });
-
-  await trigger().click();
-  await expect.element(page.getByRole("listbox")).toBeVisible();
-  expect(search().query()).toBeNull();
-});
-
-it("filters on a substring, past the accents", async () => {
-  render(Harness, { options: LONG });
-
-  await trigger().click();
-  await search().fill("otavio");
-
-  // Unaccented input, accented label -- the case native type-ahead cannot do at all.
-  await expect.poll(optionLabels).toEqual(["Otávio Rocha"]);
-
-  await search().fill("correas");
-  await expect.poll(optionLabels).toEqual(["Corrêas"]);
-
-  // And in the middle of the label, which prefix-only type-ahead also cannot do.
-  await search().fill("rocha");
-  await expect.poll(optionLabels).toEqual(["Otávio Rocha"]);
-});
-
-it("shows the empty state when nothing matches", async () => {
-  render(Harness, { options: LONG });
-
-  await trigger().click();
-  await search().fill("zzz");
-
-  await expect.poll(() => options().elements().length).toBe(0);
-  await expect.element(page.getByText("No matches")).toBeVisible();
-});
-
-it("takes a custom filter in place of the default matching", async () => {
-  // Value-prefix matching: nothing the default would ever do, and the label is ignored entirely.
-  const filter = (option: SelectOption, query: string) => option.value.startsWith(query);
-  render(Harness, { options: LONG, filter });
-
-  await trigger().click();
-  await search().fill("sao");
-  await expect.poll(optionLabels).toEqual(["São Gonçalo"]);
-
-  await search().fill("Otávio");
-  await expect.poll(optionLabels).toEqual([]);
+  await expect.element(trigger()).toHaveFocus();
+  // The rows are pointed at rather than focused, which is what lets the trigger stay the one
+  // element carrying the keyboard.
+  await expect.poll(activeOption).toBe("Araras");
 });
 
 it("moves the highlight with the arrows and jumps with Home and End", async () => {
@@ -160,12 +109,9 @@ it("moves the highlight with the arrows and jumps with Home and End", async () =
 });
 
 it("steps over a disabled option instead of landing on it", async () => {
-  render(Harness, { options: LONG, searchable: false });
+  render(Harness, { options: LONG });
 
   await trigger().click();
-  // The trigger keeps the focus when there is no search field, so it is the trigger that has to
-  // carry `aria-activedescendant`.
-  await expect.element(trigger()).toHaveFocus();
   await expect.poll(activeOption).toBe("Araras");
 
   // Mosela sits between Itaipava and Nogueira and is disabled.
@@ -179,11 +125,22 @@ it("steps over a disabled option instead of landing on it", async () => {
   await expect.poll(activeOption).toBe("Itaipava");
 });
 
+it("opens with the arrows from the closed trigger", async () => {
+  render(Harness, { options: SHORT });
+
+  await trigger().click();
+  await trigger().click();
+  await expect.element(trigger()).toHaveAttribute("aria-expanded", "false");
+
+  await userEvent.keyboard("{ArrowDown}");
+  await expect.element(trigger()).toHaveAttribute("aria-expanded", "true");
+});
+
 it("selects with Enter and writes through the binding", async () => {
   render(Harness, { options: LONG });
 
   await trigger().click();
-  await search().fill("itaipava");
+  await userEvent.keyboard("{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}");
   await expect.poll(activeOption).toBe("Itaipava");
 
   await userEvent.keyboard("{Enter}");
@@ -193,6 +150,17 @@ it("selects with Enter and writes through the binding", async () => {
   await expect.element(trigger()).toHaveTextContent("Itaipava");
   await expect.element(trigger()).toHaveAttribute("aria-expanded", "false");
   await expect.element(trigger()).toHaveFocus();
+});
+
+it("selects with Space, which is the trigger's own key and not a search field's", async () => {
+  render(Harness, { options: SHORT });
+
+  await trigger().click();
+  await userEvent.keyboard("{ArrowDown}");
+  await userEvent.keyboard(" ");
+
+  await expect.element(bound()).toHaveTextContent("itaipava");
+  await expect.element(trigger()).toHaveAttribute("aria-expanded", "false");
 });
 
 it("selects with the mouse, and follows the mouse while it moves", async () => {
@@ -220,11 +188,11 @@ it("marks the selected row and reopens on it", async () => {
     .toHaveAttribute("aria-selected", "true");
 });
 
-it("closes on Escape and gives the focus back to the trigger", async () => {
+it("closes on Escape and leaves the focus on the trigger", async () => {
   render(Harness, { options: LONG });
 
   await trigger().click();
-  await expect.element(search()).toHaveFocus();
+  await expect.element(trigger()).toHaveFocus();
 
   await userEvent.keyboard("{Escape}");
 
@@ -237,8 +205,6 @@ it("closes on Tab and lets the focus carry on past the trigger", async () => {
   render(Harness, { options: LONG });
 
   await trigger().click();
-  await expect.element(search()).toHaveFocus();
-
   await userEvent.keyboard("{Tab}");
 
   await expect.element(trigger()).toHaveAttribute("aria-expanded", "false");
@@ -315,12 +281,11 @@ it("opens above a modal, keeps the focus and writes through from inside it", asy
   const panel = document.querySelector<HTMLElement>(".plinth-select-panel")!;
   expect(panel.matches(":popover-open")).toBe(true);
 
-  // A modal dialog makes everything outside it inert; the panel is inside the dialog's subtree,
-  // so its search field is still reachable.
-  await expect.element(search()).toHaveFocus();
+  // A modal dialog makes everything outside it inert; the trigger is inside the dialog's subtree,
+  // so it keeps the keyboard.
+  await expect.element(trigger()).toHaveFocus();
 
-  await search().fill("goncalo");
-  await userEvent.keyboard("{Enter}");
+  await userEvent.keyboard("{End}{Enter}");
 
   await expect.element(page.getByTestId("bound")).toHaveTextContent("sao-goncalo");
   await expect.element(trigger()).toHaveFocus();
@@ -332,7 +297,7 @@ it("lets Escape close the panel without taking the modal with it", async () => {
 
   await page.getByTestId("opener").click();
   await trigger().click();
-  await expect.element(search()).toBeVisible();
+  await expect.element(page.getByRole("listbox")).toBeVisible();
 
   await userEvent.keyboard("{Escape}");
 

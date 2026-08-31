@@ -10,6 +10,11 @@
       summary: "A button that owns the promise its click returns, and its own failure.",
     },
     {
+      href: resolve("/components/combobox"),
+      name: "Combobox",
+      summary: "A search field that is the control bar, over a list too long to point at.",
+    },
+    {
       href: resolve("/components/confirm"),
       name: "Confirm",
       summary: "An awaited yes or no, asked in one line from anywhere in the app.",
@@ -77,7 +82,7 @@
     {
       href: resolve("/components/select"),
       name: "Select",
-      summary: "A searchable, clearable combobox that grows its own search field.",
+      summary: "A clearable listbox for a short list, in the top layer above anything.",
     },
     {
       href: resolve("/components/skeleton"),

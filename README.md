@@ -246,7 +246,7 @@ base URL, how auth is injected, and how the backend spells an error body.
 | `@viniaraujo68/plinth/theme`       | `ThemeContext`, `ThemeController`, `ThemeToggle`, the cookie helpers |
 | `@viniaraujo68/plinth/theme.css`   | The stylesheet the tokens are declared in                            |
 | `@viniaraujo68/plinth/attachments` | The `tooltip` attachment, usable on any tag                          |
-| `@viniaraujo68/plinth/components`  | The primitives, the `DateRange` and `Select` helpers                 |
+| `@viniaraujo68/plinth/components`  | The primitives, the `DateRange` and option-matching helpers          |
 | `@viniaraujo68/plinth/confirm`     | `confirm`, `Confirmer`, the challenge helpers                        |
 | `@viniaraujo68/plinth/shell`       | `AppShell`, `Breadcrumbs`                                            |
 | `@viniaraujo68/plinth/table`       | `DataTable` and the sorting functions behind it                      |
@@ -256,11 +256,21 @@ base URL, how auth is injected, and how the backend spells an error body.
 | `@viniaraujo68/plinth/http`        | `createHttpClient`, `ApiError`, `errorMessage`, `errorStatus`        |
 | `@viniaraujo68/plinth/formatters`  | `createFormatters`, over `Intl`                                      |
 
-The components entry point ships `AsyncButton`, `Copyable`, `DateRangePicker`, `Dialog`,
-`Dropdown`, `ErrorDisplay`, `ErrorPage`, `LoadingButton`, `Logo`, `Modal`, `Paginator`,
+The components entry point ships `AsyncButton`, `Combobox`, `Copyable`, `DateRangePicker`,
+`Dialog`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `LoadingButton`, `Logo`, `Modal`, `Paginator`,
 `RefreshButton`, `Select`, `Skeleton` and `Tooltip`. Every one of them has a page in the showcase.
 It also exports the mark's outline as data — `PICK_PATH` and `PICK_CLIP_PATH` — for anything
 that wants the pick as a silhouette of its own.
+
+Two of those pick one thing from a list, and which one to reach for is decided by the length of
+the list rather than by a flag:
+
+- **`Select`** — a trigger and a panel of rows, for a list short enough to read at a glance. There
+  is nothing to type into; the arrows walk it and the trigger keeps the focus.
+- **`Combobox`** — the control bar IS the search field, for a list nobody is going to scroll.
+  Clicking it selects the text that is there so the next keystroke replaces it, the query filters
+  past accents and anywhere in the label, and anything that closes the list without a pick puts
+  the selected label back.
 
 `Confirmer` is a component too, and it has its own showcase page, but it ships from
 `@viniaraujo68/plinth/confirm` rather than from the components entry point: like `Toaster` it is

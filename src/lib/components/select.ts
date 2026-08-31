@@ -1,25 +1,16 @@
 /**
- * One row of a `Select`.
+ * One row of a `Select` or a `Combobox`.
  *
  * `value` is the identity: it is what the control binds, what `onchange` reports, and what the
- * option list is keyed by, so two options may not share one. `label` is what a human reads and
- * what the default matcher searches — a code that only means something to the backend belongs in
- * `value`, never in `label`.
+ * option list is keyed by, so two options may not share one. `label` is what a human reads, what
+ * the default matcher searches and what a `Combobox` puts in its text field — a code that only
+ * means something to the backend belongs in `value`, never in `label`.
  */
 export interface SelectOption {
   value: string;
   label: string;
   disabled?: boolean;
 }
-
-/**
- * How many options it takes before `Select` grows a search field on its own.
- *
- * The number is a judgement, not a measurement: a list this long stops being scannable at a
- * glance on a phone-sized panel, while a shorter one is faster to point at than to type at. Pass
- * `searchable` explicitly to overrule it in either direction.
- */
-export const SELECT_SEARCH_THRESHOLD = 8;
 
 /**
  * Strips accents and case so that a search compares the letters a person meant rather than the
@@ -37,7 +28,7 @@ export const normalizeForSearch = (text: string): string =>
   text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
 /**
- * The matcher `Select` uses when no `filter` is passed: a substring of the label, accent- and
+ * The matcher `Combobox` uses when no `filter` is passed: a substring of the label, accent- and
  * case-insensitive.
  *
  * Exported so a consumer who only wants to widen it — matching the value too, or a synonym list —
@@ -45,3 +36,21 @@ export const normalizeForSearch = (text: string): string =>
  */
 export const matchesSelectQuery = (option: SelectOption, query: string): boolean =>
   normalizeForSearch(option.label).includes(normalizeForSearch(query));
+
+/**
+ * The first selectable index from `from`, walking in `delta`'s direction; `-1` when there is none.
+ *
+ * Both controls move a highlight over the same list under the same rule — a disabled row is
+ * stepped over rather than landed on — and the walk stops at the ends instead of wrapping, so
+ * holding an arrow key rests against the edge rather than cycling forever.
+ */
+export const nextSelectableIndex = (
+  options: readonly SelectOption[],
+  from: number,
+  delta: number,
+): number => {
+  for (let index = from; index >= 0 && index < options.length; index += delta)
+    if (!options[index].disabled) return index;
+
+  return -1;
+};

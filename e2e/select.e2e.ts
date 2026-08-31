@@ -1,42 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test("leaves a short list without a search field and gives a long one its own", async ({
-  page,
-}) => {
+test("opens a plain list with no field of its own anywhere in it", async ({ page }) => {
   await page.goto("/components/select");
 
   await page.getByTestId("size").click();
   await expect(page.getByRole("option", { name: "Medium" })).toBeVisible();
-  await expect(page.getByPlaceholder("Search locals")).toBeHidden();
-  await page.keyboard.press("Escape");
-
-  await page.getByTestId("local").click();
-  await expect(page.getByPlaceholder("Search locals")).toBeFocused();
-});
-
-test("finds an accented option from an unaccented query", async ({ page }) => {
-  await page.goto("/components/select");
-
-  await page.getByTestId("local").click();
-  await page.getByPlaceholder("Search locals").fill("otavio");
-
-  const rows = page.getByRole("option");
-  await expect(rows).toHaveCount(1);
-  await rows.first().click();
-
-  await expect(page.getByTestId("local-value")).toHaveText("otavio-rocha");
-  await expect(page.getByTestId("local")).toContainText("Otávio Rocha");
-  await expect(page.getByTestId("local")).toBeFocused();
-});
-
-test("says so when the query matches nothing", async ({ page }) => {
-  await page.goto("/components/select");
-
-  await page.getByTestId("local").click();
-  await page.getByPlaceholder("Search locals").fill("zurique");
-
-  await expect(page.getByRole("option")).toHaveCount(0);
-  await expect(page.getByText("No local by that name")).toBeVisible();
+  await expect(page.getByRole("option")).toHaveCount(4);
+  // Typing is `Combobox`'s job; this panel is a list and nothing else.
+  await expect(page.getByRole("textbox")).toHaveCount(0);
 });
 
 test("walks the list from the keyboard and selects with Enter", async ({ page }) => {
@@ -45,6 +16,9 @@ test("walks the list from the keyboard and selects with Enter", async ({ page })
   await page.getByTestId("size").focus();
   await page.keyboard.press("ArrowDown");
   await expect(page.getByTestId("size")).toHaveAttribute("aria-expanded", "true");
+  // The trigger keeps the focus: the rows are pointed at, never focused.
+  await expect(page.getByTestId("size")).toBeFocused();
+  await expect(page.getByTestId("size")).toHaveAttribute("aria-activedescendant", /option/);
 
   await page.keyboard.press("End");
   await page.keyboard.press("Enter");
@@ -52,6 +26,22 @@ test("walks the list from the keyboard and selects with Enter", async ({ page })
   await expect(page.getByTestId("size")).toContainText("Extra large");
   await expect(page.getByTestId("size")).toHaveAttribute("aria-expanded", "false");
   await expect(page.getByTestId("size")).toBeFocused();
+});
+
+test("picks with the mouse and reopens on the row it picked", async ({ page }) => {
+  await page.goto("/components/select");
+
+  await page.getByTestId("local").click();
+  await page.getByRole("option", { name: "Corrêas" }).click();
+
+  await expect(page.getByTestId("local-value")).toHaveText("correas");
+  await expect(page.getByTestId("local")).toContainText("Corrêas");
+
+  await page.getByTestId("local").click();
+  await expect(page.getByRole("option", { name: "Corrêas" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
 });
 
 test("clears the selection without ever offering a blank row", async ({ page }) => {
@@ -66,22 +56,19 @@ test("clears the selection without ever offering a blank row", async ({ page }) 
   await expect(page.getByTestId("local")).toContainText("Every local");
 
   await page.getByTestId("local").click();
-  await expect(page.getByRole("option")).toHaveCount(11);
+  await expect(page.getByRole("option")).toHaveCount(9);
 });
 
-test("searches an airport by its code through the custom filter", async ({ page }) => {
+test("renders a decorated row and still closes to the plain label", async ({ page }) => {
   await page.goto("/components/select");
 
-  await page.getByTestId("airport").click();
-  await page.getByPlaceholder("Code or city").fill("gig");
+  await page.getByTestId("busiest").click();
+  const row = page.getByRole("option", { name: /Itaipava/ });
+  await expect(row).toContainText("18");
 
-  const rows = page.getByRole("option");
-  await expect(rows).toHaveCount(1);
-  await expect(rows.first()).toContainText("Galeão");
-
-  // The same field still searches the label, which is what the composition buys over replacing it.
-  await page.getByPlaceholder("Code or city").fill("rio");
-  await expect(page.getByRole("option")).toHaveCount(2);
+  await row.click();
+  await expect(page.getByTestId("busiest")).toContainText("Itaipava");
+  await expect(page.getByTestId("busiest")).not.toContainText("18");
 });
 
 test("steps over a disabled row and refuses to open a disabled control", async ({ page }) => {
@@ -108,12 +95,11 @@ test("opens over a modal and closes one layer at a time", async ({ page }) => {
   await expect(dialog).toBeVisible();
 
   await page.getByTestId("modal-local").click();
-  const search = page.getByPlaceholder("Search");
-  await expect(search).toBeFocused();
+  await expect(page.getByRole("listbox")).toBeVisible();
+  await expect(page.getByTestId("modal-local")).toBeFocused();
 
-  await search.fill("goncalo");
-  await page.keyboard.press("Enter");
-  await expect(page.getByTestId("modal-value")).toHaveText("sao-goncalo");
+  await page.getByRole("option", { name: "Nogueira" }).click();
+  await expect(page.getByTestId("modal-value")).toHaveText("nogueira");
   await expect(dialog).toBeVisible();
 
   // The panel is the topmost thing in the top layer, so the first Escape is spent on it.
