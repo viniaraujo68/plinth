@@ -121,6 +121,25 @@
 
   const activeOptionId = $derived(isOpen && highlighted >= 0 ? optionId(highlighted) : undefined);
 
+  // Puts the selected label in the field and marks it as a label rather than a query. Whenever the
+  // field still has the keyboard the label is also selected, which is the whole of what makes the
+  // next keystroke a new query instead of an append: a caret parked after `Itaipava` turns `sao`
+  // into `Itaipavasao`, which matches nothing. It is the same state a click on the bar leaves
+  // behind, so every way back into a settled field behaves alike.
+  //
+  // Written straight to the element as well as to the state: `bind:value` lands a tick later and
+  // puts the caret at the end when it does, which would undo the selection made here. The binding
+  // then finds the element already holding the value and leaves it -- and the selection -- alone.
+  const showSelectedLabel = () => {
+    isQuery = false;
+    text = selected?.label ?? "";
+
+    if (input && document.activeElement === input) {
+      input.value = text;
+      input.select();
+    }
+  };
+
   // A selection made from outside -- a reset button, a value arriving with the data -- has to
   // reach the field too. Only while the list is closed: an open control's text belongs to whoever
   // is typing into it, and the close puts the label back anyway.
@@ -128,7 +147,8 @@
     const label = selected?.label ?? "";
 
     untrack(() => {
-      if (!isOpen) text = label;
+      if (isOpen || label === text) return;
+      showSelectedLabel();
     });
   });
 
@@ -240,11 +260,15 @@
     panel?.hide();
   };
 
+  // Restoring the label belongs to the CLOSE and to nothing else. An open is just as often asked
+  // for by the keystroke that starts a query -- typing into a field Escape had closed -- and
+  // restoring there would overwrite that very character with the label and leave the caret after
+  // it, so the second keystroke would append. Nothing needs restoring on the way in anyway: every
+  // close already did it, and the effect above keeps a closed field in step.
   const onOpenChange = (nowOpen: boolean) => {
     isOpen = nowOpen;
-    isQuery = false;
     highlightedValue = nowOpen ? value : null;
-    text = selected?.label ?? "";
+    if (!nowOpen) showSelectedLabel();
   };
 </script>
 
@@ -257,11 +281,12 @@ is the one to reach for.
 Searching is accent-insensitive — typing `otavio` finds `Otávio` — and matches anywhere in the
 label, which is the pair of things native type-ahead cannot do. `filter` replaces the matcher.
 
-The text in the field is a view of the selection, never a value of its own: focusing selects it so
-the first keystroke replaces it, and Escape, Tab, a click outside and a blur all put the selected
-label back. Emptying the field and leaving therefore reverts rather than clears — clearing is the
-✕, and only the ✕. `name` submits the selected `value` through a hidden input, so the text on
-screen is never what a form receives.
+The text in the field is a view of the selection, never a value of its own: Escape, Tab, a click
+outside, a blur and a pick all put the selected label back, and every label written into a field
+that still has the keyboard is selected — as focusing and clicking select it — so typing straight
+on starts a new query instead of appending to a label. Emptying the field and leaving therefore
+reverts rather than clears — clearing is the ✕, and only the ✕. `name` submits the selected `value`
+through a hidden input, so the text on screen is never what a form receives.
 
 The panel is a native popover: it sits in the top layer, above a `Modal` and out of every overflow
 and stacking context, with no z-index anywhere. The input carries `role="combobox"` with

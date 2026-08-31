@@ -271,6 +271,133 @@ it("puts the selected label back when Escape closes the list on a half-typed que
   await expect.element(page.getByTestId("changes")).toHaveTextContent("0");
 });
 
+it("starts a fresh query on the next keystroke after Escape", async () => {
+  render(Harness, { options: LOCALS, value: "itaipava" });
+
+  await bar().click();
+  await bar().fill("otav");
+
+  await userEvent.keyboard("{Escape}");
+  expect(text()).toBe("Itaipava");
+  // The restored label is a label, so it is selected exactly as a click on the bar leaves it.
+  expect(allSelected()).toBe(true);
+
+  await userEvent.keyboard("sao");
+
+  // Appended it would read `Itaipavasao` -- and, with the reopen eating the first keystroke,
+  // `Itaipavaao` -- matching nothing at all.
+  expect(text()).toBe("sao");
+  await expect.poll(optionLabels).toEqual(["São Gonçalo"]);
+  await expect.element(bar()).toHaveAttribute("aria-expanded", "true");
+});
+
+it("still starts a fresh query when Escape is pressed a second time over nothing", async () => {
+  render(Harness, { options: LOCALS, value: "itaipava" });
+
+  await bar().click();
+  await bar().fill("otav");
+
+  // The second Escape has no list left to close, so it must leave the field exactly as the first
+  // one did rather than quietly undoing the restore.
+  await userEvent.keyboard("{Escape}{Escape}");
+  await userEvent.keyboard("sao");
+
+  expect(text()).toBe("sao");
+  await expect.poll(optionLabels).toEqual(["São Gonçalo"]);
+});
+
+it("keeps the character that reopens a closed field", async () => {
+  render(Harness, { options: LOCALS });
+
+  await bar().click();
+  await userEvent.keyboard("{Escape}");
+  await expect.element(bar()).toHaveAttribute("aria-expanded", "false");
+
+  await userEvent.keyboard("sao");
+
+  // Nothing is selected here, so there is no label to append to: the only thing the reopen can
+  // cost is the keystroke that asked for it.
+  expect(text()).toBe("sao");
+  await expect.poll(optionLabels).toEqual(["São Gonçalo"]);
+});
+
+it("deletes rather than reopens on the first Backspace after Escape", async () => {
+  render(Harness, { options: LOCALS, value: "itaipava" });
+
+  await bar().click();
+  await bar().fill("otav");
+  await userEvent.keyboard("{Escape}");
+
+  await userEvent.keyboard("{Backspace}");
+
+  // The restored label is selected, so one Backspace takes all of it -- and the reopen may not
+  // put it back.
+  expect(text()).toBe("");
+  await expect.poll(() => options().elements().length).toBe(LOCALS.length);
+});
+
+it("starts a fresh query after a pick instead of appending to the label it left", async () => {
+  render(Harness, { options: LOCALS, value: "itaipava" });
+
+  await bar().click();
+  await bar().fill("otav");
+  await userEvent.keyboard("{Enter}");
+  expect(text()).toBe("Otávio Rocha");
+
+  await userEvent.keyboard("sao");
+
+  // The pick leaves the keyboard in the field, so the very next keystroke is a new search.
+  expect(text()).toBe("sao");
+  await expect.poll(optionLabels).toEqual(["São Gonçalo"]);
+});
+
+it("does the same after a pick made with the mouse", async () => {
+  render(Harness, { options: LOCALS, value: "itaipava" });
+
+  await bar().click();
+  await options().nth(0).click();
+  await expect.poll(text).toBe("Araras");
+
+  await userEvent.keyboard("sao");
+
+  expect(text()).toBe("sao");
+  await expect.poll(optionLabels).toEqual(["São Gonçalo"]);
+});
+
+it("starts a fresh query after a value arrives from outside a focused field", async () => {
+  const harness = render(Harness, { options: LOCALS, value: "itaipava" });
+
+  await bar().click();
+  await userEvent.keyboard("{Escape}");
+
+  await harness.rerender({ value: "araras" });
+  await expect.poll(text).toBe("Araras");
+
+  await userEvent.keyboard("sao");
+
+  // The outside write put a label in a field someone still has the keyboard in, which is the same
+  // situation Escape leaves and has to end the same way.
+  expect(text()).toBe("sao");
+  await expect.poll(optionLabels).toEqual(["São Gonçalo"]);
+});
+
+it("starts a fresh query after Tab takes the focus away and brings it back", async () => {
+  render(Harness, { options: LOCALS, value: "itaipava" });
+
+  await bar().click();
+  await bar().fill("otav");
+
+  await userEvent.keyboard("{Tab}");
+  await expect.element(page.getByTestId("after")).toHaveFocus();
+
+  await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
+  await expect.element(bar()).toHaveFocus();
+  await userEvent.keyboard("sao");
+
+  expect(text()).toBe("sao");
+  await expect.poll(optionLabels).toEqual(["São Gonçalo"]);
+});
+
 it("puts it back on a click outside as well", async () => {
   render(Harness, { options: LOCALS, value: "itaipava" });
 

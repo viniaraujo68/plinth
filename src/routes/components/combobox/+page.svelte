@@ -153,8 +153,10 @@
       Fifty-two cities. Clicking the bar opens the list and selects whatever text is in it, so the
       first keystroke replaces it rather than appending to it. Escape, Tab, a click outside or
       simply leaving all put the selected label back — a control that claims to hold Petrópolis is
-      never left showing <code class="kbd kbd-sm">petr</code>. Emptying it and leaving reverts too:
-      clearing is the ✕, and only the ✕.
+      never left showing <code class="kbd kbd-sm">petr</code> — and the label they put back is
+      selected in turn, so carrying straight on after an Escape searches again instead of typing
+      <code class="kbd kbd-sm">Petrópolissao</code>. Emptying it and leaving reverts too: clearing
+      is the ✕, and only the ✕.
     </p>
     <div class="flex flex-col gap-1.5">
       <span id="city-label" class="label text-xs">Destination</span>

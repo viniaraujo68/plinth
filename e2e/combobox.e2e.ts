@@ -69,6 +69,35 @@ test("puts the selected label back when the list closes without a pick", async (
   await expect(page.getByTestId("city-value")).toHaveText("petropolis");
 });
 
+test("retypes straight after Escape instead of appending to the restored label", async ({
+  page,
+}) => {
+  await page.goto("/components/combobox");
+
+  const bar = page.getByTestId("city");
+  await bar.click();
+  await page.keyboard.type("goia");
+  await expect(bar).toHaveValue("goia");
+
+  await page.keyboard.press("Escape");
+  await expect(bar).toHaveAttribute("aria-expanded", "false");
+  await expect(bar).toHaveValue("Petrópolis");
+  await expect(bar).toBeFocused();
+
+  // No click in between: the field never lost the keyboard, so the next keystroke has to be the
+  // start of a new search. Appended it would read `Petrópolissao`, and with the reopen eating the
+  // first character, `Petrópolisao` -- no city either way.
+  await page.keyboard.type("sao");
+
+  await expect(bar).toHaveValue("sao");
+  await expect(bar).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("option")).toHaveCount(2);
+
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("city-value")).toHaveText("sao-luis");
+  await expect(bar).toHaveValue("São Luís");
+});
+
 test("clears only through the ✕, and keeps the keyboard when it does", async ({ page }) => {
   await page.goto("/components/combobox");
 
