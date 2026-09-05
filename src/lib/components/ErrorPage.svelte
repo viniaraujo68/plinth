@@ -8,9 +8,38 @@
     pathname?: string;
     /** Where "back to start" goes. Pass `resolve("/")` from an app with a base path. */
     homeHref?: string;
+    /** The chip above the heading, given the status. */
+    statusLabel?: (status: number) => string;
+    /** Heading of a 404. */
+    notFoundTitle?: string;
+    /**
+     * Body of a 404, given the path when one was passed. Left out, the English sentence renders
+     * with the address in a monospace run of its own, which a returned string cannot carry.
+     */
+    notFoundBody?: (pathname: string | undefined) => string;
+    /** Heading of every other status. */
+    errorTitle?: string;
+    /** Body of every other status, used when no `message` was passed. */
+    errorBody?: string;
+    /** Label of the link home. */
+    homeLabel?: string;
+    /** Label of the reload button, which a 404 does not offer. */
+    reloadLabel?: string;
   }
 
-  let { status, message, pathname, homeHref = "/" }: Props = $props();
+  let {
+    status,
+    message,
+    pathname,
+    homeHref = "/",
+    statusLabel = (status: number) => `Error ${status}`,
+    notFoundTitle = "Page not found",
+    notFoundBody,
+    errorTitle = "Something went wrong",
+    errorBody = "The application ran into an unexpected problem.",
+    homeLabel = "Back to start",
+    reloadLabel = "Reload",
+  }: Props = $props();
 
   const notFound = $derived(status === 404);
 </script>
@@ -23,6 +52,10 @@ Everything it shows arrives as a prop rather than being read from `$app/state` i
 component. That keeps it renderable — and testable — outside a SvelteKit navigation, and it keeps
 the choice of what to reveal at the app's own `+error.svelte`, which is where the app can tell an
 intentional `error(403, "...")` message apart from one it would rather not print.
+
+Every word of the copy is a prop with an English default, because the library ships no
+translations: `statusLabel`, `notFoundTitle`, `notFoundBody`, `errorTitle`, `errorBody`,
+`homeLabel` and `reloadLabel`. `message` still wins over `errorBody` whenever the app passed one.
 
 ```svelte
 <script lang="ts">
@@ -55,26 +88,32 @@ intentional `error(403, "...")` message apart from one it would rather not print
       <path d="M12 17h.01" />
     {/if}
   </svg>
-  <p class="text-xs font-medium tracking-widest text-base-content/55 uppercase">Error {status}</p>
+  <p class="text-xs font-medium tracking-widest text-base-content/55 uppercase">
+    {statusLabel(status)}
+  </p>
   <h1 class="text-xl font-semibold">
-    {notFound ? "Page not found" : "Something went wrong"}
+    {notFound ? notFoundTitle : errorTitle}
   </h1>
-  <p class="max-w-md text-sm text-base-content/60">
+  <p class="max-w-md text-sm break-words text-base-content/60">
     {#if notFound}
-      The address {#if pathname}<span class="font-mono break-all">{pathname}</span>{:else}you asked
-        for{/if} does not exist, or has moved.
+      {#if notFoundBody}
+        {notFoundBody(pathname)}
+      {:else}
+        The address {#if pathname}<span class="font-mono break-all">{pathname}</span>{:else}you
+          asked for{/if} does not exist, or has moved.
+      {/if}
     {:else}
-      {message ?? "The application ran into an unexpected problem."}
+      {message ?? errorBody}
     {/if}
   </p>
   <div class="mt-4 flex gap-2">
     <!-- The link is resolved by the app, which is the side that knows its route ids and its base
          path; the library only renders what it was handed. -->
     <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-    <a class="btn btn-primary" href={homeHref}>Back to start</a>
+    <a class="btn btn-primary" href={homeHref}>{homeLabel}</a>
     {#if !notFound}
       <!-- A reload is worth offering only for a failure that might not repeat; a 404 will. -->
-      <button type="button" class="btn" onclick={() => location.reload()}>Reload</button>
+      <button type="button" class="btn" onclick={() => location.reload()}>{reloadLabel}</button>
     {/if}
   </div>
 </div>

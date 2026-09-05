@@ -47,6 +47,33 @@
   </section>
 
   <section class="flex flex-col gap-4">
+    <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
+      Every word is a prop
+    </h2>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      The library ships no translations, so the chip, both headings, both bodies and the two buttons
+      are props with English defaults. <code class="kbd kbd-sm">message</code> still wins over
+      <code class="kbd kbd-sm">errorBody</code>, because a message the app wrote is already in the
+      app's own language.
+    </p>
+    <div class="min-h-72 rounded-box border border-base-content/10 bg-base-200">
+      <ErrorPage
+        status={404}
+        pathname="/discos/1998"
+        homeHref={resolve("/")}
+        statusLabel={(status) => `Erro ${status}`}
+        notFoundTitle="Página não encontrada"
+        notFoundBody={(pathname) =>
+          `O endereço ${pathname ?? "que você pediu"} não existe, ou mudou de lugar.`}
+        errorTitle="Algo deu errado"
+        errorBody="O aplicativo encontrou um problema inesperado."
+        homeLabel="Voltar ao início"
+        reloadLabel="Recarregar"
+      />
+    </div>
+  </section>
+
+  <section class="flex flex-col gap-4">
     <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">Wiring</h2>
     <p class="max-w-2xl text-sm text-base-content/70">
       Everything it shows arrives as a prop instead of being read out of
