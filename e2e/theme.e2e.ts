@@ -53,3 +53,46 @@ test("restores the persisted preference on the next visit", async ({ page }) => 
   await expect(page.getByTestId("preference")).toHaveText("light");
   expect(await colorScheme(page)).toBe("light");
 });
+
+// The seed a consumer stamps on <html> for a flash-free first paint. Everything below runs
+// against the production build on purpose: Lightning CSS folds a selector list into `:is(...)`,
+// whose specificity is the max over its arguments, so the seed only ever ties with the live
+// controller in the built stylesheet -- never in dev, and never in the unit run.
+const seed = (page: Page) =>
+  page.route(/\/theme$/, async (route) => {
+    const response = await route.fetch();
+    const body = (await response.text()).replace("<html", '<html data-theme="plinth-dark"');
+    await route.fulfill({ response, body });
+  });
+
+test.describe("without JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("paints the stamped seed at first paint", async ({ page }) => {
+    await seed(page);
+    await page.goto("/theme");
+
+    expect(await colorScheme(page)).toBe("dark");
+  });
+});
+
+test("drops the stamped seed once the controller mounts", async ({ page }) => {
+  await seed(page);
+  await page.goto("/theme");
+
+  await expect(page.getByTestId("preference")).toHaveText("system");
+  expect(await page.evaluate(() => document.documentElement.hasAttribute("data-theme"))).toBe(
+    false,
+  );
+  expect(await colorScheme(page)).toBe("light dark");
+});
+
+test("keeps a seed put back under a checked controller from painting", async ({ page }) => {
+  await page.goto("/theme");
+  await toggle(page).click();
+  await expect(page.getByTestId("preference")).toHaveText("light");
+
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "plinth-dark"));
+
+  expect(await colorScheme(page)).toBe("light");
+});

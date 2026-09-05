@@ -169,6 +169,17 @@ without configuration; anything else goes through `AppShell`'s `icon` snippet.
 what CSS keys the theme on, and every other picker in the app just writes `preference` on the
 theme context. `AppShell` fills its parent, so give it one with a height.
 
+An app that cannot render the controller in the right state on the server — a prerendered site, a
+client-only app — usually stamps `data-theme="plinth-light"` or `data-theme="plinth-dark"` on
+`<html>` from a head script, so the very first paint is already right. That stamp is a **seed for
+the first paint and nothing else.** The stylesheet gives it up the moment a checked controller is
+under it, and `ThemeController` drops it outright when it mounts, so from hydration onwards the
+preference is the only thing painting the page — including the "system" preference, which checks
+nothing and would otherwise keep losing to a stale stamp forever. Do not read the root
+`data-theme` back as the current theme: read `preference` on the theme context, or `dark` for the
+resolved one. A `data-theme` on any element **below** the root is a different thing entirely and
+is left alone — that is subtree theming, and it keeps working whatever the page theme is.
+
 `setUserContext` is optional: without it the library falls back to an anonymous context whose role
 checks all answer `true`, so a route tree annotated with `requiredRoles` still renders while there
 is no authentication to evaluate it against. Any object matching the `UserContext` interface will

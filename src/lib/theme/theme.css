@@ -11,6 +11,17 @@
    the choice to the OS, which is already correct on the very first paint and keeps tracking
    live OS changes without a line of JS. Checked pins the scheme named by the checkbox `value`.
 
+   `[data-theme]` pins a scheme by attribute, and does two jobs: on the root it is the first-paint
+   seed a consumer stamps before hydration, from a cookie no checkbox has read yet; on any other
+   element it re-themes that subtree. Both are guarded by `:not(:has(input.theme-controller
+   :checked))`, and the guard is what keeps a live controller in charge. A selector list is folded
+   by Lightning CSS into `:is(...)`, whose specificity is the MAX over its arguments, so an
+   unguarded attribute branch would tie with the `:has()` branch of the other theme and source
+   order alone would decide — a stale seed on the root beating the checkbox the user just moved.
+   Guarded, the two branches are mutually exclusive: an element holding the attribute yields for
+   as long as a checked controller sits under it, which for the root is from the moment the app
+   mounts one, while a nested subtree keeps its attribute because the controller is not under it.
+
    Because every color below is declared once through `light-dark()`, the inherited
    `color-scheme` ends up being the only switch in the whole system. That also buys subtree
    theming for free: `light-dark()` resolves at the point of USE, not of declaration, so putting
@@ -19,11 +30,11 @@
   color-scheme: light dark;
 }
 :root:has(input.theme-controller[value="plinth-light"]:checked),
-[data-theme="plinth-light"] {
+[data-theme="plinth-light"]:not(:has(input.theme-controller:checked)) {
   color-scheme: light;
 }
 :root:has(input.theme-controller[value="plinth-dark"]:checked),
-[data-theme="plinth-dark"] {
+[data-theme="plinth-dark"]:not(:has(input.theme-controller:checked)) {
   color-scheme: dark;
 }
 
