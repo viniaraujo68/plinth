@@ -8,6 +8,8 @@
   ];
 
   const WEBHOOK = "https://example.test/hooks/2f6c1b90a4e34d7f";
+
+  const CATALOGUE_NUMBER = "KLD-1998-07";
 </script>
 
 <main class="mx-auto flex w-full max-w-4xl flex-col gap-12 p-6 sm:p-10">
@@ -82,5 +84,27 @@
       <Copyable class="font-mono" data-testid="inline">acme-prod</Copyable>
       and restart the collector.
     </p>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
+      Every word is a prop
+    </h2>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      The button has no visible text, so its accessible name is the whole of the copy — and the
+      library ships no translations. <code class="kbd kbd-sm">copyLabel</code> and
+      <code class="kbd kbd-sm">copiedLabel</code> are props with English defaults; the value beside them
+      is the app's own and never gets translated.
+    </p>
+    <div class="card w-fit rounded-box border border-base-content/10 p-4">
+      <Copyable
+        class="font-mono text-sm"
+        data-testid="translated"
+        copyLabel="Copiar"
+        copiedLabel="Copiado"
+      >
+        {CATALOGUE_NUMBER}
+      </Copyable>
+    </div>
   </section>
 </main>

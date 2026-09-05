@@ -47,3 +47,17 @@ it("confirms through the accessible name and then goes back", async () => {
   // stuck on "Copied" is what a screen reader would read for the rest of the session.
   await expect.poll(() => button().element().getAttribute("aria-label")).toBe("Copy");
 });
+
+it("names the idle button as it was told", async () => {
+  render(Harness, { copyLabel: "Copiar" });
+
+  await expect.element(button()).toHaveAttribute("aria-label", "Copiar");
+});
+
+it("names the confirming button as it was told", async () => {
+  render(Harness, { copiedLabel: "Copiado" });
+
+  await button().click();
+
+  await expect.element(button()).toHaveAttribute("aria-label", "Copiado");
+});

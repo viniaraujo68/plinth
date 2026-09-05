@@ -10,6 +10,10 @@
     copyableText?: string | null;
     /** How long the confirmation stays up, in milliseconds. */
     confirmationMs?: number;
+    /** Accessible name of the button while it is waiting to be pressed. */
+    copyLabel?: string;
+    /** Accessible name of the button while the confirmation is up. */
+    copiedLabel?: string;
   };
 
   let {
@@ -17,6 +21,8 @@
     children,
     copyableText,
     confirmationMs = 1200,
+    copyLabel = "Copy",
+    copiedLabel = "Copied",
     ...rest
   }: Props = $props();
 
@@ -54,6 +60,10 @@ The button confirms with a check for a moment after a successful write, and stay
 browser refuses the clipboard, so the confirmation never claims a copy that did not happen. Its
 accessible name carries that state, since the icon alone is invisible to a screen reader.
 
+Both of those names are props with an English default — `copyLabel` and `copiedLabel` — because the
+library ships no translations. They are the whole of the copy: the button has no visible text, and
+a refused clipboard stays silent rather than saying so.
+
 ```svelte
 <Copyable class="font-mono text-xs" copyableText={id}>
   <a class="link" href={href}>{id}</a>
@@ -65,7 +75,7 @@ accessible name carries that state, since the icon alone is invisible to a scree
   <button
     type="button"
     class="copy-button inline-flex shrink-0 items-center"
-    aria-label={copied ? "Copied" : "Copy"}
+    aria-label={copied ? copiedLabel : copyLabel}
     onclick={copy}
   >
     <!-- Inline paths rather than an icon-font class: the library must render correctly in a

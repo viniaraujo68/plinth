@@ -4,9 +4,11 @@
   interface Props {
     copyableText?: string;
     confirmationMs?: number;
+    copyLabel?: string;
+    copiedLabel?: string;
   }
 
-  let { copyableText, confirmationMs }: Props = $props();
+  let { copyableText, confirmationMs, copyLabel, copiedLabel }: Props = $props();
 </script>
 
 <!--
@@ -15,6 +17,6 @@ Test-only host for `Copyable`, whose value is a snippet. Named `*.spec.svelte` s
 it.
 -->
 
-<Copyable {copyableText} {confirmationMs}>
+<Copyable {copyableText} {confirmationMs} {copyLabel} {copiedLabel}>
   <span>acme-prod</span>
 </Copyable>
