@@ -49,6 +49,16 @@
     { id: "12h", label: "12 h", durationMs: 43_200_000 },
     { id: "90d", label: "90 d", durationMs: 7_776_000_000 },
   ];
+
+  let translatedRange = $state<DateRange>({
+    from: "2026-03-01T00:00:00.000Z",
+    to: "2026-03-31T23:59:00.000Z",
+  });
+
+  const RELEASE_PRESETS = [
+    { id: "7d", label: "7 d", durationMs: 604_800_000 },
+    { id: "30d", label: "30 d", durationMs: 2_592_000_000 },
+  ];
 </script>
 
 <main class="mx-auto flex w-full max-w-4xl flex-col gap-12 p-6 sm:p-10">
@@ -151,6 +161,44 @@
 
         <dt class="text-base-content/60">to</dt>
         <dd class="font-mono tabular-nums" data-testid="quiet-to">{quietRange.to}</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
+      Every word is a prop
+    </h2>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      The library ships no translations, so the group name, the custom button, the two field labels
+      and the out-of-order alert are all props with English defaults. Relabelling the custom button
+      does not rename the selection it stands for —
+      <code class="kbd kbd-sm">"custom"</code> is still the id, and
+      <code class="kbd kbd-sm">preset="custom"</code> still starts there. The preset buttons carry the
+      words the list itself gave them.
+    </p>
+
+    <div class="card flex flex-col gap-5 rounded-box bg-base-200 p-4" data-testid="translated-demo">
+      <DateRangePicker
+        bind:value={translatedRange}
+        presets={RELEASE_PRESETS}
+        preset="custom"
+        reAnchorMs={0}
+        label="Janela de lançamento"
+        customLabel="Personalizado"
+        fromLabel="De"
+        toLabel="Até"
+        invalidRangeLabel="O início não pode vir depois do fim."
+      />
+
+      <dl class="grid grid-cols-[auto_1fr] items-baseline gap-x-6 gap-y-2 text-sm">
+        <dt class="text-base-content/60">from</dt>
+        <dd class="font-mono tabular-nums" data-testid="translated-from">
+          {translatedRange.from}
+        </dd>
+
+        <dt class="text-base-content/60">to</dt>
+        <dd class="font-mono tabular-nums" data-testid="translated-to">{translatedRange.to}</dd>
       </dl>
     </div>
   </section>

@@ -40,6 +40,17 @@
     reAnchorMs?: number;
     /** Names the preset group for assistive technology. */
     label?: string;
+    /**
+     * Label of the button that switches to the typed pair. The id behind it stays
+     * {@link CUSTOM_PRESET_ID} whatever this says, so `preset="custom"` keeps working.
+     */
+    customLabel?: string;
+    /** Label of the start field. */
+    fromLabel?: string;
+    /** Label of the end field. */
+    toLabel?: string;
+    /** Shown, as an alert, while the typed pair is out of order. */
+    invalidRangeLabel?: string;
     onchange?: (value: DateRange) => void;
   }
 
@@ -50,6 +61,10 @@
     preset,
     reAnchorMs = 60_000,
     label = "Date range",
+    customLabel = "Custom",
+    fromLabel = "From",
+    toLabel = "To",
+    invalidRangeLabel = "The start must not be after the end.",
     onchange,
   }: Props = $props();
 
@@ -120,7 +135,7 @@
     // someone who is still filling the form in.
     if (from === null || to === null) return null;
 
-    return isValidRange(from, to) ? null : "The start must not be after the end.";
+    return isValidRange(from, to) ? null : invalidRangeLabel;
   });
 
   $effect(() => {
@@ -172,6 +187,11 @@ The two custom fields are `<input type="datetime-local">`, which means they are 
 the viewer's own zone with no offset attached, while the emitted pair stays in UTC. The conversion
 runs to whole minutes in both directions; see `isoToLocalInput` / `localInputToIso`.
 
+Every word it renders is a prop with an English default — `label`, `customLabel`, `fromLabel`,
+`toLabel` and `invalidRangeLabel` — because the library ships no translations. Only the wording
+moves: the custom button keeps the reserved `"custom"` id whatever `customLabel` says. The preset
+buttons are labelled by the list itself, through `DateRangePreset.label`.
+
 ```svelte
 <DateRangePicker bind:value={range} preset="24h" onchange={(r) => load(r)} />
 ```
@@ -198,14 +218,14 @@ runs to whole minutes in both directions; see `isoToLocalInput` / `localInputToI
       aria-pressed={isCustom}
       onclick={enterCustom}
     >
-      Custom
+      {customLabel}
     </button>
   </div>
 
   {#if isCustom}
     <div class="flex flex-wrap items-end gap-x-4 gap-y-3">
       <div class="flex flex-col gap-1">
-        <label class="label text-xs" for={fromId}>From</label>
+        <label class="label text-xs" for={fromId}>{fromLabel}</label>
         <input
           id={fromId}
           class="input min-h-11"
@@ -222,7 +242,7 @@ runs to whole minutes in both directions; see `isoToLocalInput` / `localInputToI
       </div>
 
       <div class="flex flex-col gap-1">
-        <label class="label text-xs" for={toId}>To</label>
+        <label class="label text-xs" for={toId}>{toLabel}</label>
         <input
           id={toId}
           class="input min-h-11"

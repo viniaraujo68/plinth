@@ -173,3 +173,41 @@ it("names the preset group for assistive technology", async () => {
 
   await expect.element(page.getByRole("group", { name: "Reporting window" })).toBeVisible();
 });
+
+it("labels the custom button as it was told, keeping the reserved id", async () => {
+  render(DateRangePicker, { reAnchorMs: 0, preset: "custom", customLabel: "Pick your own" });
+
+  await expect.element(button("Pick your own")).toHaveAttribute("aria-pressed", "true");
+  expect(button("Custom").elements()).toHaveLength(0);
+});
+
+it("labels the start field as it was told", async () => {
+  render(DateRangePicker, { reAnchorMs: 0, fromLabel: "Start" });
+
+  await button("Custom").click();
+
+  await expect.element(page.getByLabelText("Start")).toBeVisible();
+  await expect.element(toField()).toBeVisible();
+});
+
+it("labels the end field as it was told", async () => {
+  render(DateRangePicker, { reAnchorMs: 0, toLabel: "End" });
+
+  await button("Custom").click();
+
+  await expect.element(page.getByLabelText("End")).toBeVisible();
+  await expect.element(fromField()).toBeVisible();
+});
+
+it("words the out-of-order alert as it was told", async () => {
+  render(DateRangePicker, {
+    reAnchorMs: 0,
+    invalidRangeLabel: "The start has to come first.",
+  });
+
+  await button("Custom").click();
+  await fromField().fill("2026-01-02T03:04");
+  await toField().fill("2026-01-02T02:00");
+
+  await expect.element(page.getByRole("alert")).toHaveTextContent("The start has to come first.");
+});
