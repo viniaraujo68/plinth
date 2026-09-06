@@ -283,6 +283,11 @@ the list rather than by a flag:
   past accents and anywhere in the label, and anything that closes the list without a pick puts
   the selected label back.
 
+Their panels — and `Dropdown`'s, and the one the `tooltip` attachment puts up — are placed with CSS
+anchor positioning, and place themselves from script in a browser that does not have it yet
+(Firefox, and Safari before iOS/macOS 26), so a panel is never left floating at the top of the
+screen instead of under its control.
+
 `Confirmer` is a component too, and it has its own showcase page, but it ships from
 `@viniaraujo68/plinth/confirm` rather than from the components entry point: like `Toaster` it is
 half of a pair, and the other half is a function any module calls with nothing plumbed through.
