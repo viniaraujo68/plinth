@@ -105,7 +105,7 @@ it("hangs the panel under the anchor, centred on it", () => {
   position(panel, anchor, { gap: 4 });
 
   expect(boxOf(panel)).toEqual({ top: 200 + ANCHOR_HEIGHT + 4, left: 130, width: 60, height: 40 });
-  expect(panel.style.position).toBe("fixed");
+  expect(panel.style.position).toBe("absolute");
   expect(panel.style.margin).toBe("0px");
 });
 

@@ -103,8 +103,20 @@ export function positionUnder(
 
   const place = () => {
     const target = anchor.getBoundingClientRect();
+    /* Document coordinates, not viewport ones. A popover sits in the top layer, whose containing
+       block is the initial containing block, so an absolutely positioned panel is offset from the
+       document's origin and scrolls with the page on its own. `position: fixed` was the obvious
+       choice and the wrong one: iOS Safari renders fixed boxes against the visual viewport once
+       the keyboard is up or the page is zoomed, while `getBoundingClientRect()` keeps answering in
+       layout-viewport coordinates -- a `Combobox` list landed a keyboard's height away from its
+       field. Absolute boxes and client rects agree, whatever the visual viewport is doing. */
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    const targetTop = target.top + scrollY;
+    const targetBottom = target.bottom + scrollY;
+    const targetLeft = target.left + scrollX;
 
-    write("position", "fixed");
+    write("position", "absolute");
     write("margin", "0");
     /* Both of these are the initial values, so writing them costs nothing in the browser this
        exists for -- it does not know the properties and drops the declarations. What they buy is
@@ -128,20 +140,30 @@ export function positionUnder(
     // after the close, most likely. Nothing to place, and nothing worth writing a stale top for.
     if (width === 0 && height === 0) return;
 
-    const viewportWidth = document.documentElement.clientWidth;
-    const viewportHeight = document.documentElement.clientHeight;
+    /* The visual viewport is the part of the page a person can actually see: what is left above
+       a phone's keyboard, or the zoomed-in window. That is the region the panel has to fit in and
+       be clamped to, and `pageTop`/`pageLeft` already put it in document coordinates. */
+    const visual = window.visualViewport;
+    const view = visual
+      ? { top: visual.pageTop, left: visual.pageLeft, width: visual.width, height: visual.height }
+      : {
+          top: scrollY,
+          left: scrollX,
+          width: document.documentElement.clientWidth,
+          height: document.documentElement.clientHeight,
+        };
 
     // The gap goes between the anchor and the panel and the inset between the panel and the edge
     // of the screen, which is what makes "it fits" the same question the clamp below answers.
-    const fitsBelow = height <= viewportHeight - target.bottom - gap - inset;
-    const fitsAbove = height <= target.top - gap - inset;
+    const fitsBelow = height <= view.top + view.height - targetBottom - gap - inset;
+    const fitsAbove = height <= targetTop - view.top - gap - inset;
     const above = side === "top" ? fitsAbove || !fitsBelow : !fitsBelow && fitsAbove;
 
-    const top = above ? target.top - gap - height : target.bottom + gap;
-    const left = align === "start" ? target.left : target.left + (target.width - width) / 2;
+    const top = above ? targetTop - gap - height : targetBottom + gap;
+    const left = align === "start" ? targetLeft : targetLeft + (target.width - width) / 2;
 
-    write("top", `${clamp(top, inset, viewportHeight - inset - height)}px`);
-    write("left", `${clamp(left, inset, viewportWidth - inset - width)}px`);
+    write("top", `${clamp(top, view.top + inset, view.top + view.height - inset - height)}px`);
+    write("left", `${clamp(left, view.left + inset, view.left + view.width - inset - width)}px`);
   };
 
   place();
@@ -154,6 +176,7 @@ export function positionUnder(
   /* The visual viewport is the one a phone's on-screen keyboard and pinch-zoom change, and
      neither of those fires `resize` on the window. */
   window.visualViewport?.addEventListener("resize", place);
+  window.visualViewport?.addEventListener("scroll", place);
 
   /* Either box changing size changes the placement: the flip and both clamps are measurements. It
      is also what keeps a `Combobox` panel under its field while the query filters rows away, with
@@ -167,6 +190,7 @@ export function positionUnder(
     window.removeEventListener("scroll", place, { capture: true });
     window.removeEventListener("resize", place);
     window.visualViewport?.removeEventListener("resize", place);
+    window.visualViewport?.removeEventListener("scroll", place);
 
     for (const [property, value] of original)
       if (value) panel.style.setProperty(property, value);
