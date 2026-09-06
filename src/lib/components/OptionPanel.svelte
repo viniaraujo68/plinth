@@ -123,6 +123,11 @@
     if (panel && !panel.checkVisibility({ opacityProperty: true, visibilityProperty: true }))
       isMounted = false;
   };
+  /* `transitionend` bubbles, so a row's own transition would reach the panel and ask whether to
+     unmount the list while it is plainly open. Only the panel's transitions can be its exit. */
+  const onTransitionSettled = (event: TransitionEvent) => {
+    if (event.target === event.currentTarget) unmountWhenHidden();
+  };
 
   const onBeforeToggle = (event: ToggleEvent) => {
     const open = event.newState === "open";
@@ -166,15 +171,15 @@ Not exported from the package: it is the shared half of two components, not a th
   style:position-anchor={anchorName}
   onbeforetoggle={onBeforeToggle}
   ontoggle={onToggle}
-  ontransitionend={unmountWhenHidden}
-  ontransitioncancel={unmountWhenHidden}
+  ontransitionend={onTransitionSettled}
+  ontransitioncancel={onTransitionSettled}
 >
   {#if isMounted}
     <div
       id={listboxId}
       role="listbox"
       aria-labelledby={labelledBy}
-      class="max-h-64 min-h-0 flex-1 overflow-y-auto overscroll-contain p-1"
+      class="max-h-64 overflow-y-auto overscroll-contain p-1"
     >
       {#each options as candidate, index (candidate.value)}
         <button

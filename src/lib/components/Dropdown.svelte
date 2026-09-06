@@ -73,6 +73,10 @@
     if (panel && !panel.checkVisibility({ opacityProperty: true, visibilityProperty: true }))
       isMounted = false;
   };
+  /* See OptionPanel: a descendant's transition must not be mistaken for the panel's exit. */
+  const onTransitionSettled = (event: TransitionEvent) => {
+    if (event.target === event.currentTarget) unmountWhenHidden();
+  };
 
   const onToggle = (event: ToggleEvent) => {
     isOpen = event.newState === "open";
@@ -128,8 +132,8 @@ dismiss itself after submitting.
   id={panelId}
   style:position-anchor={anchorName}
   ontoggle={onToggle}
-  ontransitionend={unmountWhenHidden}
-  ontransitioncancel={unmountWhenHidden}
+  ontransitionend={onTransitionSettled}
+  ontransitioncancel={onTransitionSettled}
 >
   {#if isMounted}
     {@render content()}
