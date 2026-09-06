@@ -1,4 +1,5 @@
 import type { Attachment } from "svelte/attachments";
+import { positionUnder, supportsAnchorPositioning } from "../anchoring.js";
 
 export interface TooltipOptions {
   /** Keeps the wiring attached but suppresses the panel, so a caller can gate a tooltip on
@@ -11,6 +12,10 @@ export interface TooltipOptions {
    binding needs an ident nothing else uses. A module-level counter is enough: the pair is created
    and torn down together, and the value never leaves this module. */
 let bindingCount = 0;
+
+/** The panel's `margin` below, in pixels: `0.375rem` at the default root size. The script
+    fallback needs the number, since it places the panel from `getBoundingClientRect()` readings. */
+const GAP = 6;
 
 /* The panel is styled imperatively rather than through utility classes because the panel of the
    string variant is created by this module, outside any component — a consumer's Tailwind build
@@ -75,13 +80,32 @@ const bind = (
 
   if (prepareImmediately) prepare();
 
+  let stopPositioning: (() => void) | undefined;
+
   const show = () => {
     // Read through `options` at show time, not at bind time: a caller passing a plain object that
     // it mutates would otherwise be stuck with whatever the flag was when the pair was created.
     if (options.disabled) return;
-    prepare()?.showPopover();
+
+    const shown = prepare();
+    if (!shown) return;
+    shown.showPopover();
+
+    /* Without anchor positioning the `position-area` above is dropped and the UA popover rules
+       are all that is left, which -- with the `margin` overriding their `margin: auto` -- pins the
+       panel to the top corner of the screen. Script places it instead, to the same geometry:
+       centred on the host, above it, and below it when there is no room, which is `flip-block`. */
+    stopPositioning?.();
+    stopPositioning = supportsAnchorPositioning()
+      ? undefined
+      : positionUnder(shown, host, { side: "top", gap: GAP, inset: GAP });
   };
-  const hide = () => panel?.hidePopover();
+
+  const hide = () => {
+    stopPositioning?.();
+    stopPositioning = undefined;
+    panel?.hidePopover();
+  };
 
   // A manual popover has no light dismiss, and the pointer never enters the panel, so Escape on
   // the host is the only way out for someone reading the tooltip from the keyboard.

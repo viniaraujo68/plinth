@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
+import { overrideAnchorPositioningSupport } from "../anchoring.js";
 import Harness from "./TooltipHarness.spec.svelte";
 
 const trigger = () => page.getByRole("button", { name: "Archive" });
@@ -92,4 +93,45 @@ it("takes the anchor styling off the host on teardown", async () => {
 
   expect(host.style.getPropertyValue("anchor-name")).toBe("");
   expect(host.getAttribute("aria-describedby")).toBeNull();
+});
+
+it("centres the panel over the host where the browser has no anchor positioning", async () => {
+  /* Firefox, and Safari before 26, drop the `position-area` the panel is placed with and leave the
+     UA popover rules -- which, with the panel's own margin overriding their `margin: auto`, pin it
+     to the top corner of the screen. */
+  overrideAnchorPositioningSupport(false);
+
+  try {
+    render(Harness, { style: "position: fixed; top: 300px; left: 180px" });
+    await trigger().hover();
+    await expect.poll(isOpen).toBe(true);
+
+    const host = trigger().element().getBoundingClientRect();
+    const box = () => panelElement()!.getBoundingClientRect();
+
+    // Above the host, unlike every other panel in the library: a tooltip under the pointer is a
+    // tooltip the pointer is about to cover.
+    await expect.poll(() => Math.round(box().bottom)).toBe(Math.round(host.top) - 6);
+    expect(Math.round(box().left + box().width / 2)).toBe(Math.round(host.left + host.width / 2));
+  } finally {
+    overrideAnchorPositioningSupport(undefined);
+  }
+});
+
+it("flips the panel below the host when there is no room above it", async () => {
+  overrideAnchorPositioningSupport(false);
+
+  try {
+    render(Harness, { style: "position: fixed; top: 0; left: 180px" });
+    await trigger().hover();
+    await expect.poll(isOpen).toBe(true);
+
+    const host = trigger().element().getBoundingClientRect();
+    const box = () => panelElement()!.getBoundingClientRect();
+
+    // `position-try-fallbacks: flip-block`, done by hand.
+    await expect.poll(() => Math.round(box().top)).toBe(Math.round(host.bottom) + 6);
+  } finally {
+    overrideAnchorPositioningSupport(undefined);
+  }
 });

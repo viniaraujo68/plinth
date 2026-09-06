@@ -237,6 +237,7 @@ the width belongs to the wrapper, since the panel matches it.
   id={panelId}
   {anchorName}
   {listboxId}
+  anchor={trigger}
   {options}
   {value}
   {highlighted}

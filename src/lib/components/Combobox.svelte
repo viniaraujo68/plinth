@@ -365,6 +365,7 @@ arrows walk the list.
   id={panelId}
   {anchorName}
   {listboxId}
+  anchor={input}
   {value}
   {highlighted}
   {optionId}

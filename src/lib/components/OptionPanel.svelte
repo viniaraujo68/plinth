@@ -1,13 +1,22 @@
 <script lang="ts">
-  import { flushSync, type Snippet } from "svelte";
+  import { flushSync, onDestroy, type Snippet } from "svelte";
   import type { ClassValue } from "svelte/elements";
+  import { positionUnder, supportsAnchorPositioning } from "../anchoring.js";
   import type { SelectOption } from "./select.js";
+
+  /** `margin-block: 0.25rem` below, in pixels: the gap the anchored path puts under the control. */
+  const GAP = 4;
 
   interface Props {
     /** Document-unique id of the popover. `Select` names it from the trigger's `popovertarget`. */
     id: string;
     /** The `anchor-name` the control declares, which is what the panel hangs itself under. */
     anchorName: string;
+    /**
+     * The control itself. Read only where the browser has no anchor positioning and the panel has
+     * to be placed by script — measuring it is the one thing {@link Props.anchorName} cannot do.
+     */
+    anchor?: HTMLElement;
     listboxId: string;
     /** Id of the control the listbox borrows its accessible name from. */
     labelledBy: string;
@@ -36,6 +45,7 @@
   let {
     id,
     anchorName,
+    anchor,
     listboxId,
     labelledBy,
     options,
@@ -53,10 +63,37 @@
   let panel = $state<HTMLDivElement>();
   let isMounted = $state(false);
 
+  let stopPositioning: (() => void) | undefined;
+
+  /* Without anchor positioning the placement rules at the bottom of this file are dropped and
+     the UA popover ones are all that is left -- which, with the `margin-block` below overriding
+     half of their `margin: auto`, pins the panel to the top of the screen at an intrinsic width.
+     Script places it instead, to the same geometry: under the control, as wide as it, a hair
+     below it, and above it when there is no room. */
+  const reposition = () => {
+    stopPositioning?.();
+    stopPositioning = undefined;
+    if (!panel || !anchor || supportsAnchorPositioning()) return;
+
+    stopPositioning = positionUnder(panel, anchor, { gap: GAP, matchWidth: true });
+  };
+
+  const releasePositioning = () => {
+    stopPositioning?.();
+    stopPositioning = undefined;
+  };
+
+  // A panel left open when its control is destroyed would otherwise leave the reposition
+  // listeners on the window, holding a detached element.
+  onDestroy(releasePositioning);
+
   /** Shows the panel. For a control that is not a `popovertarget` invoker — a `Combobox` input. */
   export function show() {
     isMounted = true;
     if (panel && !panel.matches(":popover-open")) panel.showPopover();
+    // Ahead of the `toggle` event, which arrives a task later: the panel is on screen from this
+    // line onwards, so anything but a synchronous placement is a painted frame in the wrong place.
+    reposition();
   }
 
   export function hide() {
@@ -99,8 +136,13 @@
   };
 
   const onToggle = (event: ToggleEvent) => {
-    if (event.newState === "open") isMounted = true;
-    else unmountWhenHidden();
+    if (event.newState === "open") {
+      isMounted = true;
+      reposition();
+    } else {
+      releasePositioning();
+      unmountWhenHidden();
+    }
   };
 </script>
 

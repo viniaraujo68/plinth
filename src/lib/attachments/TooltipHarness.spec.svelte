@@ -4,9 +4,11 @@
   interface Props {
     text?: string;
     disabled?: boolean;
+    /** Puts the host somewhere with room around it, for the specs that measure the panel. */
+    style?: string;
   }
 
-  let { text = "Archives the release", disabled = false }: Props = $props();
+  let { text = "Archives the release", disabled = false, style }: Props = $props();
 </script>
 
 <!--
@@ -16,4 +18,4 @@ renders this rather than calling the attachment by hand — which is also the on
 the re-run that a changing `disabled` triggers. Named `*.spec.svelte` so packaging drops it.
 -->
 
-<button {@attach tooltip(text, { disabled })}>Archive</button>
+<button {style} {@attach tooltip(text, { disabled })}>Archive</button>

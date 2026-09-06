@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
+import { overrideAnchorPositioningSupport } from "../anchoring.js";
 import Harness from "./DropdownHarness.spec.svelte";
 
 const trigger = () => page.getByRole("button", { name: "Actions" });
@@ -94,4 +95,29 @@ it("opens from outside with content already mounted", async () => {
   // there in the same turn the popover becomes open.
   await expect.poll(isOpen).toBe(true);
   expect(isMounted()).toBe(true);
+});
+
+it("hangs the panel under the trigger where the browser has no anchor positioning", async () => {
+  /* Firefox, and Safari before 26, drop the `position-area` this panel is placed with and leave
+     the UA popover rules -- `position: fixed; inset: 0; margin: auto` -- which float the panel in
+     the middle of the screen with no relation to the trigger at all. */
+  overrideAnchorPositioningSupport(false);
+
+  try {
+    render(Harness);
+    await trigger().click();
+    await expect.poll(isOpen).toBe(true);
+
+    const button = trigger().element().getBoundingClientRect();
+    const box = () => panelElement()!.getBoundingClientRect();
+
+    await expect.poll(() => Math.round(box().top)).toBe(Math.round(button.bottom));
+    // `position-area: bottom` centres the panel on its anchor, which is what a menu wider than
+    // its trigger needs.
+    expect(Math.round(box().left + box().width / 2)).toBe(
+      Math.round(button.left + button.width / 2),
+    );
+  } finally {
+    overrideAnchorPositioningSupport(undefined);
+  }
 });

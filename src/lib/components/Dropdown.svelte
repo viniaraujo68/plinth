@@ -1,6 +1,7 @@
 <script lang="ts">
-  import type { Snippet } from "svelte";
+  import { onDestroy, type Snippet } from "svelte";
   import type { ClassValue, HTMLButtonAttributes } from "svelte/elements";
+  import { positionUnder, supportsAnchorPositioning } from "../anchoring.js";
 
   type Props = HTMLButtonAttributes & {
     children: Snippet;
@@ -20,7 +21,32 @@
 
   let isOpen = $state(false);
   let isMounted = $state(false);
+  let trigger = $state<HTMLButtonElement>();
   let panel = $state<HTMLElement>();
+
+  let stopPositioning: (() => void) | undefined;
+
+  /* Without anchor positioning the placement rules at the bottom of this file are dropped and
+     the UA popover ones -- `position: fixed; inset: 0; margin: auto` -- are all that is left,
+     which floats the panel in the middle of the screen with no relation to the trigger. Script
+     places it instead, to the geometry `position-area: bottom` gives: centred on the trigger,
+     right under it, and above it when there is no room below. */
+  const reposition = () => {
+    stopPositioning?.();
+    stopPositioning = undefined;
+    if (!panel || !trigger || supportsAnchorPositioning()) return;
+
+    stopPositioning = positionUnder(panel, trigger);
+  };
+
+  const releasePositioning = () => {
+    stopPositioning?.();
+    stopPositioning = undefined;
+  };
+
+  // A panel left open when the dropdown is destroyed would otherwise leave the reposition
+  // listeners on the window, holding a detached element.
+  onDestroy(releasePositioning);
 
   /**
    * Opens the panel.
@@ -32,6 +58,7 @@
   export function open() {
     isMounted = true;
     if (panel && !panel.matches(":popover-open")) panel.showPopover();
+    reposition();
   }
 
   /** Closes the panel — for dismissing it once an action inside `content` has finished. */
@@ -49,8 +76,13 @@
 
   const onToggle = (event: ToggleEvent) => {
     isOpen = event.newState === "open";
-    if (isOpen) isMounted = true;
-    else unmountWhenHidden();
+    if (isOpen) {
+      isMounted = true;
+      reposition();
+    } else {
+      releasePositioning();
+      unmountWhenHidden();
+    }
   };
 </script>
 
@@ -80,6 +112,7 @@ dismiss itself after submitting.
 
 <button
   {...rest}
+  bind:this={trigger}
   type={type ?? "button"}
   popovertarget={panelId}
   aria-expanded={isOpen}

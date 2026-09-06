@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
+import { overrideAnchorPositioningSupport } from "../anchoring.js";
 import Harness from "./SelectHarness.spec.svelte";
 import ModalHarness from "./SelectModalHarness.spec.svelte";
 import type { SelectOption } from "./select.js";
@@ -307,4 +308,28 @@ it("lets Escape close the panel without taking the modal with it", async () => {
 
   await userEvent.keyboard("{Escape}");
   await expect.poll(() => page.getByRole("dialog").query()).toBeNull();
+});
+
+it("hangs the panel under the control where the browser has no anchor positioning", async () => {
+  /* Firefox, and Safari before 26, drop every anchored declaration in the panel's stylesheet and
+     leave the UA popover rules -- which, with the panel's own `margin-block` overriding half of
+     their `margin: auto`, pin it to the top of the screen at an intrinsic width. That is the shape
+     the bug was reported in from a phone, and this is the test that stands guard over it. */
+  overrideAnchorPositioningSupport(false);
+
+  try {
+    render(Harness, { options: SHORT });
+    await trigger().click();
+    await expect.element(page.getByRole("listbox")).toBeInTheDocument();
+
+    const control = trigger().element().getBoundingClientRect();
+    const box = () => document.querySelector(".plinth-select-panel")!.getBoundingClientRect();
+
+    await expect.poll(() => Math.round(box().top)).toBe(Math.round(control.bottom) + 4);
+    expect(Math.round(box().left)).toBe(Math.round(control.left));
+    // The `anchor-size(width)` parity: an option that fits the closed control fits the open one.
+    expect(Math.round(box().width)).toBe(Math.round(control.width));
+  } finally {
+    overrideAnchorPositioningSupport(undefined);
+  }
 });

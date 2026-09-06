@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
+import { overrideAnchorPositioningSupport } from "../anchoring.js";
 import Harness from "./ComboboxHarness.spec.svelte";
 import ModalHarness from "./ComboboxModalHarness.spec.svelte";
 import type { SelectOption } from "./select.js";
@@ -549,4 +550,33 @@ it("lets Escape close the list without taking the modal with it", async () => {
 
   await userEvent.keyboard("{Escape}");
   await expect.poll(() => page.getByRole("dialog").query()).toBeNull();
+});
+
+it("hangs the panel under the field where the browser has no anchor positioning", async () => {
+  /* Firefox, and Safari before 26, drop every anchored declaration in the panel's stylesheet and
+     leave the UA popover rules -- which, with the panel's own `margin-block` overriding half of
+     their `margin: auto`, pin it to the top of the screen at an intrinsic width. */
+  overrideAnchorPositioningSupport(false);
+
+  try {
+    render(Harness, { options: LOCALS });
+    await bar().click();
+    await expect.element(page.getByRole("listbox")).toBeInTheDocument();
+
+    const control = field().getBoundingClientRect();
+    const box = () => document.querySelector(".plinth-combobox-panel")!.getBoundingClientRect();
+
+    await expect.poll(() => Math.round(box().top)).toBe(Math.round(control.bottom) + 4);
+    expect(Math.round(box().left)).toBe(Math.round(control.left));
+    // The `anchor-size(width)` parity: the list is the field's list, so it is the field's width.
+    expect(Math.round(box().width)).toBe(Math.round(control.width));
+
+    // The panel is measured, so a query that filters rows away has to be measured again.
+    const tall = box().height;
+    await userEvent.keyboard("arara");
+    await expect.poll(() => box().height).toBeLessThan(tall);
+    expect(Math.round(box().top)).toBe(Math.round(control.bottom) + 4);
+  } finally {
+    overrideAnchorPositioningSupport(undefined);
+  }
 });
