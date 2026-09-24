@@ -36,7 +36,10 @@
     stopPositioning = undefined;
     if (!panel || !trigger || supportsAnchorPositioning()) return;
 
-    stopPositioning = positionUnder(panel, trigger);
+    // The edge margin the stylesheet gives the panel, read before the script takes the margins
+    // over, so both paths keep the same distance from the side of the screen.
+    const edge = parseFloat(getComputedStyle(panel).marginLeft) || 0;
+    stopPositioning = positionUnder(panel, trigger, { inset: edge });
   };
 
   const releasePositioning = () => {
@@ -104,6 +107,9 @@ unmounts once the panel is really hidden, so an expensive menu costs nothing unt
 `open()` and `close()` are exposed for `bind:this`, which is what a form inside the panel needs to
 dismiss itself after submitting.
 
+A panel that would run off the side of the screen is pulled back onto it and keeps half a rem from
+the edge, in both the anchored and the scripted placement; `--dropdown-edge` changes the distance.
+
 ```svelte
 <Dropdown bind:this={menu} class="btn" panelClass="dropdown menu w-56 rounded-box bg-base-200 p-2">
   Actions
@@ -144,6 +150,11 @@ dismiss itself after submitting.
   [popover] {
     position-area: bottom;
     position-try: top, left, right;
+    /* A panel wider than the room left beside its trigger is shifted back onto the screen, and the
+       shift stops at the margin box: with no inline margin a menu opened from a trigger at the edge
+       of a phone lands flush against the glass. The custom property is the way to change it, since
+       this rule outranks a utility class passed through `panelClass`. */
+    margin-inline: var(--dropdown-edge, 0.5rem);
   }
 
   /* A closed popover is hidden by a rule in the UA stylesheet, which every author rule outranks --

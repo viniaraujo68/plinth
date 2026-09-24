@@ -121,3 +121,30 @@ it("hangs the panel under the trigger where the browser has no anchor positionin
     overrideAnchorPositioningSupport(undefined);
   }
 });
+
+const EDGE = 8;
+
+const assertKeepsOffTheEdge = async () => {
+  render(Harness, { atEdge: true });
+  await trigger().click();
+  await expect.poll(isOpen).toBe(true);
+
+  const box = () => panelElement()!.getBoundingClientRect();
+  await expect.poll(() => Math.round(window.innerWidth - box().right)).toBeGreaterThanOrEqual(EDGE);
+  expect(Math.round(box().left)).toBeGreaterThanOrEqual(EDGE);
+};
+
+// A menu opened from a trigger at the end of a toolbar is wider than the room beside it, and the
+// browser shifts it back onto the screen. Without an inline margin it lands flush against the edge.
+it("keeps a panel off the side of the screen when it has to be pulled back onto it", async () => {
+  await assertKeepsOffTheEdge();
+});
+
+it("keeps the same distance from the edge where the panel is placed by script", async () => {
+  overrideAnchorPositioningSupport(false);
+  try {
+    await assertKeepsOffTheEdge();
+  } finally {
+    overrideAnchorPositioningSupport(undefined);
+  }
+});
