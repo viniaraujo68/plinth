@@ -4,6 +4,7 @@ import {
   resolvePathname,
   type RoutingConfig,
   type RoutingSource,
+  withSearchParams,
 } from "./routing.svelte.js";
 
 // `$app/paths` is a virtual module the SvelteKit plugin fills in from the generated app; in a
@@ -230,4 +231,13 @@ it("does not call a parent entry stale when only its descendants have pages", ()
 
 it("sends a runtime pathname through the app's base-path resolver", () => {
   expect(resolvePathname("/orders/42")).toBe("/base/orders/42");
+});
+
+it("sets and removes search parameters on a copy of the URL", () => {
+  const url = new URL("https://example.test/list?tab=a&keep=1&gone=x");
+
+  const next = withSearchParams(url, { tab: "b", gone: null, skipped: undefined, fresh: "y" });
+
+  expect(next.search).toBe("?tab=b&keep=1&fresh=y");
+  expect(url.search).toBe("?tab=a&keep=1&gone=x");
 });

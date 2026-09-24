@@ -308,3 +308,23 @@ export const resolvePathname = (pathname: string): string =>
   (resolve as unknown as (path: string) => string)(pathname);
 
 export const [getRoutingContext, setRoutingContext] = createContext<RoutingContext>();
+
+/**
+ * A copy of `url` with some search parameters set and others removed — `null` or `undefined`
+ * removes. It never edits the URL it was given, which is usually the page store's own and is read
+ * by everything else on the page.
+ */
+export const withSearchParams = (
+  url: URL,
+  updates: Record<string, string | null | undefined>,
+): URL => {
+  // A value handed to `goto` or an `href`, never read reactively: a `SvelteURL` would only add
+  // signals nobody subscribes to.
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity
+  const next = new URL(url);
+  for (const [key, value] of Object.entries(updates))
+    if (value === null || value === undefined) next.searchParams.delete(key);
+    else next.searchParams.set(key, value);
+
+  return next;
+};
