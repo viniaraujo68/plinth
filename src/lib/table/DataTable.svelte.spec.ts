@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import DataTable from "./DataTable.svelte";
 import Harness from "./DataTableHarness.spec.svelte";
@@ -267,4 +267,187 @@ it("leaves the sort control named by its own label when sortLabel is absent", as
 
   expect(button?.hasAttribute("aria-label")).toBe(false);
   await expect.element(page.getByRole("button", { name: "Language" })).toBeInTheDocument();
+});
+
+const headerNames = () =>
+  [...document.querySelectorAll("thead th")].map((th) =>
+    th.textContent?.replace(/[↑↓]/g, "").trim(),
+  );
+const columnState = () => document.querySelector("[data-testid='column-state']")?.textContent;
+const openColumns = async () => {
+  await page.getByRole("button", { name: "Columns" }).click();
+};
+
+it("renders no bar and no handles unless asked to", () => {
+  render(Harness);
+
+  expect(document.querySelector(".plinth-table-bar")).toBeNull();
+  expect(document.querySelector(".plinth-resize")).toBeNull();
+});
+
+it("puts the toolbar and the columns menu in one bar above the table", async () => {
+  render(Harness, { withToolbar: true, columnsLabel: "Columns" });
+
+  const bar = document.querySelector(".plinth-table-bar");
+  expect(bar?.querySelector("[data-testid='toolbar']")).not.toBeNull();
+  await expect.element(page.getByRole("button", { name: "Columns" })).toBeVisible();
+});
+
+it("starts a column hidden when it is hidden by default", () => {
+  render(Harness, { withLayout: true, columnsLabel: "Columns" });
+
+  expect(headerNames()).toEqual(["Language", "Year", "Actions"]);
+});
+
+it("hides and shows columns from the menu, cells included", async () => {
+  render(Harness, { withLayout: true, columnsLabel: "Columns" });
+  await openColumns();
+
+  await page.getByRole("checkbox", { name: "Year" }).click();
+  expect(headerNames()).toEqual(["Language", "Actions"]);
+  expect(document.querySelector("td[data-label='Year']")).toBeNull();
+
+  await page.getByRole("checkbox", { name: "Typing" }).click();
+  expect(headerNames()).toEqual(["Language", "Typing", "Actions"]);
+  expect(columnState()).toContain('"year":false');
+});
+
+it("lists a locked column without a checkbox", async () => {
+  render(Harness, { withLayout: true, columnsLabel: "Columns" });
+  await openColumns();
+
+  const list = page.getByRole("list", { name: "Columns" });
+  await expect.element(list.getByText("Language")).toBeVisible();
+  await expect.element(page.getByRole("checkbox", { name: "Language" })).not.toBeInTheDocument();
+});
+
+it("reorders columns with the step buttons", async () => {
+  render(Harness, { withLayout: true, columnsLabel: "Columns" });
+  await openColumns();
+
+  await page.getByRole("button", { name: "Move Year up" }).click();
+  expect(headerNames()).toEqual(["Year", "Language", "Actions"]);
+
+  await page.getByRole("button", { name: "Move Year down" }).click();
+  expect(headerNames()).toEqual(["Language", "Year", "Actions"]);
+  await expect.element(page.getByRole("button", { name: "Move Language up" })).toBeDisabled();
+});
+
+it("forgets the arrangement on reset", async () => {
+  render(Harness, { withLayout: true, columnsLabel: "Columns" });
+  await openColumns();
+
+  const reset = page.getByRole("button", { name: "Reset columns" });
+  await expect.element(reset).toBeDisabled();
+  await page.getByRole("button", { name: "Move Year up" }).click();
+  await reset.click();
+
+  expect(headerNames()).toEqual(["Language", "Year", "Actions"]);
+  expect(columnState()).toBe("none");
+});
+
+it("keeps sorting by a column the reader hid", async () => {
+  render(Harness, {
+    withLayout: true,
+    columnsLabel: "Columns",
+    initialSort: { key: "year", direction: "desc" },
+  });
+  await openColumns();
+
+  await page.getByRole("checkbox", { name: "Year" }).click();
+
+  expect(names()).toEqual(["TypeScript", "Rust", "Python"]);
+});
+
+it("resizes a column from the keyboard and hands it back on Home", async () => {
+  render(Harness, { resizable: true });
+  const handle = page.getByRole("separator", { name: "Resize Year" });
+
+  (handle.element() as HTMLElement).focus();
+  await userEvent.keyboard("{ArrowRight}");
+
+  const fit = () => headerElement("Year")?.querySelector<HTMLElement>(".plinth-fit");
+  expect(fit()).not.toBeNull();
+  const widened = fit()!.getBoundingClientRect().width;
+  expect(document.querySelector("table")?.classList.contains("plinth-sized")).toBe(true);
+
+  await userEvent.keyboard("{Shift>}{ArrowLeft}{/Shift}");
+  expect(fit()!.getBoundingClientRect().width).toBeLessThan(widened);
+
+  await userEvent.keyboard("{Home}");
+  expect(fit()).toBeNull();
+  expect(columnState()).toContain('"widths":{}');
+});
+
+it("never resizes a column below its minimum", async () => {
+  render(Harness, { resizable: true });
+  (page.getByRole("separator", { name: "Resize Year" }).element() as HTMLElement).focus();
+
+  for (let step = 0; step < 20; step++) await userEvent.keyboard("{Shift>}{ArrowLeft}{/Shift}");
+
+  expect(columnState()).toContain('"year":60');
+});
+
+it("resizes a column by dragging its edge, and resets it on a double click", async () => {
+  render(Harness, { resizable: true });
+  const handle = page.getByRole("separator", { name: "Resize Language" }).element() as HTMLElement;
+  const header = headerElement("Language") as HTMLElement;
+  const style = getComputedStyle(header);
+  const before =
+    header.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  const box = handle.getBoundingClientRect();
+  const x = box.left + box.width / 2;
+  const y = box.top + box.height / 2;
+
+  handle.dispatchEvent(
+    new PointerEvent("pointerdown", {
+      clientX: x,
+      clientY: y,
+      button: 0,
+      pointerId: 7,
+      bubbles: true,
+    }),
+  );
+  handle.dispatchEvent(
+    new PointerEvent("pointermove", { clientX: x + 80, clientY: y, pointerId: 7, bubbles: true }),
+  );
+  handle.dispatchEvent(
+    new PointerEvent("pointerup", { clientX: x + 80, pointerId: 7, bubbles: true }),
+  );
+
+  await expect.poll(columnState).toContain(`"name":${Math.round(before + 80)}`);
+
+  handle.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+  await expect.poll(() => headerElement("Language")?.querySelector(".plinth-fit")).toBeNull();
+});
+
+it("drops the widths and the handles in card form", () => {
+  render(Harness, {
+    width: NARROW,
+    resizable: true,
+    initialColumnState: { order: [], visibility: {}, widths: { name: 300 } },
+  });
+
+  const handle = document.querySelector<HTMLElement>(".plinth-resize");
+  expect(handle && getComputedStyle(handle).display).toBe("none");
+  const fit = document.querySelector<HTMLElement>("td .plinth-fit");
+  expect(fit && getComputedStyle(fit).width).not.toBe("300px");
+});
+
+it("remembers the arrangement under its storage key", async () => {
+  localStorage.removeItem("spec:languages");
+  const first = render(Harness, {
+    withLayout: true,
+    columnsLabel: "Columns",
+    storageKey: "spec:languages",
+  });
+  await openColumns();
+  await page.getByRole("checkbox", { name: "Year" }).click();
+  expect(localStorage.getItem("spec:languages")).toContain('"year":false');
+  await first.unmount();
+
+  render(Harness, { withLayout: true, columnsLabel: "Columns", storageKey: "spec:languages" });
+
+  await expect.poll(headerNames).toEqual(["Language", "Actions"]);
+  localStorage.removeItem("spec:languages");
 });

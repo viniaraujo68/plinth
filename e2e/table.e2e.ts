@@ -131,3 +131,67 @@ test("names every sort control through sortLabel, pills included", async ({ page
     page.locator(narrow).getByRole("button", { name: "Sort by Elevation", exact: true }),
   ).toBeVisible();
 });
+
+const arranged = "[data-testid='arranged']";
+const arrangedHeaders = (page: import("@playwright/test").Page) =>
+  page.locator(`${arranged} thead th`);
+
+test.describe("a table the reader arranges", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/table");
+    await page.evaluate(() => localStorage.removeItem("plinth-showcase:peaks"));
+    await page.reload();
+  });
+
+  test("hides a column from the menu and keeps it hidden after a reload", async ({ page }) => {
+    await expect(arrangedHeaders(page)).toHaveCount(5);
+    await page.locator(arranged).getByRole("button", { name: "Columns" }).click();
+    await page.getByRole("checkbox", { name: "Range" }).click();
+
+    await expect(arrangedHeaders(page)).toHaveCount(4);
+    await expect(page.locator(`${arranged} th`, { hasText: "Range" })).toHaveCount(0);
+
+    await page.reload();
+    await expect(arrangedHeaders(page)).toHaveCount(4);
+    await expect(page.locator(`${arranged} th`, { hasText: "Range" })).toHaveCount(0);
+  });
+
+  test("reorders columns by dragging a row of the menu", async ({ page }) => {
+    await page.locator(arranged).getByRole("button", { name: "Columns" }).click();
+    const list = page.getByRole("list", { name: "Columns" });
+    const grade = list.locator("li", { hasText: "Grade" });
+    const peak = list.locator("li", { hasText: "Peak" });
+
+    await grade.dragTo(peak, { targetPosition: { x: 20, y: 2 } });
+
+    await expect(arrangedHeaders(page).nth(1)).toContainText("Grade");
+  });
+
+  test("resizes a column by dragging its header's edge", async ({ page }) => {
+    const handle = page.locator(arranged).getByRole("separator", { name: "Resize Range" });
+    const header = page.locator(`${arranged} th`, { hasText: "Range" });
+    // `page.mouse` works in viewport coordinates and never scrolls on its own.
+    await handle.scrollIntoViewIfNeeded();
+    const before = (await header.boundingBox())?.width ?? 0;
+    const box = await handle.boundingBox();
+    if (!box) throw new Error("the resize handle is not on screen");
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 2, { steps: 6 });
+    await page.mouse.up();
+
+    const after = (await header.boundingBox())?.width ?? 0;
+    expect(after).toBeGreaterThan(before + 100);
+
+    await handle.dblclick();
+    await expect.poll(async () => (await header.boundingBox())?.width ?? 0).toBeLessThan(after);
+  });
+
+  test("renders the toolbar in the same bar as the menu", async ({ page }) => {
+    await page.getByRole("button", { name: "feet" }).click();
+
+    await expect(page.locator(`${arranged} th`, { hasText: "Elevation (ft)" })).toBeVisible();
+    await expect(page.locator(`${arranged} tbody tr`).first()).toContainText("29,032");
+  });
+});

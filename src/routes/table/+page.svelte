@@ -1,6 +1,7 @@
 <script lang="ts">
+  import SegmentedControl from "$lib/components/SegmentedControl.svelte";
   import { createFormatters } from "$lib/formatters.js";
-  import { DataTable, type Column, type SortState } from "$lib/table/index.js";
+  import { DataTable, type Column, type ColumnState, type SortState } from "$lib/table/index.js";
 
   interface Peak {
     id: string;
@@ -60,6 +61,32 @@
     { key: "grade", label: "Grade", align: "center", cell: grade, sortBy: (r) => RANK[r.grade] },
   ]);
 
+  const FEET_PER_METRE = 3.28084;
+
+  let unit = $state<"m" | "ft">("m");
+  let arranged = $state<ColumnState | undefined>();
+
+  const arrangedColumns: Column<Peak>[] = $derived([
+    { key: "rank", label: "#", sortable: false, align: "center", cell: rank, hideable: false },
+    { key: "name", label: "Peak", hideable: false, minWidth: 80 },
+    { key: "range", label: "Range" },
+    {
+      key: "height",
+      label: unit === "m" ? "Elevation (m)" : "Elevation (ft)",
+      numeric: true,
+      cell: elevationIn,
+      sortBy: (r) => r.height,
+    },
+    {
+      key: "firstAscent",
+      label: "First ascent",
+      cell: ascent,
+      sortBy: (r) => r.firstAscent,
+      hiddenByDefault: true,
+    },
+    { key: "grade", label: "Grade", align: "center", cell: grade, sortBy: (r) => RANK[r.grade] },
+  ]);
+
   let sort = $state<SortState | undefined>({ key: "height", direction: "desc" });
   let selected = $state<Peak | undefined>();
   let useCardSnippet = $state(false);
@@ -75,6 +102,10 @@
 
 {#snippet elevation(peak: Peak)}
   {format.number(peak.height)} m
+{/snippet}
+
+{#snippet elevationIn(peak: Peak)}
+  {format.number(unit === "m" ? peak.height : Math.round(peak.height * FEET_PER_METRE))}
 {/snippet}
 
 {#snippet ascent(peak: Peak)}
@@ -112,8 +143,10 @@
       first paint.
     </p>
     <p class="max-w-2xl text-base-content/70">
-      It is deliberately not a data grid. No filtering, no column visibility, no virtualization, no
-      saved views — a table that needs those needs a different component.
+      When a table asks for it, the reader can arrange the columns too: show, hide and reorder them
+      from a menu, drag a header's edge to resize one, and find the table the way they left it after
+      a reload. It stays short of a data grid — no filtering, no virtualization, no saved views; a
+      table that needs those needs a different component.
     </p>
   </header>
 
@@ -207,6 +240,63 @@
         card={useCardSnippet ? peakCard : undefined}
       />
     </div>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
+      Arranged by the reader
+    </h2>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      <code class="kbd kbd-sm">columnsLabel</code> adds the menu at the end of the bar above the
+      table: a checkbox per column, a drag grip, and a step button each way for the keyboard. The
+      rank and the peak are <code class="kbd kbd-sm">hideable: false</code>, so they are listed
+      without a checkbox; the first ascent starts hidden through
+      <code class="kbd kbd-sm">hiddenByDefault</code>. The other end of the bar is the
+      <code class="kbd kbd-sm">toolbar</code> snippet — here a unit switch.
+    </p>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      <code class="kbd kbd-sm">resizable</code> grows a handle on every header's right edge: drag
+      it, double-click it to hand the column back to its content, or focus it and use the arrow
+      keys, with Shift for bigger steps and Home to reset. Everything lands in one bound
+      <code class="kbd kbd-sm">columnState</code>, and <code class="kbd kbd-sm">storageKey</code> keeps
+      it across a reload.
+    </p>
+
+    <div class="rounded-box border border-base-content/10 bg-base-100 p-2" data-testid="arranged">
+      <DataTable
+        rows={PEAKS}
+        columns={arrangedColumns}
+        rowKey={(peak) => peak.id}
+        sort={{ key: "height", direction: "desc" }}
+        bind:columnState={arranged}
+        storageKey="plinth-showcase:peaks"
+        resizable
+        columnsLabel="Columns"
+        resetColumnsLabel="Reset columns"
+        label="Peaks, arranged"
+        sortLabel={(column) => `Sort by ${column.label}`}
+      >
+        {#snippet toolbar()}
+          <SegmentedControl
+            bind:value={unit}
+            size="sm"
+            label="Elevation unit"
+            caption="Elevation in"
+            options={[
+              { id: "m", label: "metres" },
+              { id: "ft", label: "feet" },
+            ]}
+          />
+        {/snippet}
+      </DataTable>
+    </div>
+
+    <p class="text-sm text-base-content/60">
+      Column state:
+      <code class="kbd kbd-sm" data-testid="arranged-state"
+        >{arranged ? JSON.stringify(arranged) : "as declared"}</code
+      >
+    </p>
   </section>
 
   <section class="flex flex-col gap-4">

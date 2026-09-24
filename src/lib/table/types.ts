@@ -49,6 +49,21 @@ export interface Column<T> {
   /** Extra classes for this column's cells and header. */
   class?: ClassValue;
   /**
+   * Whether the reader can take the column off the table from the columns menu. On by default; a
+   * column that the rest of the row makes no sense without — the name a row is about, the rank a
+   * reader counts down — opts out, and the menu lists it without a checkbox.
+   */
+  hideable?: boolean;
+  /**
+   * Starts the column hidden, so a table can carry a detail nobody needs at a glance without
+   * making everyone who does not want it take it away first. Ignored when `hideable` is `false`.
+   */
+  hiddenByDefault?: boolean;
+  /** Whether the header grows a resize handle when the table is `resizable`. On by default. */
+  resizable?: boolean;
+  /** The narrowest a reader can drag the column, in pixels. Defaults to 48. */
+  minWidth?: number;
+  /**
    * Renders the cell. Without it the cell is `String(value)`, and `null`/`undefined` is an
    * em dash.
    *
@@ -62,4 +77,22 @@ export interface Column<T> {
    * `$derived` and the distinction stops mattering.
    */
   cell?: Snippet<[T, number]>;
+}
+
+/**
+ * The part of a table the reader arranges: which columns show, in what order, and how wide the
+ * ones they dragged are. Everything is an override of what the columns declare, so a table whose
+ * columns change — one added by a later release, one that only exists for some data — reads an old
+ * state without losing its own defaults, and an empty state means "as declared".
+ */
+export interface ColumnState {
+  /**
+   * Column keys in the order the reader put them. Keys that no longer name a column are ignored,
+   * and a column missing from the list keeps its declared place next to its declared neighbour.
+   */
+  order: string[];
+  /** Per-key shown or hidden, over the column's own `hiddenByDefault`. */
+  visibility: Record<string, boolean>;
+  /** Widths the reader dragged, in pixels. A column with no entry sizes to its content. */
+  widths: Record<string, number>;
 }
