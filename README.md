@@ -245,31 +245,33 @@ do — reactive if the answers can change, which a class with `$state` fields gi
 ```
 
 `Breadcrumbs` derives the trail from the routing context; it is never handed a list. `DataTable`
-sorts in the browser and turns into cards on a narrow screen. `createFormatters` decides the
+sorts in the browser and turns into cards on a narrow screen; given `columnsLabel`, `resizable` and
+`storageKey`, it also lets the reader show, hide, reorder and resize its columns and remembers the
+arrangement across reloads. `createFormatters` decides the
 locale once, and `createHttpClient` takes the three things that actually differ between apps — the
 base URL, how auth is injected, and how the backend spells an error body.
 
 ## Entry points
 
-| Import                             | What it carries                                                      |
-| ---------------------------------- | -------------------------------------------------------------------- |
-| `@viniaraujo68/plinth`             | `AsyncAction`, the error reporter, `LIBRARY_VERSION`                 |
-| `@viniaraujo68/plinth/theme`       | `ThemeContext`, `ThemeController`, `ThemeToggle`, the cookie helpers |
-| `@viniaraujo68/plinth/theme.css`   | The stylesheet the tokens are declared in                            |
-| `@viniaraujo68/plinth/attachments` | The `tooltip` attachment, usable on any tag                          |
-| `@viniaraujo68/plinth/components`  | The primitives, the `DateRange` and option-matching helpers          |
-| `@viniaraujo68/plinth/confirm`     | `confirm`, `Confirmer`, the challenge helpers                        |
-| `@viniaraujo68/plinth/shell`       | `AppShell`, `Breadcrumbs`                                            |
-| `@viniaraujo68/plinth/table`       | `DataTable` and the sorting functions behind it                      |
-| `@viniaraujo68/plinth/toast`       | The toast queue and its host                                         |
-| `@viniaraujo68/plinth/routing`     | `RoutingConfig`, `RoutingContext`, `resolvePathname`                 |
-| `@viniaraujo68/plinth/user`        | `UserContext`, `ScopedComponent`, the anonymous default              |
-| `@viniaraujo68/plinth/http`        | `createHttpClient`, `ApiError`, `errorMessage`, `errorStatus`        |
-| `@viniaraujo68/plinth/formatters`  | `createFormatters`, over `Intl`                                      |
+| Import                             | What it carries                                                                                            |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `@viniaraujo68/plinth`             | `AsyncAction`, the error reporter, `LIBRARY_VERSION`                                                       |
+| `@viniaraujo68/plinth/theme`       | `ThemeContext`, `ThemeController`, `ThemeToggle`, the cookie helpers, `createCssColorReader`               |
+| `@viniaraujo68/plinth/theme.css`   | The stylesheet the tokens are declared in                                                                  |
+| `@viniaraujo68/plinth/attachments` | The `tooltip` attachment, usable on any tag                                                                |
+| `@viniaraujo68/plinth/components`  | The primitives, the `DateRange` and option-matching helpers                                                |
+| `@viniaraujo68/plinth/confirm`     | `confirm`, `Confirmer`, the challenge helpers                                                              |
+| `@viniaraujo68/plinth/shell`       | `AppShell`, `Breadcrumbs`                                                                                  |
+| `@viniaraujo68/plinth/table`       | `DataTable`, the sorting and column-layout functions behind it, `competitionRanks`, the sort ↔ URL helpers |
+| `@viniaraujo68/plinth/toast`       | The toast queue and its host                                                                               |
+| `@viniaraujo68/plinth/routing`     | `RoutingConfig`, `RoutingContext`, `resolvePathname`, `withSearchParams`                                   |
+| `@viniaraujo68/plinth/user`        | `UserContext`, `ScopedComponent`, the anonymous default                                                    |
+| `@viniaraujo68/plinth/http`        | `createHttpClient`, `ApiError`, `errorMessage`, `errorStatus`                                              |
+| `@viniaraujo68/plinth/formatters`  | `createFormatters`, over `Intl`                                                                            |
 
 The components entry point ships `AsyncButton`, `Combobox`, `Copyable`, `DateRangePicker`,
 `Dialog`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `LoadingButton`, `Logo`, `Modal`, `Paginator`,
-`RefreshButton`, `Select`, `Skeleton` and `Tooltip`. Every one of them has a page in the showcase.
+`RefreshButton`, `SegmentedControl`, `Select`, `Skeleton` and `Tooltip`. Every one of them has a page in the showcase.
 It also exports the mark's outline as data — `PICK_PATH` and `PICK_CLIP_PATH` — for anything
 that wants the pick as a silhouette of its own.
 
