@@ -80,6 +80,11 @@
       summary: "Manual reload, an auto-refresh schedule and the age of what is on screen.",
     },
     {
+      href: resolve("/components/segmented-control"),
+      name: "SegmentedControl",
+      summary: "A row of exclusive buttons for a few views of the same thing.",
+    },
+    {
       href: resolve("/components/select"),
       name: "Select",
       summary: "A clearable listbox for a short list, in the top layer above anything.",

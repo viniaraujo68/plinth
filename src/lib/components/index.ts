@@ -11,6 +11,7 @@ export { default as Logo } from "./Logo.svelte";
 export { default as Modal } from "./Modal.svelte";
 export { default as Paginator } from "./Paginator.svelte";
 export { default as RefreshButton } from "./RefreshButton.svelte";
+export { default as SegmentedControl } from "./SegmentedControl.svelte";
 export { default as Select } from "./Select.svelte";
 export { default as Skeleton } from "./Skeleton.svelte";
 export { default as Tooltip } from "./Tooltip.svelte";
@@ -41,3 +42,6 @@ export {
 // a synonym list -- can compose with the accent folding instead of reimplementing it. The
 // highlight walk stays private: it is how the two components drive themselves.
 export { matchesSelectQuery, normalizeForSearch, type SelectOption } from "./select.js";
+
+// The option type a caller of `SegmentedControl` writes its list against.
+export type { SegmentedOption } from "./segmented.js";
