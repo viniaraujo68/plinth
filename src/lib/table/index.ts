@@ -8,7 +8,11 @@ export {
   cellText,
   cellValue,
   compareSortValues,
+  competitionRanks,
   nextSort,
+  sortFromParams,
   sortRows,
+  sortToParams,
   sortValue,
+  type SortParamNames,
 } from "./sort.js";

@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { ariaSort, cellValue, compareSortValues, nextSort, sortRows, sortValue } from "./sort.js";
-import type { Column } from "./types.js";
+import {
+  ariaSort,
+  cellValue,
+  compareSortValues,
+  competitionRanks,
+  nextSort,
+  sortFromParams,
+  sortRows,
+  sortToParams,
+  sortValue,
+} from "./sort.js";
+import type { Column, SortState, SortValue } from "./types.js";
 
 interface Row {
   id: number;
@@ -170,5 +180,81 @@ describe("ariaSort", () => {
   it("spells out the direction of the sorted column", () => {
     expect(ariaSort({ key: "name", direction: "asc" }, name)).toBe("ascending");
     expect(ariaSort({ key: "name", direction: "desc" }, name)).toBe("descending");
+  });
+});
+
+describe("competitionRanks", () => {
+  const value = (row: { v: SortValue }) => row.v;
+
+  it("gives tied rows the rank of the first of them and skips the places they used", () => {
+    const rows = [{ v: 9 }, { v: 7 }, { v: 7 }, { v: 3 }];
+    expect(competitionRanks(rows, value)).toEqual([1, 2, 2, 4]);
+  });
+
+  it("gives a missing value no rank, and does not let it break a tie after it", () => {
+    const rows = [{ v: 5 }, { v: null }, { v: Number.NaN }, { v: undefined }];
+    expect(competitionRanks(rows, value)).toEqual([1, null, null, null]);
+  });
+
+  it("ties strings the way the table compares them", () => {
+    const rows = [{ v: "Ana" }, { v: "ana" }, { v: "Bia" }];
+    expect(competitionRanks(rows, value, "pt-BR")).toEqual([1, 1, 3]);
+  });
+
+  it("ties equal dates, which are different objects", () => {
+    const rows = [{ v: new Date("2026-01-01") }, { v: new Date("2026-01-01") }];
+    expect(competitionRanks(rows, value)).toEqual([1, 1]);
+  });
+});
+
+describe("sortFromParams", () => {
+  const fallback: SortState = { key: "rate", direction: "desc" };
+
+  it("reads both pieces from the URL", () => {
+    expect(sortFromParams(new URLSearchParams("sort=goals&dir=asc"), fallback)).toEqual({
+      key: "goals",
+      direction: "asc",
+    });
+  });
+
+  it("falls back piece by piece, and on a direction it does not recognise", () => {
+    expect(sortFromParams(new URLSearchParams("sort=goals"), fallback)).toEqual({
+      key: "goals",
+      direction: "desc",
+    });
+    expect(sortFromParams(new URLSearchParams("dir=sideways"), fallback)).toEqual(fallback);
+  });
+
+  it("reads under other parameter names", () => {
+    const params = new URLSearchParams("order=name&way=asc");
+    expect(sortFromParams(params, fallback, { key: "order", direction: "way" })).toEqual({
+      key: "name",
+      direction: "asc",
+    });
+  });
+});
+
+describe("sortToParams", () => {
+  const fallback: SortState = { key: "rate", direction: "desc" };
+
+  it("removes the pieces equal to the fallback", () => {
+    expect(sortToParams(fallback, fallback)).toEqual({ sort: null, dir: null });
+    expect(sortToParams({ key: "goals", direction: "desc" }, fallback)).toEqual({
+      sort: "goals",
+      dir: null,
+    });
+    expect(sortToParams({ key: "rate", direction: "asc" }, fallback)).toEqual({
+      sort: null,
+      dir: "asc",
+    });
+  });
+
+  it("round-trips through sortFromParams", () => {
+    const sort: SortState = { key: "goals", direction: "asc" };
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(sortToParams(sort, fallback)))
+      if (value !== null) params.set(key, value);
+
+    expect(sortFromParams(params, fallback)).toEqual(sort);
   });
 });

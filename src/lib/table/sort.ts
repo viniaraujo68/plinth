@@ -106,3 +106,71 @@ export const ariaSort = <T>(
   if (current?.key !== column.key) return "none";
   return current.direction === "asc" ? "ascending" : "descending";
 };
+
+/**
+ * Standard competition ranks ("1224") for rows already in display order: rows whose values compare
+ * equal share the rank of the first of them, and the next distinct value skips the places the tie
+ * used up. A missing value gets no rank at all — it sorts last, and "tied for last because nobody
+ * knows" is not a position worth printing.
+ *
+ * The table hands a `cell` snippet the row's position, which is the right number until two rows
+ * tie; a leaderboard that has to say "joint second" needs this instead.
+ */
+export const competitionRanks = <T>(
+  ordered: readonly T[],
+  valueOf: (row: T) => SortValue,
+  locale?: string,
+): (number | null)[] => {
+  const ranks: (number | null)[] = [];
+  let previous: SortValue;
+  ordered.forEach((row, index) => {
+    const value = valueOf(row);
+    if (isMissing(value)) {
+      ranks.push(null);
+      return;
+    }
+    const tied =
+      index > 0 && !isMissing(previous) && compareSortValues(previous, value, locale) === 0;
+    ranks.push(tied ? ranks[index - 1] : index + 1);
+    previous = value;
+  });
+  return ranks;
+};
+
+/** The search parameter names a sort is written under, when the URL has room for more than one. */
+export interface SortParamNames {
+  key: string;
+  direction: string;
+}
+
+const SORT_PARAMS: SortParamNames = { key: "sort", direction: "dir" };
+
+/**
+ * Reads a sort out of a URL's search parameters, so a shared link opens on the order its sender was
+ * looking at. Anything missing or unrecognised falls back to `fallback` piece by piece: a link with
+ * only `?sort=year` gets the fallback's direction.
+ */
+export const sortFromParams = (
+  params: URLSearchParams,
+  fallback: SortState,
+  names: SortParamNames = SORT_PARAMS,
+): SortState => {
+  const direction = params.get(names.direction);
+  return {
+    key: params.get(names.key) ?? fallback.key,
+    direction: direction === "asc" || direction === "desc" ? direction : fallback.direction,
+  };
+};
+
+/**
+ * The search parameters that write `sort` back, as updates for `withSearchParams`: a piece equal to
+ * the fallback is `null` — removed — so the URL of a table in its default order stays clean.
+ */
+export const sortToParams = (
+  sort: SortState,
+  fallback: SortState,
+  names: SortParamNames = SORT_PARAMS,
+): Record<string, string | null> => ({
+  [names.key]: sort.key === fallback.key ? null : sort.key,
+  [names.direction]: sort.direction === fallback.direction ? null : sort.direction,
+});
