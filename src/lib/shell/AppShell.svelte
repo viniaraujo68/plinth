@@ -3,7 +3,7 @@
   // pathname assembled at runtime has no literal route to hand it. `resolvePathname` IS that call,
   // wrapped once so the unavoidable cast lives in a single place.
   /* eslint-disable svelte/no-navigation-without-resolve */
-  import type { Snippet } from "svelte";
+  import { untrack, type Snippet } from "svelte";
   import type { ClassValue } from "svelte/elements";
   import Dialog from "../components/Dialog.svelte";
   import { PICK_CLIP_PATH } from "../components/pick.js";
@@ -121,6 +121,35 @@
     route.routeId === "/"
       ? routing.routeId === "/"
       : routing.matched.some((match) => match.routeId === route.routeId);
+
+  let content: HTMLElement | undefined = $state();
+  const offsets: Record<string, number> = {};
+  let returningTo: string | null = null;
+  const pathname = $derived(routing.url.pathname);
+
+  const rememberOffset = () => {
+    if (content) offsets[pathname] = content.scrollTop;
+  };
+
+  $effect(() => {
+    const onPopState = () => {
+      returningTo = window.location.pathname;
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  });
+
+  $effect(() => {
+    const current = pathname;
+    const element = content;
+    if (!element) return;
+    untrack(() => {
+      const returning = returningTo === current;
+      returningTo = null;
+      if (returning) element.scrollTop = offsets[current] ?? 0;
+      else if (!routing.url.hash) element.scrollTop = 0;
+    });
+  });
 
   // Home leads the bottom bar rather than heading it: a bar has no header to put it in.
   const barEntries = $derived(home ? [home, ...items] : items);
@@ -299,7 +328,7 @@ shell rather than to the window, and the content area reserves its height plus
     </div>
   </aside>
 
-  <main class="shell-content">
+  <main class="shell-content" bind:this={content} onscroll={rememberOffset}>
     {@render children()}
   </main>
 

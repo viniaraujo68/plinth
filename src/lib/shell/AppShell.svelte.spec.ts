@@ -652,3 +652,50 @@ it("renders the brand snippet in the sidebar header", async () => {
 
   await expect.element(page.getByTestId("brand")).toBeInTheDocument();
 });
+
+class MovingSource implements RoutingSource {
+  route: { id: string | null } = $state({ id: "/dashboard" });
+  params: Record<string, string> = {};
+  url: URL = $state(new URL("https://acme.test/dashboard"));
+
+  goTo(path: string, id: string) {
+    this.url = new URL(path, "https://acme.test");
+    this.route = { id };
+  }
+}
+
+const content = () => document.querySelector<HTMLElement>(".shell-content")!;
+
+const scrolledTo = async (top: number) => {
+  content().scrollTop = top;
+  content().dispatchEvent(new Event("scroll"));
+  await expect.poll(() => content().scrollTop).toBe(top);
+};
+
+it("starts a newly opened page at the top of the scroll container", async () => {
+  const source = new MovingSource();
+  render(Harness, { routing: new RoutingContext(config, source), width: WIDE, tallBody: true });
+  await scrolledTo(900);
+  source.goTo("/customers", "/customers");
+  await expect.poll(() => content().scrollTop).toBe(0);
+});
+
+it("returns to where the page was left when the browser goes back", async () => {
+  const source = new MovingSource();
+  render(Harness, { routing: new RoutingContext(config, source), width: WIDE, tallBody: true });
+  await scrolledTo(900);
+  source.goTo("/customers", "/customers");
+  await expect.poll(() => content().scrollTop).toBe(0);
+  history.pushState({}, "", "/dashboard");
+  window.dispatchEvent(new PopStateEvent("popstate"));
+  source.goTo("/dashboard", "/dashboard");
+  await expect.poll(() => content().scrollTop).toBe(900);
+});
+
+it("leaves the scroll to the browser when the link carries a fragment", async () => {
+  const source = new MovingSource();
+  render(Harness, { routing: new RoutingContext(config, source), width: WIDE, tallBody: true });
+  await scrolledTo(900);
+  source.goTo("/customers#orders", "/customers");
+  await expect.poll(() => content().scrollTop).toBe(900);
+});

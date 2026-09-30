@@ -17,6 +17,7 @@
     withBrand?: boolean;
     /** A stand-in for the language or theme toggle an app drops into the footer slot. */
     withFooter?: boolean;
+    tallBody?: boolean;
   }
 
   const {
@@ -28,6 +29,7 @@
     customIcons = false,
     withBrand = false,
     withFooter = false,
+    tallBody = false,
   }: Props = $props();
 
   let footerClicks = $state(0);
@@ -47,7 +49,7 @@
     footer={withFooter ? footer : undefined}
     icon={customIcons ? icon : undefined}
   >
-    <p>page body</p>
+    <p style={tallBody ? "height: 3000px" : undefined}>page body</p>
   </AppShell>
 </div>
 
