@@ -32,6 +32,8 @@ const applyPanelStyle = (panel: HTMLElement, anchorName: string) => {
     // ends up covering it, the host sees mouseleave, the panel hides, the host sees mouseenter
     // again. Staying transparent to hit-testing is what breaks the cycle.
     pointerEvents: "none",
+    whiteSpace: "normal",
+    overflowWrap: "break-word",
     margin: "0.375rem",
     width: "max-content",
     maxWidth: "20rem",

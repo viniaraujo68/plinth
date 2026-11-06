@@ -42,3 +42,12 @@ it("keeps the panel closed while tooltipDisabled is set", async () => {
   await host().hover();
   await expect.poll(isOpen).toBe(false);
 });
+
+it("wraps its text even when the host sits inside a nowrap ancestor", async () => {
+  const screen = render(Harness, { host: "button" });
+  (screen.container as HTMLElement).style.whiteSpace = "nowrap";
+
+  await host().hover();
+  await expect.poll(isOpen).toBe(true);
+  expect(getComputedStyle(panelElement()!).whiteSpace).toBe("normal");
+});
