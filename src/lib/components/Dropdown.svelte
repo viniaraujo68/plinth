@@ -11,6 +11,8 @@
     panelClass?: ClassValue | null;
     /** Whether the panel is open, however it got there. Bind to read it; the popover decides it. */
     expanded?: boolean;
+    /** Hangs the panel just under the trigger at the trigger's width, as a field's list does. */
+    matchWidth?: boolean;
   };
 
   let {
@@ -18,6 +20,7 @@
     content,
     panelClass,
     expanded = $bindable(false),
+    matchWidth = false,
     type,
     ...rest
   }: Props = $props();
@@ -27,6 +30,8 @@
   const uid = $props.id();
   const panelId = `plinth-dropdown-${uid}`;
   const anchorName = `--${panelId}`;
+
+  const FIELD_GAP = 4;
 
   let isMounted = $state(false);
   let trigger = $state<HTMLButtonElement>();
@@ -47,7 +52,11 @@
     // The edge margin the stylesheet gives the panel, read before the script takes the margins
     // over, so both paths keep the same distance from the side of the screen.
     const edge = parseFloat(getComputedStyle(panel).marginLeft) || 0;
-    stopPositioning = positionUnder(panel, trigger, { inset: edge });
+    stopPositioning = positionUnder(
+      panel,
+      trigger,
+      matchWidth ? { gap: FIELD_GAP, matchWidth } : { inset: edge },
+    );
   };
 
   const releasePositioning = () => {
@@ -126,6 +135,8 @@ its `autofocus` element.
 
 A panel that would run off the side of the screen is pulled back onto it and keeps half a rem from
 the edge, in both the anchored and the scripted placement; `--dropdown-edge` changes the distance.
+`matchWidth` hangs it instead just under the trigger and exactly as wide, for a trigger that is a
+field, the way the `Select` panel hangs under its control.
 
 ```svelte
 <Dropdown bind:this={menu} class="btn" panelClass="dropdown menu w-56 rounded-box bg-base-200 p-2">
@@ -149,7 +160,7 @@ the edge, in both the anchored and the scripted placement; `--dropdown-edge` cha
 </button>
 <div
   bind:this={panel}
-  class={panelClass}
+  class={[panelClass, matchWidth && "match-width"]}
   popover
   id={panelId}
   style:position-anchor={anchorName}
@@ -172,6 +183,14 @@ the edge, in both the anchored and the scripted placement; `--dropdown-edge` cha
        of a phone lands flush against the glass. The custom property is the way to change it, since
        this rule outranks a utility class passed through `panelClass`. */
     margin-inline: var(--dropdown-edge, 0.5rem);
+  }
+
+  [popover].match-width {
+    position-try: top;
+    box-sizing: border-box;
+    width: anchor-size(width);
+    margin-inline: 0;
+    margin-block: 0.25rem;
   }
 
   /* A closed popover is hidden by a rule in the UA stylesheet, which every author rule outranks --

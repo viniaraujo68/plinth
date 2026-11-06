@@ -5,8 +5,15 @@
     panelClass = "panel",
     atEdge = false,
     withField = false,
+    matchWidth = false,
     expanded = $bindable(false),
-  }: { panelClass?: string; atEdge?: boolean; withField?: boolean; expanded?: boolean } = $props();
+  }: {
+    panelClass?: string;
+    atEdge?: boolean;
+    withField?: boolean;
+    matchWidth?: boolean;
+    expanded?: boolean;
+  } = $props();
 
   let menu = $state<ReturnType<typeof Dropdown>>();
 
@@ -25,7 +32,7 @@ Named `*.spec.svelte` so packaging drops it.
 <button type="button" onclick={() => menu?.open()}>Open from outside</button>
 
 <span class:edge={atEdge}>
-  <Dropdown bind:this={menu} bind:expanded {panelClass}>
+  <Dropdown bind:this={menu} bind:expanded {panelClass} {matchWidth}>
     Actions
     {#snippet content()}
       {#if withField}

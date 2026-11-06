@@ -201,3 +201,32 @@ it("keeps the same distance from the edge where the panel is placed by script", 
     overrideAnchorPositioningSupport(undefined);
   }
 });
+
+const assertMatchesTheTrigger = async () => {
+  render(Harness, { matchWidth: true });
+  const button = trigger().element() as HTMLElement;
+  button.style.width = "18rem";
+  button.style.margin = "4rem";
+
+  await trigger().click();
+  await expect.poll(isOpen).toBe(true);
+
+  const anchor = button.getBoundingClientRect();
+  const box = () => panelElement()!.getBoundingClientRect();
+  await expect.poll(() => Math.round(box().width)).toBe(Math.round(anchor.width));
+  expect(Math.round(box().left)).toBe(Math.round(anchor.left));
+  expect(Math.round(box().top)).toBe(Math.round(anchor.bottom) + 4);
+};
+
+it("hangs a field's panel under the trigger at the trigger's width", async () => {
+  await assertMatchesTheTrigger();
+});
+
+it("matches the trigger's width where the panel is placed by script", async () => {
+  overrideAnchorPositioningSupport(false);
+  try {
+    await assertMatchesTheTrigger();
+  } finally {
+    overrideAnchorPositioningSupport(undefined);
+  }
+});
