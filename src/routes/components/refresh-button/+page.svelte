@@ -54,7 +54,8 @@
     </h2>
     <p class="max-w-2xl text-sm text-base-content/70">
       The periods on offer are a prop; a screen watching something slow has no business offering ten
-      seconds.
+      seconds. <code>autoRefresh</code> arms the schedule from the first render, and binding it keeps
+      the reader's choice wherever the page wants to remember it.
     </p>
     <div class="card w-fit rounded-box bg-base-200 p-4">
       <RefreshButton
@@ -66,7 +67,20 @@
           { value: 3600, label: "1h" },
         ]}
         defaultInterval={900}
+        autoRefresh
       />
+    </div>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
+      Manual only
+    </h2>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      An empty list of periods leaves the timestamp and the button, with no schedule to arm.
+    </p>
+    <div class="card w-fit rounded-box bg-base-200 p-4">
+      <RefreshButton onRefresh={reload} lastSuccessAt={loadedAt} intervals={[]} />
     </div>
   </section>
 </main>

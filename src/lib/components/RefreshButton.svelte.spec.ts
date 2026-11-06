@@ -55,3 +55,46 @@ it("restarts the countdown when the period changes", async () => {
 
   await expect.element(page.getByTestId("refresh-clock")).toHaveTextContent("300s");
 });
+
+it("starts with auto-refresh armed when asked to", async () => {
+  render(RefreshButton, { onRefresh: () => undefined, defaultInterval: 60, autoRefresh: true });
+
+  await expect
+    .element(page.getByRole("button", { name: "Pause auto-refresh" }))
+    .toHaveAttribute("aria-pressed", "true");
+  await expect.element(page.getByTestId("refresh-clock")).toHaveTextContent("60s");
+});
+
+it("falls back to an offered period when the default is not one of them", async () => {
+  render(RefreshButton, { onRefresh: () => undefined, defaultInterval: 45, autoRefresh: true });
+
+  await expect
+    .element(page.getByRole("combobox", { name: "Auto-refresh interval" }))
+    .toHaveValue("30");
+  await expect.element(page.getByTestId("refresh-clock")).toHaveTextContent("30s");
+});
+
+it("offers no schedule at all when there are no periods to pick from", async () => {
+  const onRefresh = vi.fn();
+  render(RefreshButton, { onRefresh, intervals: [], autoRefresh: true });
+
+  await expect.element(page.getByRole("button", { name: "Refresh now" })).toBeVisible();
+  expect(document.querySelectorAll("button")).toHaveLength(1);
+  expect(document.querySelector("select")).toBeNull();
+  await expect.element(page.getByTestId("refresh-clock")).toHaveTextContent("--:--:--");
+  expect(onRefresh).not.toHaveBeenCalled();
+});
+
+it("says its words through props", async () => {
+  render(RefreshButton, {
+    onRefresh: () => undefined,
+    autoRefresh: true,
+    refreshLabel: "Reload",
+    pauseLabel: "Stop",
+    intervalLabel: "Every",
+  });
+
+  await expect.element(page.getByRole("button", { name: "Reload" })).toBeVisible();
+  await expect.element(page.getByRole("button", { name: "Stop" })).toBeVisible();
+  await expect.element(page.getByRole("combobox", { name: "Every" })).toBeVisible();
+});

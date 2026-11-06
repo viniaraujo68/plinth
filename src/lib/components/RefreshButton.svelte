@@ -12,10 +12,15 @@
   interface Props {
     /** The reload itself. Awaited, so the spinner and the countdown follow the real request. */
     onRefresh: () => unknown | Promise<unknown>;
-    /** Auto-refresh periods offered by the picker, in seconds. */
+    /** Auto-refresh periods offered by the picker, in seconds. Pass `[]` for a manual-only control. */
     intervals?: IntervalOption[];
-    /** Period selected when auto-refresh is switched on. Defaults to the second option. */
+    /**
+     * Period selected when auto-refresh is switched on, one of `intervals`. Defaults to the second
+     * option, and so does a period the picker does not offer.
+     */
     defaultInterval?: number;
+    /** Whether auto-refresh is armed. Pass `true` to start with it on; bind to follow the toggle. */
+    autoRefresh?: boolean;
     /**
      * When the data on screen last landed, as an epoch millisecond count. Left out, the control
      * times its own successful refreshes — which is wrong the moment the data also arrives from
@@ -24,6 +29,10 @@
     lastSuccessAt?: number | null;
     /** Formatting locale for the timestamp. Defaults to the browser's. */
     locale?: string;
+    refreshLabel?: string;
+    startLabel?: string;
+    pauseLabel?: string;
+    intervalLabel?: string;
     class?: ClassValue;
   }
 
@@ -38,17 +47,26 @@
     onRefresh,
     intervals = defaultIntervals,
     defaultInterval,
+    autoRefresh = $bindable(false),
     lastSuccessAt,
     locale,
+    refreshLabel = "Refresh now",
+    startLabel = "Start auto-refresh",
+    pauseLabel = "Pause auto-refresh",
+    intervalLabel = "Auto-refresh interval",
     class: cls,
   }: Props = $props();
 
-  let auto = $state(false);
   // A seed, not a binding: once the user has picked a period, a re-render of the parent must not
   // yank it back to the default. `untrack` states that and keeps the compiler from warning.
   let periodSec = $state(
-    untrack(() => defaultInterval ?? intervals[1]?.value ?? intervals[0]?.value ?? 30),
+    untrack(() =>
+      intervals.some((option) => option.value === defaultInterval)
+        ? defaultInterval!
+        : (intervals[1]?.value ?? intervals[0]?.value ?? null),
+    ),
   );
+  const scheduled = $derived(intervals.length > 0 && periodSec !== null);
   let ownLastSuccessAt = $state<number | null>(null);
   let nextRefreshAt = $state<number | null>(null);
   let now = $state(Date.now());
@@ -84,12 +102,12 @@
   // The deadline is a plain local: writing it to state would make this effect depend on its own
   // output and re-run forever.
   $effect(() => {
-    if (!auto || !visible) {
+    if (!autoRefresh || !scheduled || !visible) {
       nextRefreshAt = null;
       return;
     }
 
-    const period = periodSec * 1000;
+    const period = periodSec! * 1000;
     let deadline = Date.now() + period;
     nextRefreshAt = deadline;
     now = Date.now();
@@ -162,8 +180,8 @@ countdown replaces the timestamp while auto-refresh is armed, so the strip never
   <button
     type="button"
     class="btn ml-1.5 btn-square btn-ghost btn-xs"
-    title="Refresh now"
-    aria-label="Refresh now"
+    title={refreshLabel}
+    aria-label={refreshLabel}
     onclick={refresh}
   >
     <svg
@@ -183,34 +201,41 @@ countdown replaces the timestamp while auto-refresh is armed, so the strip never
     </svg>
   </button>
 
-  <span class="mx-0.5 h-5 w-px bg-base-content/15"></span>
+  {#if scheduled}
+    <span class="mx-0.5 h-5 w-px bg-base-content/15"></span>
 
-  <button
-    type="button"
-    class={["btn btn-square btn-ghost btn-xs", auto ? "text-primary" : "text-base-content/55"]}
-    title={auto ? "Pause auto-refresh" : "Start auto-refresh"}
-    aria-label={auto ? "Pause auto-refresh" : "Start auto-refresh"}
-    aria-pressed={auto}
-    onclick={() => {
-      auto = !auto;
-    }}
-  >
-    {#if auto}
-      <svg class="size-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <rect x="6" y="4" width="4" height="16" rx="1" />
-        <rect x="14" y="4" width="4" height="16" rx="1" />
-      </svg>
-    {:else}
-      <svg class="size-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M7 4.5v15a1 1 0 0 0 1.53.85l11.5-7.5a1 1 0 0 0 0-1.7L8.53 3.65A1 1 0 0 0 7 4.5Z" />
-      </svg>
-    {/if}
-  </button>
+    <button
+      type="button"
+      class={[
+        "btn btn-square btn-ghost btn-xs",
+        autoRefresh ? "text-primary" : "text-base-content/55",
+      ]}
+      title={autoRefresh ? pauseLabel : startLabel}
+      aria-label={autoRefresh ? pauseLabel : startLabel}
+      aria-pressed={autoRefresh}
+      onclick={() => {
+        autoRefresh = !autoRefresh;
+      }}
+    >
+      {#if autoRefresh}
+        <svg class="size-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <rect x="6" y="4" width="4" height="16" rx="1" />
+          <rect x="14" y="4" width="4" height="16" rx="1" />
+        </svg>
+      {:else}
+        <svg class="size-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path
+            d="M7 4.5v15a1 1 0 0 0 1.53.85l11.5-7.5a1 1 0 0 0 0-1.7L8.53 3.65A1 1 0 0 0 7 4.5Z"
+          />
+        </svg>
+      {/if}
+    </button>
+  {/if}
 
-  {#if auto}
+  {#if scheduled && autoRefresh}
     <select
       class="select ml-0.5 w-18 select-ghost font-mono select-xs"
-      aria-label="Auto-refresh interval"
+      aria-label={intervalLabel}
       bind:value={periodSec}
     >
       {#each intervals as option (option.value)}
