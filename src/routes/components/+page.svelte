@@ -55,6 +55,11 @@
       summary: "A full-page status screen, with its own wording for a 404.",
     },
     {
+      href: resolve("/components/json-input"),
+      name: "JsonInput",
+      summary: "A JSON text field that says whether it parses, and reindents on the way out.",
+    },
+    {
       href: resolve("/components/listbox"),
       name: "Listbox",
       summary: "A list to pick one or several from in place, with an optional search.",

@@ -6,6 +6,7 @@ export { default as Dialog } from "./Dialog.svelte";
 export { default as Dropdown } from "./Dropdown.svelte";
 export { default as ErrorDisplay } from "./ErrorDisplay.svelte";
 export { default as ErrorPage } from "./ErrorPage.svelte";
+export { default as JsonInput } from "./JsonInput.svelte";
 export { default as Listbox } from "./Listbox.svelte";
 export { default as LoadingButton } from "./LoadingButton.svelte";
 export { default as Logo } from "./Logo.svelte";
@@ -44,6 +45,13 @@ export {
 // a synonym list -- can compose with the accent folding instead of reimplementing it. The
 // highlight walk stays private: it is how the two components drive themselves.
 export { matchesSelectQuery, normalizeForSearch, type SelectOption } from "./select.js";
+
+export {
+  formatJsonText,
+  parseJsonText,
+  type JsonTextOptions,
+  type JsonTextResult,
+} from "./json-text.js";
 
 // The option type a caller of `SegmentedControl` writes its list against.
 export type { SegmentedOption } from "./segmented.js";

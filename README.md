@@ -272,11 +272,16 @@ base URL, how auth is injected, and how the backend spells an error body.
 | `@viniaraujo68/plinth/formatters`  | `createFormatters`, over `Intl`                                                                            |
 
 The components entry point ships `AsyncButton`, `Combobox`, `Copyable`, `DateRangePicker`,
-`Dialog`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `Listbox`, `LoadingButton`, `Logo`, `Modal`,
-`MultiSelect`, `Paginator`, `RefreshButton`, `SegmentedControl`, `Select`, `Skeleton` and
+`Dialog`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `JsonInput`, `Listbox`, `LoadingButton`, `Logo`,
+`Modal`, `MultiSelect`, `Paginator`, `RefreshButton`, `SegmentedControl`, `Select`, `Skeleton` and
 `Tooltip`. Every one of them has a page in the showcase.
 It also exports the mark's outline as data — `PICK_PATH` and `PICK_CLIP_PATH` — for anything
 that wants the pick as a silhouette of its own.
+
+`JsonInput` edits a JSON document as text: it reports through a bindable `invalid` whether the text
+parses, shows the parser's message after the first blur, can reindent on blur, and sets the
+textarea's custom validity so a form will not submit a broken document. `parseJsonText` and
+`formatJsonText` are the same rules, for reading the text once it is sent.
 
 Two of those pick one thing from a list, and which one to reach for is decided by the length of
 the list rather than by a flag:
