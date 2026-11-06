@@ -368,6 +368,11 @@
   border-top: 0;
 }
 
+:where(.menu) {
+  --menu-active-bg: var(--color-primary);
+  --menu-active-fg: var(--color-primary-content);
+}
+
 /* Every floating surface — dropdown, popover — gets one treatment: base-100, hairline border,
    box radius, soft drop shadow. Content inside is therefore already on base-100, so the context
    tokens need no adjustment. */
