@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import Harness from "./BreadcrumbsHarness.spec.svelte";
+import "../../routes/layout.css";
 import { RoutingContext, type RoutingConfig, type RoutingSource } from "../routing.svelte.js";
 
 const config: RoutingConfig = {
@@ -50,6 +51,20 @@ it("renders a section with no page of its own as plain text", () => {
   // "/orders" is declared but has no +page.svelte, so it is a heading rather than a link.
   expect(labels()).toEqual(["Acme", "Orders", "Order 7841"]);
   expect(tags()).toEqual(["A", "SPAN", "SPAN"]);
+});
+
+it("does not dress a crumb that goes nowhere as a link", async () => {
+  render(Harness, { routing: routingAt("/orders/[id]", { id: "7841" }) });
+
+  for (const index of [1, 2]) {
+    const crumb = crumbs()[index];
+    await page.elementLocator(crumb).hover();
+    expect(getComputedStyle(crumb).cursor).toBe("default");
+    expect(getComputedStyle(crumb).textDecorationLine).toBe("none");
+  }
+
+  await page.elementLocator(crumbs()[0]).hover();
+  expect(getComputedStyle(crumbs()[0]).cursor).toBe("pointer");
 });
 
 it("marks the last crumb as the current page", () => {

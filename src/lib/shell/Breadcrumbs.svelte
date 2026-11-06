@@ -61,8 +61,8 @@ only needs `routeId` and `label`, so appending a leaf the route tree cannot know
                is for; the intermediate non-links are headings and get neither. -->
           <span
             class={[
-              "crumb gap-1.5",
-              isLast ? "cursor-default text-base-content" : "text-base-content/50",
+              "crumb cursor-default gap-1.5 no-underline",
+              isLast ? "text-base-content" : "text-base-content/50",
             ]}
             aria-current={isLast ? "page" : undefined}
           >
