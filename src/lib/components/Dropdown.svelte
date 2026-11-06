@@ -59,9 +59,16 @@
   // listeners on the window, holding a detached element.
   onDestroy(releasePositioning);
 
-  /** Opens the panel. Its content mounts in the `beforetoggle` the browser fires on the way. */
+  /**
+   * Opens the panel, or, when it is already open, moves focus back to its `autofocus` element, so a
+   * caller can send the keyboard back into the panel after Shift+Tab took it out.
+   */
   export function open() {
-    if (!panel || panel.matches(":popover-open")) return;
+    if (!panel) return;
+    if (panel.matches(":popover-open")) {
+      panel.querySelector<HTMLElement>("[autofocus]")?.focus();
+      return;
+    }
     panel.showPopover();
     reposition();
   }
@@ -86,6 +93,7 @@
 
   const onBeforeToggle = (event: ToggleEvent) => {
     if (event.newState === "open") flushSync(() => (isMounted = true));
+    else if (panel?.contains(document.activeElement)) trigger?.focus({ preventScroll: true });
   };
 
   const onToggle = (event: ToggleEvent) => {
@@ -110,10 +118,11 @@ The popover itself — not a local flag — is the source of truth for open/clos
 and the bindable `expanded` are read back from its `toggle` event. Content mounts just before the
 panel shows, however it was opened, and unmounts once the panel is really hidden, so an expensive
 menu costs nothing until it is used. An element inside it marked `autofocus` takes the focus as the
-panel shows.
+panel shows, and closing the panel with the focus inside it hands the focus back to the trigger.
 
 `open()` and `close()` are exposed for `bind:this`, which is what a form inside the panel needs to
-dismiss itself after submitting.
+dismiss itself after submitting. `open()` on a panel that is already open moves the focus back to
+its `autofocus` element.
 
 A panel that would run off the side of the screen is pulled back onto it and keeps half a rem from
 the edge, in both the anchored and the scripted placement; `--dropdown-edge` changes the distance.

@@ -113,6 +113,8 @@
       The content mounts just before the panel shows, whether a click, a key or
       <code class="kbd kbd-sm">open()</code> opened it, so it never paints as an empty box and an
       <code class="kbd kbd-sm">autofocus</code> field inside it takes the focus as it appears.
+      Closing with the focus inside hands it back to the trigger, and calling
+      <code class="kbd kbd-sm">open()</code> on a panel already open sends the focus back to that field.
     </p>
     <div class="flex flex-wrap items-center gap-4">
       <button

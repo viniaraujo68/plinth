@@ -125,6 +125,31 @@ it("mounts the content and focuses its autofocus element when the keyboard opens
   await expect.element(page.getByRole("textbox", { name: "Filter" })).toHaveFocus();
 });
 
+it("hands the focus back to its trigger when it closes with the focus inside", async () => {
+  render(Harness, { withField: true });
+
+  await remoteOpener().click();
+  await expect.element(page.getByRole("textbox", { name: "Filter" })).toHaveFocus();
+
+  await userEvent.keyboard("{Escape}");
+  await expect.poll(isOpen).toBe(false);
+  await expect.element(trigger()).toHaveFocus();
+});
+
+it("moves the focus back into an open panel when asked to open again", async () => {
+  const screen = render(Harness, { withField: true });
+
+  screen.component.openMenu();
+  const field = page.getByRole("textbox", { name: "Filter" });
+  await expect.element(field).toHaveFocus();
+
+  (trigger().element() as HTMLElement).focus();
+  screen.component.openMenu();
+
+  expect(isOpen()).toBe(true);
+  await expect.element(field).toHaveFocus();
+});
+
 it("hangs the panel under the trigger where the browser has no anchor positioning", async () => {
   /* Firefox, and Safari before 26, drop the `position-area` this panel is placed with and leave
      the UA popover rules -- `position: fixed; inset: 0; margin: auto` -- which float the panel in
