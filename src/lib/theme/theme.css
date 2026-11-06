@@ -6,6 +6,10 @@
   --default-font-family: var(--font-sans);
 }
 
+:where(.font-mono, [data-mono], code, kbd, samp, pre) {
+  font-variant-ligatures: none;
+}
+
 /* The daisyUI theme-controller checkbox holds the user's PREFERENCE rather than the resolved
    theme (see ThemeController.svelte). Unchecked is "system": `color-scheme: light dark` hands
    the choice to the OS, which is already correct on the very first paint and keeps tracking
