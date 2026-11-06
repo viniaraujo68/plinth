@@ -6,6 +6,7 @@ test("toggles from the trigger and runs an action from the panel", async ({ page
   const trigger = page.getByRole("button", { name: "Row actions" });
   await trigger.click();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByTestId("menu-open")).toHaveText("yes");
 
   await page.getByRole("button", { name: "Duplicate" }).click();
   await expect(page.getByTestId("last-action")).toHaveText("Duplicate");

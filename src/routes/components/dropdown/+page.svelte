@@ -10,6 +10,7 @@
 
   let status = $state("all");
   let lastAction = $state("—");
+  let menuOpen = $state(false);
 
   const STATUSES = ["all", "queued", "published", "failed"];
 </script>
@@ -29,10 +30,15 @@
     <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">Menu</h2>
     <p class="max-w-2xl text-sm text-base-content/70">
       The trigger is the root, so daisyUI's button classes apply directly to it. The panel is styled
-      through <code class="kbd kbd-sm">panelClass</code>.
+      through <code class="kbd kbd-sm">panelClass</code>, and
+      <code class="kbd kbd-sm">bind:expanded</code> reads whether it is open, however it got there.
     </p>
     <div class="flex flex-wrap items-center gap-4">
-      <Dropdown class="btn btn-sm" panelClass="menu w-52 rounded-box bg-base-200 p-2 shadow-lg">
+      <Dropdown
+        bind:expanded={menuOpen}
+        class="btn btn-sm"
+        panelClass="menu w-52 rounded-box bg-base-200 p-2 shadow-lg"
+      >
         Row actions
         {#snippet content()}
           <li><button type="button" onclick={() => (lastAction = "Open")}>Open</button></li>
@@ -49,6 +55,11 @@
       <span class="text-sm text-base-content/70">
         Last action <span class="badge badge-soft badge-sm" data-testid="last-action"
           >{lastAction}</span
+        >
+      </span>
+      <span class="text-sm text-base-content/70">
+        Open <span class="badge badge-soft badge-sm" data-testid="menu-open"
+          >{menuOpen ? "yes" : "no"}</span
         >
       </span>
     </div>

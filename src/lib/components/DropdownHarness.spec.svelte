@@ -1,8 +1,11 @@
 <script lang="ts">
   import Dropdown from "./Dropdown.svelte";
 
-  let { panelClass = "panel", atEdge = false }: { panelClass?: string; atEdge?: boolean } =
-    $props();
+  let {
+    panelClass = "panel",
+    atEdge = false,
+    expanded = $bindable(false),
+  }: { panelClass?: string; atEdge?: boolean; expanded?: boolean } = $props();
 
   let menu = $state<ReturnType<typeof Dropdown>>();
 </script>
@@ -17,7 +20,7 @@ Named `*.spec.svelte` so packaging drops it.
 <button type="button" onclick={() => menu?.open()}>Open from outside</button>
 
 <span class:edge={atEdge}>
-  <Dropdown bind:this={menu} {panelClass}>
+  <Dropdown bind:this={menu} bind:expanded {panelClass}>
     Actions
     {#snippet content()}
       <button type="button" onclick={() => menu?.close()}>Done</button>

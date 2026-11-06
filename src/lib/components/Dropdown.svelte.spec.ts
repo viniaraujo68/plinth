@@ -97,6 +97,24 @@ it("opens from outside with content already mounted", async () => {
   expect(isMounted()).toBe(true);
 });
 
+it("reports whether the panel is open through a bindable expanded", async () => {
+  let expanded = false;
+  render(Harness, {
+    get expanded() {
+      return expanded;
+    },
+    set expanded(next: boolean) {
+      expanded = next;
+    },
+  });
+
+  await trigger().click();
+  await expect.poll(() => expanded).toBe(true);
+
+  await userEvent.keyboard("{Escape}");
+  await expect.poll(() => expanded).toBe(false);
+});
+
 it("hangs the panel under the trigger where the browser has no anchor positioning", async () => {
   /* Firefox, and Safari before 26, drop the `position-area` this panel is placed with and leave
      the UA popover rules -- `position: fixed; inset: 0; margin: auto` -- which float the panel in

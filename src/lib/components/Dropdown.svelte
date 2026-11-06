@@ -9,9 +9,18 @@
     /** Classes for the panel — the only part of this component the trigger's `class` cannot
         reach, since the trigger is the root. */
     panelClass?: ClassValue | null;
+    /** Whether the panel is open, however it got there. Bind to read it; the popover decides it. */
+    expanded?: boolean;
   };
 
-  let { children, content, panelClass, type, ...rest }: Props = $props();
+  let {
+    children,
+    content,
+    panelClass,
+    expanded = $bindable(false),
+    type,
+    ...rest
+  }: Props = $props();
 
   // `popovertarget` needs a document-unique id, and `$props.id()` is the only source of one that
   // is stable across server render and hydration.
@@ -19,7 +28,6 @@
   const panelId = `plinth-dropdown-${uid}`;
   const anchorName = `--${panelId}`;
 
-  let isOpen = $state(false);
   let isMounted = $state(false);
   let trigger = $state<HTMLButtonElement>();
   let panel = $state<HTMLElement>();
@@ -82,8 +90,8 @@
   };
 
   const onToggle = (event: ToggleEvent) => {
-    isOpen = event.newState === "open";
-    if (isOpen) {
+    expanded = event.newState === "open";
+    if (expanded) {
       isMounted = true;
       reposition();
     } else {
@@ -100,8 +108,8 @@ clicking outside, and pressing Escape all dismiss it without a single listener o
 button is the root: class, handlers and aria go straight onto it, and `panelClass` styles the
 panel.
 
-The popover itself — not a local flag — is the source of truth for open/closed; `aria-expanded`
-and the mounted content are read back from its `toggle` event. Content mounts on first open and
+The popover itself — not a local flag — is the source of truth for open/closed; `aria-expanded`,
+the bindable `expanded` and the mounted content are read back from its `toggle` event. Content mounts on first open and
 unmounts once the panel is really hidden, so an expensive menu costs nothing until it is used.
 
 `open()` and `close()` are exposed for `bind:this`, which is what a form inside the panel needs to
@@ -125,7 +133,7 @@ the edge, in both the anchored and the scripted placement; `--dropdown-edge` cha
   bind:this={trigger}
   type={type ?? "button"}
   popovertarget={panelId}
-  aria-expanded={isOpen}
+  aria-expanded={expanded}
   style:anchor-name={anchorName}
   onpointerdown={() => (isMounted = true)}
 >
