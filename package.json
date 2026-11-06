@@ -1,6 +1,6 @@
 {
   "name": "@viniaraujo68/plinth",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A personal Svelte 5 design system: theme, application shell, interface primitives, routing metadata, a fetch wrapper and locale-aware formatters.",
   "license": "MIT",
   "type": "module",
