@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, type Snippet } from "svelte";
+  import { flushSync, onDestroy, type Snippet } from "svelte";
   import type { ClassValue, HTMLButtonAttributes } from "svelte/elements";
   import { positionUnder, supportsAnchorPositioning } from "../anchoring.js";
 
@@ -59,16 +59,10 @@
   // listeners on the window, holding a detached element.
   onDestroy(releasePositioning);
 
-  /**
-   * Opens the panel.
-   *
-   * The content is mounted before the popover is shown. The `toggle` event that normally does
-   * that fires asynchronously, which would paint one frame of empty panel; the trigger button
-   * never hits this because it pre-mounts on pointer-down, well before the click lands.
-   */
+  /** Opens the panel. Its content mounts in the `beforetoggle` the browser fires on the way. */
   export function open() {
-    isMounted = true;
-    if (panel && !panel.matches(":popover-open")) panel.showPopover();
+    if (!panel || panel.matches(":popover-open")) return;
+    panel.showPopover();
     reposition();
   }
 
@@ -81,7 +75,8 @@
      means its `transitionend` never arrives. Asking the element whether it is actually visible is
      the only reading that holds for both an animated and an instant close. */
   const unmountWhenHidden = () => {
-    if (panel && !panel.checkVisibility({ opacityProperty: true, visibilityProperty: true }))
+    if (!panel || panel.matches(":popover-open")) return;
+    if (!panel.checkVisibility({ opacityProperty: true, visibilityProperty: true }))
       isMounted = false;
   };
   /* See OptionPanel: a descendant's transition must not be mistaken for the panel's exit. */
@@ -89,10 +84,13 @@
     if (event.target === event.currentTarget) unmountWhenHidden();
   };
 
+  const onBeforeToggle = (event: ToggleEvent) => {
+    if (event.newState === "open") flushSync(() => (isMounted = true));
+  };
+
   const onToggle = (event: ToggleEvent) => {
     expanded = event.newState === "open";
     if (expanded) {
-      isMounted = true;
       reposition();
     } else {
       releasePositioning();
@@ -108,9 +106,11 @@ clicking outside, and pressing Escape all dismiss it without a single listener o
 button is the root: class, handlers and aria go straight onto it, and `panelClass` styles the
 panel.
 
-The popover itself — not a local flag — is the source of truth for open/closed; `aria-expanded`,
-the bindable `expanded` and the mounted content are read back from its `toggle` event. Content mounts on first open and
-unmounts once the panel is really hidden, so an expensive menu costs nothing until it is used.
+The popover itself — not a local flag — is the source of truth for open/closed; `aria-expanded`
+and the bindable `expanded` are read back from its `toggle` event. Content mounts just before the
+panel shows, however it was opened, and unmounts once the panel is really hidden, so an expensive
+menu costs nothing until it is used. An element inside it marked `autofocus` takes the focus as the
+panel shows.
 
 `open()` and `close()` are exposed for `bind:this`, which is what a form inside the panel needs to
 dismiss itself after submitting.
@@ -135,7 +135,6 @@ the edge, in both the anchored and the scripted placement; `--dropdown-edge` cha
   popovertarget={panelId}
   aria-expanded={expanded}
   style:anchor-name={anchorName}
-  onpointerdown={() => (isMounted = true)}
 >
   {@render children()}
 </button>
@@ -145,6 +144,7 @@ the edge, in both the anchored and the scripted placement; `--dropdown-edge` cha
   popover
   id={panelId}
   style:position-anchor={anchorName}
+  onbeforetoggle={onBeforeToggle}
   ontoggle={onToggle}
   ontransitionend={onTransitionSettled}
   ontransitioncancel={onTransitionSettled}

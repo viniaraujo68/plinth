@@ -4,10 +4,15 @@
   let {
     panelClass = "panel",
     atEdge = false,
+    withField = false,
     expanded = $bindable(false),
-  }: { panelClass?: string; atEdge?: boolean; expanded?: boolean } = $props();
+  }: { panelClass?: string; atEdge?: boolean; withField?: boolean; expanded?: boolean } = $props();
 
   let menu = $state<ReturnType<typeof Dropdown>>();
+
+  export function openMenu() {
+    menu?.open();
+  }
 </script>
 
 <!--
@@ -23,6 +28,9 @@ Named `*.spec.svelte` so packaging drops it.
   <Dropdown bind:this={menu} bind:expanded {panelClass}>
     Actions
     {#snippet content()}
+      {#if withField}
+        <input aria-label="Filter" autofocus />
+      {/if}
       <button type="button" onclick={() => menu?.close()}>Done</button>
     {/snippet}
   </Dropdown>

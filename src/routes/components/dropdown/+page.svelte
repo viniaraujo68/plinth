@@ -110,9 +110,9 @@
       Opening from elsewhere
     </h2>
     <p class="max-w-2xl text-sm text-base-content/70">
-      <code class="kbd kbd-sm">open()</code> mounts the content before showing the panel, so a
-      programmatic open never flashes an empty box the way the trigger's own async
-      <code class="kbd kbd-sm">toggle</code> event would.
+      The content mounts just before the panel shows, whether a click, a key or
+      <code class="kbd kbd-sm">open()</code> opened it, so it never paints as an empty box and an
+      <code class="kbd kbd-sm">autofocus</code> field inside it takes the focus as it appears.
     </p>
     <div class="flex flex-wrap items-center gap-4">
       <button
@@ -130,9 +130,12 @@
       >
         …or click me
         {#snippet content()}
-          <p data-testid="remote-content">
-            Mounted on demand and unmounted once the panel is really hidden.
-          </p>
+          <div class="flex flex-col gap-3">
+            <p data-testid="remote-content">
+              Mounted on demand and unmounted once the panel is really hidden.
+            </p>
+            <input class="input input-sm" aria-label="Note" placeholder="Note" autofocus />
+          </div>
         {/snippet}
       </Dropdown>
     </div>

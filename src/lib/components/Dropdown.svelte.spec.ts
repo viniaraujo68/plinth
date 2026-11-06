@@ -115,6 +115,16 @@ it("reports whether the panel is open through a bindable expanded", async () => 
   await expect.poll(() => expanded).toBe(false);
 });
 
+it("mounts the content and focuses its autofocus element when the keyboard opens it", async () => {
+  render(Harness, { withField: true });
+
+  (trigger().element() as HTMLElement).focus();
+  await userEvent.keyboard("{Enter}");
+
+  await expect.poll(isOpen).toBe(true);
+  await expect.element(page.getByRole("textbox", { name: "Filter" })).toHaveFocus();
+});
+
 it("hangs the panel under the trigger where the browser has no anchor positioning", async () => {
   /* Firefox, and Safari before 26, drop the `position-area` this panel is placed with and leave
      the UA popover rules -- `position: fixed; inset: 0; margin: auto` -- which float the panel in
