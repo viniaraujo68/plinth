@@ -273,7 +273,8 @@ base URL, how auth is injected, and how the backend spells an error body.
 
 The components entry point ships `AsyncButton`, `Combobox`, `Copyable`, `DateRangePicker`,
 `Dialog`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `Listbox`, `LoadingButton`, `Logo`, `Modal`,
-`Paginator`, `RefreshButton`, `SegmentedControl`, `Select`, `Skeleton` and `Tooltip`. Every one of them has a page in the showcase.
+`MultiSelect`, `Paginator`, `RefreshButton`, `SegmentedControl`, `Select`, `Skeleton` and
+`Tooltip`. Every one of them has a page in the showcase.
 It also exports the mark's outline as data — `PICK_PATH` and `PICK_CLIP_PATH` — for anything
 that wants the pick as a silhouette of its own.
 
@@ -290,6 +291,11 @@ the list rather than by a flag:
 **`Listbox`** is the list on its own, with no trigger and no panel: it renders in place, holds the
 focus on itself or on an optional search box, checks one value or an array of them, and jumps to
 a typed prefix. Inside a `Dropdown`, `autofocus` hands it the keyboard as the panel opens.
+
+**`MultiSelect`** picks several: the field shows the picks as removable chips, and opening it lists
+every option under a search box, with the picked ones checked; a row is checked or unchecked
+without closing the list. A disabled option that is already picked stays locked. `name` submits
+one entry per pick and `required` holds the form back while nothing is picked.
 
 Their panels — and `Dropdown`'s, and the one the `tooltip` attachment puts up — are placed with CSS
 anchor positioning, and place themselves from script in a browser that does not have it yet

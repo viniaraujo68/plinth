@@ -28,6 +28,7 @@ export const showcaseRoutes: RoutingConfig<RouteId> = {
     "/components/loading-button": { title: "LoadingButton" },
     "/components/logo": { title: "Logo" },
     "/components/modal": { title: "Modal" },
+    "/components/multi-select": { title: "MultiSelect" },
     "/components/paginator": { title: "Paginator" },
     "/components/refresh-button": { title: "RefreshButton" },
     "/components/select": { title: "Select" },

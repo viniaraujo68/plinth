@@ -10,6 +10,7 @@ export { default as Listbox } from "./Listbox.svelte";
 export { default as LoadingButton } from "./LoadingButton.svelte";
 export { default as Logo } from "./Logo.svelte";
 export { default as Modal } from "./Modal.svelte";
+export { default as MultiSelect } from "./MultiSelect.svelte";
 export { default as Paginator } from "./Paginator.svelte";
 export { default as RefreshButton } from "./RefreshButton.svelte";
 export { default as SegmentedControl } from "./SegmentedControl.svelte";

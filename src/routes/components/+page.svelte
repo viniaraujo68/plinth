@@ -75,6 +75,11 @@
       summary: "Title, scrollable body and footer over an inert background.",
     },
     {
+      href: resolve("/components/multi-select"),
+      name: "MultiSelect",
+      summary: "Several picks as removable chips, over a searchable list that checks them.",
+    },
+    {
       href: resolve("/components/paginator"),
       name: "Paginator",
       summary: "Page walking and a size picker, for counted and uncounted results alike.",
