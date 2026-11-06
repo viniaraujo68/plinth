@@ -35,3 +35,15 @@ test("submits every pick and keeps a locked one", async ({ page }) => {
 
   await expect(page.getByTestId("channels-submitted")).toHaveText("email");
 });
+
+test("a chip's remove button takes a tap that lands just beside its cross", async ({ page }) => {
+  await page.goto("/components/multi-select");
+
+  const remove = page.getByRole("button", { name: "Remove Ada Lovelace" });
+  const box = await remove.boundingBox();
+  if (!box) throw new Error("remove button is not laid out");
+  await page.mouse.click(box.x + box.width / 2, box.y - 4);
+
+  await expect(page.getByTestId("members-value")).toHaveText("grace");
+  await expect(page.getByRole("listbox")).toHaveCount(0);
+});

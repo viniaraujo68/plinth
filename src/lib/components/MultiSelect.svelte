@@ -159,7 +159,7 @@ pick.
           <button
             type="button"
             tabindex="-1"
-            class="pointer-events-auto flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-base-content/50 hover:bg-base-content/10 hover:text-base-content"
+            class="pointer-events-auto relative flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-base-content/50 after:absolute after:-inset-1.5 hover:bg-base-content/10 hover:text-base-content"
             aria-label={removeLabel(label)}
             onclick={() => {
               remove(picked);
