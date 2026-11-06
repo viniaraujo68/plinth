@@ -258,7 +258,7 @@ base URL, how auth is injected, and how the backend spells an error body.
 | `@viniaraujo68/plinth`             | `AsyncAction`, the error reporter, `LIBRARY_VERSION`                                                       |
 | `@viniaraujo68/plinth/theme`       | `ThemeContext`, `ThemeController`, `ThemeToggle`, the cookie helpers, `createCssColorReader`               |
 | `@viniaraujo68/plinth/theme.css`   | The stylesheet the tokens are declared in                                                                  |
-| `@viniaraujo68/plinth/attachments` | The `tooltip` attachment, usable on any tag                                                                |
+| `@viniaraujo68/plinth/attachments` | The `tooltip` attachment, usable on any tag, and `sortable`, which reorders a list from its drag handles   |
 | `@viniaraujo68/plinth/components`  | The primitives, the `DateRange` and option-matching helpers                                                |
 | `@viniaraujo68/plinth/confirm`     | `confirm`, `Confirmer`, the challenge helpers                                                              |
 | `@viniaraujo68/plinth/shell`       | `AppShell`, `Breadcrumbs`                                                                                  |
@@ -270,7 +270,7 @@ base URL, how auth is injected, and how the backend spells an error body.
 | `@viniaraujo68/plinth/formatters`  | `createFormatters`, over `Intl`                                                                            |
 
 The components entry point ships `AsyncButton`, `Combobox`, `Copyable`, `DateRangePicker`,
-`Dialog`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `JsonInput`, `Listbox`, `LoadingButton`, `Logo`,
+`Dialog`, `DragHandle`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `JsonInput`, `Listbox`, `LoadingButton`, `Logo`,
 `Modal`, `MultiSelect`, `Paginator`, `RefreshButton`, `SegmentedControl`, `Select`, `Skeleton` and
 `Tooltip`. Every one of them has a page in the showcase.
 It also exports the mark's outline as data — `PICK_PATH` and `PICK_CLIP_PATH` — for anything

@@ -110,6 +110,11 @@
       summary: "A placeholder block with a sweep of the brand colour crossing it.",
     },
     {
+      href: resolve("/components/sortable"),
+      name: "Sortable",
+      summary: "Reorders a list from a drag handle, by pointer, touch or the arrow keys.",
+    },
+    {
       href: resolve("/components/toast"),
       name: "Toast",
       summary: "A queue any module can push to, rendered by one host near the app root.",

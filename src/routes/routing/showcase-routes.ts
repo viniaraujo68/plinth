@@ -34,6 +34,7 @@ export const showcaseRoutes: RoutingConfig<RouteId> = {
     "/components/refresh-button": { title: "RefreshButton" },
     "/components/select": { title: "Select" },
     "/components/skeleton": { title: "Skeleton" },
+    "/components/sortable": { title: "Sortable" },
     "/components/toast": { title: "Toast" },
     "/components/tooltip": { title: "Tooltip" },
     "/formatters": { title: "Formatters", icon: "icon-[lucide--hash]" },

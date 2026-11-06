@@ -3,6 +3,7 @@ export { default as Combobox } from "./Combobox.svelte";
 export { default as Copyable } from "./Copyable.svelte";
 export { default as DateRangePicker } from "./DateRangePicker.svelte";
 export { default as Dialog } from "./Dialog.svelte";
+export { default as DragHandle } from "./DragHandle.svelte";
 export { default as Dropdown } from "./Dropdown.svelte";
 export { default as ErrorDisplay } from "./ErrorDisplay.svelte";
 export { default as ErrorPage } from "./ErrorPage.svelte";
