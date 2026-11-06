@@ -135,7 +135,9 @@
       >
       finds <code class="kbd kbd-sm">Otávio</code>, <code class="kbd kbd-sm">polis</code> finds
       <code class="kbd kbd-sm">Petrópolis</code> — which is the pair of things native type-ahead
-      cannot do. For a list short enough to read at a glance,
+      cannot do. Every word typed has to be in the label, in any order, so
+      <code class="kbd kbd-sm">rocha ot</code> narrows a long list of people to one. For a list
+      short enough to read at a glance,
       <a class="link" href={resolve("/components/select")}>Select</a> is the plainer control.
     </p>
     <p class="max-w-2xl text-base-content/70">

@@ -284,7 +284,7 @@ the list rather than by a flag:
   is nothing to type into; the arrows walk it and the trigger keeps the focus.
 - **`Combobox`** — the control bar IS the search field, for a list nobody is going to scroll.
   Clicking it selects the text that is there so the next keystroke replaces it, the query filters
-  past accents and anywhere in the label, and anything that closes the list without a pick puts
+  past accents and anywhere in the label, every word of it in any order, and anything that closes the list without a pick puts
   the selected label back.
 
 Their panels — and `Dropdown`'s, and the one the `tooltip` attachment puts up — are placed with CSS

@@ -30,8 +30,8 @@
     clearable?: boolean;
     disabled?: boolean;
     /**
-     * Matching for the typed query. The default is a substring of the label, case- AND
-     * accent-insensitive, so `otavio` finds `Otávio`.
+     * Matching for the typed query. The default looks for every word of the query in the label,
+     * in any order, case- AND accent-insensitive, so `rocha otavio` finds `Otávio Rocha`.
      *
      * Only consulted once something has been typed: an untouched field always shows every option,
      * which is one less case a custom matcher has to handle.
