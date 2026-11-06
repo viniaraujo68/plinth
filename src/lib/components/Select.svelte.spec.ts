@@ -270,6 +270,80 @@ it("submits the selection with the form when it is given a name", async () => {
   await expect.poll(() => new FormData(form).get("local")).toBe("centro");
 });
 
+it("picks by the first letters of a label on the closed trigger, without opening", async () => {
+  render(Harness, { options: LONG });
+
+  (trigger().element() as HTMLElement).focus();
+  await userEvent.keyboard("it");
+
+  await expect.element(bound()).toHaveTextContent("itaipava");
+  await expect.element(trigger()).toHaveAttribute("aria-expanded", "false");
+});
+
+it("cycles through the labels sharing a letter when it is typed again", async () => {
+  render(Harness, { options: LONG, value: "castelanea" });
+
+  (trigger().element() as HTMLElement).focus();
+  await userEvent.keyboard("c");
+  await expect.element(bound()).toHaveTextContent("centro");
+  await userEvent.keyboard("c");
+  await expect.element(bound()).toHaveTextContent("correas");
+});
+
+it("takes a Space typed into a prefix as part of it, not as a pick", async () => {
+  render(Harness, { options: LONG });
+
+  await trigger().click();
+  await expect.poll(() => options().all()).toHaveLength(LONG.length);
+  await userEvent.keyboard("sao g");
+
+  expect(activeOption()).toBe("São Gonçalo");
+  await expect.element(trigger()).toHaveAttribute("aria-expanded", "true");
+  await expect.element(bound()).toHaveTextContent("none");
+
+  await userEvent.keyboard("{Enter}");
+  await expect.element(bound()).toHaveTextContent("sao-goncalo");
+});
+
+it("moves the highlight, not the selection, when a prefix is typed with the list open", async () => {
+  render(Harness, { options: LONG });
+
+  await trigger().click();
+  await expect.poll(() => options().all()).toHaveLength(LONG.length);
+  await userEvent.keyboard("q");
+
+  expect(activeOption()).toBe("Quitandinha");
+  await expect.element(bound()).toHaveTextContent("none");
+  await expect.element(trigger()).toHaveFocus();
+});
+
+it("holds the form back while nothing is selected when required", async () => {
+  const screen = render(Harness, { options: SHORT, required: true });
+  const form = document.querySelector<HTMLFormElement>('[data-testid="form"]')!;
+
+  expect(form.checkValidity()).toBe(false);
+
+  await page.getByTestId("submit").click();
+  await expect.element(trigger()).toHaveFocus();
+
+  await screen.rerender({ value: "centro" });
+  expect(form.checkValidity()).toBe(true);
+});
+
+it("shows a value the options do not hold as itself, and as nothing while loading", async () => {
+  const screen = render(Harness, { options: SHORT, value: "petropolis" });
+
+  await expect.element(trigger()).toHaveTextContent("petropolis");
+
+  await screen.rerender({ options: [], loading: true });
+  await expect.element(trigger()).toHaveTextContent("");
+  await expect.element(trigger()).toHaveAttribute("aria-busy", "true");
+  expect(trigger().element().querySelector(".loading")).not.toBeNull();
+
+  await trigger().click();
+  await expect.element(page.getByText("Loading…")).toBeVisible();
+});
+
 it("opens above a modal, keeps the focus and writes through from inside it", async () => {
   render(ModalHarness, { options: LONG });
 

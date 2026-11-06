@@ -2,7 +2,13 @@
   import type { Snippet } from "svelte";
   import type { ClassValue, HTMLButtonAttributes } from "svelte/elements";
   import OptionPanel from "./OptionPanel.svelte";
-  import { nextSelectableIndex, type SelectOption } from "./select.js";
+  import {
+    isTypedKey,
+    nextSelectableIndex,
+    Typeahead,
+    typeaheadMatch,
+    type SelectOption,
+  } from "./select.js";
 
   type Props = Omit<
     HTMLButtonAttributes,
@@ -21,15 +27,18 @@
     option?: Snippet<[SelectOption]>;
     /** Accessible name of the clear button. A prop because the library ships no translations. */
     clearLabel?: string;
+    /**
+     * Shows a spinner while the options load, and `loadingLabel` in an empty list. A `value` the
+     * options do not hold yet shows as nothing rather than as itself.
+     */
+    loading?: boolean;
+    loadingLabel?: string;
     /** Classes for the control — width, margins. The trigger is where every other attribute goes. */
     class?: ClassValue;
-    /**
-     * Submits the selection with a surrounding `<form>`, through a hidden input.
-     *
-     * It buys form participation and nothing else: no constraint validation, no `required`, and
-     * no reset. A form that needs those wants a real `<select>`.
-     */
+    /** Submits the selection with a surrounding `<form>`. A form reset does not reach it. */
     name?: string;
+    /** Holds the surrounding form back while nothing is selected, and focuses the trigger. */
+    required?: boolean;
     onchange?: (value: string | null) => void;
   };
 
@@ -41,8 +50,11 @@
     disabled = false,
     option,
     clearLabel = "Clear selection",
+    loading = false,
+    loadingLabel = "Loading…",
     class: className,
     name,
+    required = false,
     onchange,
     ...rest
   }: Props = $props();
@@ -65,6 +77,12 @@
   const triggerId = $derived(rest.id ?? `${panelId}-trigger`);
 
   const selected = $derived(options.find((candidate) => candidate.value === value) ?? null);
+  const unset = $derived(value === null || value === undefined || value === "");
+  const shown = $derived.by(() => {
+    if (selected) return selected.label;
+    if (unset) return placeholder;
+    return loading ? "" : value;
+  });
   const showClear = $derived(clearable && !disabled && value !== null && value !== undefined);
 
   // The highlight is held as a value rather than an index so that an option list that changes
@@ -95,6 +113,19 @@
   const clear = () => {
     commit(null);
     trigger?.focus();
+  };
+
+  const typeahead = new Typeahead();
+
+  const jumpTo = (char: string) => {
+    if (isOpen) {
+      const match = typeaheadMatch(options, highlighted, typeahead.add(char));
+      if (match >= 0) highlightedValue = options[match].value;
+      return;
+    }
+    const current = options.findIndex((candidate) => candidate.value === value);
+    const match = typeaheadMatch(options, current, typeahead.add(char));
+    if (match >= 0) commit(options[match].value);
   };
 
   const move = (delta: number) => {
@@ -132,6 +163,11 @@
 
       case "Enter":
       case " ": {
+        if (event.key === " " && typeahead.typing) {
+          event.preventDefault();
+          jumpTo(" ");
+          break;
+        }
         if (!isOpen) return;
         // Ahead of the button's own activation, which would otherwise toggle the panel back open
         // in the same keystroke that picked a row.
@@ -147,6 +183,11 @@
         // trigger; all that is left is to take the list off the screen with it.
         if (isOpen) panel?.hide();
         break;
+
+      default:
+        if (!isTypedKey(event)) return;
+        event.preventDefault();
+        jumpTo(event.key);
     }
   };
 
@@ -174,6 +215,11 @@ The trigger carries `role="combobox"` and every attribute passed in, which is wh
 are pointed at by `aria-activedescendant` instead of being focused. `class` styles the control —
 the width belongs to the wrapper, since the panel matches it.
 
+Typing the first letters of a label works as in a native select: on the closed trigger it picks the
+row, with the list open it moves the highlight, and the same letter again cycles through the rows
+it starts. `required` holds a surrounding form back while nothing is selected, and `loading` shows a
+spinner while the options are on their way.
+
 ```svelte
 <span id="size-label">Size</span>
 <Select
@@ -199,7 +245,7 @@ the width belongs to the wrapper, since the panel matches it.
       // One class and not two: daisyUI dims the text of a disabled `<select>` through a rule that
       // only reaches a real `select` element, and two Tailwind opacities on the same property
       // would be settled by their order in the stylesheet rather than by the order written here.
-      disabled ? "text-base-content/40" : !selected && "text-base-content/50",
+      disabled ? "text-base-content/40" : unset && "text-base-content/50",
     ]}
     role="combobox"
     {disabled}
@@ -208,10 +254,14 @@ the width belongs to the wrapper, since the panel matches it.
     aria-expanded={isOpen}
     aria-controls={isOpen ? listboxId : undefined}
     aria-activedescendant={activeOptionId}
+    aria-busy={loading || undefined}
     style:anchor-name={anchorName}
     onkeydown={onKeydown}
   >
-    <span class="truncate">{selected?.label ?? placeholder}</span>
+    <span class="truncate">{shown}</span>
+    {#if loading}
+      <span class="loading ms-auto loading-xs loading-spinner" aria-hidden="true"></span>
+    {/if}
   </button>
 
   {#if showClear}
@@ -227,8 +277,18 @@ the width belongs to the wrapper, since the panel matches it.
     </button>
   {/if}
 
-  {#if name}
-    <input type="hidden" {name} value={value ?? ""} />
+  {#if name || required}
+    <input
+      class="sr-only"
+      tabindex="-1"
+      aria-hidden="true"
+      autocomplete="off"
+      {name}
+      {disabled}
+      {required}
+      value={value ?? ""}
+      onfocus={() => trigger?.focus()}
+    />
   {/if}
 </div>
 
@@ -243,6 +303,7 @@ the width belongs to the wrapper, since the panel matches it.
   {highlighted}
   {optionId}
   {option}
+  emptyLabel={loading ? loadingLabel : undefined}
   labelledBy={triggerId}
   class="plinth-select-panel"
   onopenchange={onOpenChange}

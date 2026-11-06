@@ -8,6 +8,8 @@
     clearable = false,
     disabled = false,
     name,
+    required = false,
+    loading = false,
     withOptionSnippet = false,
   }: {
     options: readonly SelectOption[];
@@ -15,6 +17,8 @@
     clearable?: boolean;
     disabled?: boolean;
     name?: string;
+    required?: boolean;
+    loading?: boolean;
     withOptionSnippet?: boolean;
   } = $props();
 
@@ -35,13 +39,16 @@ Tab to land on. Named `*.spec.svelte` so packaging drops it.
 
 <span id="harness-label">Local</span>
 
-<form data-testid="form">
+<form data-testid="form" onsubmit={(event) => event.preventDefault()}>
+  <button type="submit" data-testid="submit">Submit</button>
   <Select
     bind:value
     {options}
     {clearable}
     {disabled}
     {name}
+    {required}
+    {loading}
     option={withOptionSnippet ? row : undefined}
     aria-labelledby="harness-label"
     placeholder="Pick a local"

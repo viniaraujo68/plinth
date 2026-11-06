@@ -112,3 +112,30 @@ test("opens over a modal and closes one layer at a time", async ({ page }) => {
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
 });
+
+test("picks by a typed prefix on the closed trigger", async ({ page }) => {
+  await page.goto("/components/select");
+
+  const local = page.getByTestId("local");
+  await local.focus();
+  await page.keyboard.type("qu");
+
+  await expect(page.getByTestId("local-value")).toHaveText("quitandinha");
+  await expect(local).toHaveAttribute("aria-expanded", "false");
+});
+
+test("holds a required select's form back until something is chosen", async ({ page }) => {
+  await page.goto("/components/select");
+
+  const region = page.getByTestId("region");
+  await expect(region).toHaveAttribute("aria-busy", "true");
+  await expect(region).not.toHaveAttribute("aria-busy");
+
+  await page.getByTestId("submit-region").click();
+  await expect(region).toBeFocused();
+  await expect(page.getByTestId("region-sent")).toHaveText("—");
+
+  await page.keyboard.type("ita");
+  await page.getByTestId("submit-region").click();
+  await expect(page.getByTestId("region-sent")).toHaveText("itaipava");
+});

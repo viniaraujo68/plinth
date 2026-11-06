@@ -49,6 +49,10 @@
   let busiest = $state<string | null>("centro");
   let shipping = $state<string | null>(null);
   let modalLocal = $state<string | null>("itaipava");
+  let region = $state<string | null>(null);
+  let regionOptions = $state<readonly SelectOption[]>([]);
+  let loadingRegions = $state(true);
+  let submittedRegion = $state("—");
 
   let filters = $state<Modal>();
 
@@ -57,6 +61,11 @@
   let ready = $state(false);
   onMount(() => {
     ready = true;
+    const timer = setTimeout(() => {
+      regionOptions = LOCALS;
+      loadingRegions = false;
+    }, 1500);
+    return () => clearTimeout(timer);
   });
 </script>
 
@@ -88,7 +97,9 @@
     <p class="max-w-2xl text-sm text-base-content/70">
       Four options. The trigger keeps the keyboard the whole time: the arrows walk the rows, Home
       and End jump to the ends, Enter and Space pick, and the highlighted row is pointed at with
-      <code class="kbd kbd-sm">aria-activedescendant</code> rather than focused.
+      <code class="kbd kbd-sm">aria-activedescendant</code> rather than focused. As in a native select,
+      typing the first letters of a label picks it on the closed trigger and highlights it in the open
+      list.
     </p>
     <div class="flex flex-col gap-1.5">
       <span id="size-label" class="label text-xs">Size</span>
@@ -190,6 +201,45 @@
         />
       </div>
     </div>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
+      Loading, and a required field
+    </h2>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      <code class="kbd kbd-sm">loading</code> shows a spinner while the options are on their way.
+      <code class="kbd kbd-sm">required</code> holds the form back while nothing is selected and hands
+      the focus to the trigger, the way a native select does.
+    </p>
+    <form
+      class="flex flex-wrap items-end gap-4"
+      onsubmit={(event) => {
+        event.preventDefault();
+        submittedRegion = String(new FormData(event.currentTarget).get("region"));
+      }}
+    >
+      <div class="flex flex-col gap-1.5">
+        <span id="region-label" class="label text-xs">Region</span>
+        <Select
+          bind:value={region}
+          options={regionOptions}
+          loading={loadingRegions}
+          name="region"
+          required
+          aria-labelledby="region-label"
+          data-testid="region"
+          placeholder="Choose a region"
+          class="w-64"
+        />
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm" data-testid="submit-region">Send</button>
+      <span class="text-sm text-base-content/70">
+        Sent <span class="badge badge-soft badge-sm" data-testid="region-sent"
+          >{submittedRegion}</span
+        >
+      </span>
+    </form>
   </section>
 
   <section class="flex flex-col gap-4">

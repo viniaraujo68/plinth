@@ -287,7 +287,9 @@ Two of those pick one thing from a list, and which one to reach for is decided b
 the list rather than by a flag:
 
 - **`Select`** — a trigger and a panel of rows, for a list short enough to read at a glance. There
-  is nothing to type into; the arrows walk it and the trigger keeps the focus.
+  is nothing to type into; the arrows walk it, the first letters of a label jump to it as in a
+  native select, and the trigger keeps the focus. `required` holds a form back while nothing is
+  selected.
 - **`Combobox`** — the control bar IS the search field, for a list nobody is going to scroll.
   Clicking it selects the text that is there so the next keystroke replaces it, the query filters
   past accents and anywhere in the label, every word of it in any order, and anything that closes
