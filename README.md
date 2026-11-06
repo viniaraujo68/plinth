@@ -14,15 +14,13 @@ published.
 ## Install
 
 ```sh
-npm i github:viniaraujo68/plinth
+npm i @viniaraujo68/plinth
 ```
 
+An unreleased commit installs straight from GitHub with `npm i github:viniaraujo68/plinth#<ref>`:
 npm runs the `prepare` script for a git dependency — and installs the dev dependencies needed to
-do it — so `svelte-package` builds `dist` on the consumer's machine and nothing has to be
-committed. Pin a ref when you want one: `github:viniaraujo68/plinth#v0.1.0`.
-
-Once published to npm, the same package installs as `npm i @viniaraujo68/plinth`. Both give you
-the same import specifiers, which are what every example below uses.
+do it — so `svelte-package` builds `dist` on the consumer's machine. Both give you the same import
+specifiers, which are what every example below uses.
 
 The package declares `svelte` and `@sveltejs/kit` as peer dependencies; Tailwind 4 and daisyUI 5
 are the consumer's own, because the theme is a stylesheet the consumer imports rather than a
