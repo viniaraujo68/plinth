@@ -55,6 +55,11 @@
       summary: "A full-page status screen, with its own wording for a 404.",
     },
     {
+      href: resolve("/components/listbox"),
+      name: "Listbox",
+      summary: "A list to pick one or several from in place, with an optional search.",
+    },
+    {
       href: resolve("/components/loading-button"),
       name: "LoadingButton",
       summary: "A spinner and a blocked button, driven by a flag the caller owns.",

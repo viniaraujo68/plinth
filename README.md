@@ -272,8 +272,8 @@ base URL, how auth is injected, and how the backend spells an error body.
 | `@viniaraujo68/plinth/formatters`  | `createFormatters`, over `Intl`                                                                            |
 
 The components entry point ships `AsyncButton`, `Combobox`, `Copyable`, `DateRangePicker`,
-`Dialog`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `LoadingButton`, `Logo`, `Modal`, `Paginator`,
-`RefreshButton`, `SegmentedControl`, `Select`, `Skeleton` and `Tooltip`. Every one of them has a page in the showcase.
+`Dialog`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `Listbox`, `LoadingButton`, `Logo`, `Modal`,
+`Paginator`, `RefreshButton`, `SegmentedControl`, `Select`, `Skeleton` and `Tooltip`. Every one of them has a page in the showcase.
 It also exports the mark's outline as data — `PICK_PATH` and `PICK_CLIP_PATH` — for anything
 that wants the pick as a silhouette of its own.
 
@@ -284,8 +284,12 @@ the list rather than by a flag:
   is nothing to type into; the arrows walk it and the trigger keeps the focus.
 - **`Combobox`** — the control bar IS the search field, for a list nobody is going to scroll.
   Clicking it selects the text that is there so the next keystroke replaces it, the query filters
-  past accents and anywhere in the label, every word of it in any order, and anything that closes the list without a pick puts
-  the selected label back.
+  past accents and anywhere in the label, every word of it in any order, and anything that closes
+  the list without a pick puts the selected label back.
+
+**`Listbox`** is the list on its own, with no trigger and no panel: it renders in place, holds the
+focus on itself or on an optional search box, checks one value or an array of them, and jumps to
+a typed prefix. Inside a `Dropdown`, `autofocus` hands it the keyboard as the panel opens.
 
 Their panels — and `Dropdown`'s, and the one the `tooltip` attachment puts up — are placed with CSS
 anchor positioning, and place themselves from script in a browser that does not have it yet

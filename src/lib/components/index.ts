@@ -6,6 +6,7 @@ export { default as Dialog } from "./Dialog.svelte";
 export { default as Dropdown } from "./Dropdown.svelte";
 export { default as ErrorDisplay } from "./ErrorDisplay.svelte";
 export { default as ErrorPage } from "./ErrorPage.svelte";
+export { default as Listbox } from "./Listbox.svelte";
 export { default as LoadingButton } from "./LoadingButton.svelte";
 export { default as Logo } from "./Logo.svelte";
 export { default as Modal } from "./Modal.svelte";
