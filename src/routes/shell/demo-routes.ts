@@ -41,12 +41,11 @@ export const demoRoutes: RoutingConfig<DemoId> = {
     "/settings": { title: "Settings", icon: "settings" },
   },
 
-  // A hand-written stand-in for `import.meta.glob`, so the fake tree is self-contained. `/orders`
-  // has no page of its own on purpose: it resolves as a non-navigable heading, which is what the
-  // breadcrumb trail renders as plain text.
+  // A hand-written stand-in for `import.meta.glob`, so the fake tree is self-contained.
   pages: {
     "/src/routes/+page.svelte": {},
     "/src/routes/dashboard/+page.svelte": {},
+    "/src/routes/orders/+page.svelte": {},
     "/src/routes/orders/[id]/+page.svelte": {},
     "/src/routes/orders/[id]/lines/[line]/+page.svelte": {},
     "/src/routes/customers/+page.svelte": {},

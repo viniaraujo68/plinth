@@ -22,10 +22,14 @@ const config: RoutingConfig = {
     "/inventory": { title: "Inventory", icon: "i-box" },
     "/settings": { title: "Settings", icon: "i-settings" },
     "/internal": {},
+    "/archive": { title: "Archive", icon: "i-archive" },
+    "/archive/[year]": { title: ({ params }) => `Archive ${params.year}` },
   },
   pages: {
     "/src/routes/+page.svelte": {},
     "/src/routes/dashboard/+page.svelte": {},
+    "/src/routes/orders/+page.svelte": {},
+    "/src/routes/archive/[year]/+page.svelte": {},
     "/src/routes/orders/[id]/+page.svelte": {},
     "/src/routes/orders/[id]/lines/[line]/+page.svelte": {},
     "/src/routes/customers/+page.svelte": {},
@@ -113,7 +117,8 @@ beforeEach(() => {
 it("derives the sidebar from the route tree, dropping plumbing entries", () => {
   render(Harness, { routing: routingAt("/dashboard"), width: WIDE });
 
-  // "/internal" and "/orders/[id]/lines" are declared but untitled; "/orders/[id]" is a grandchild.
+  // "/internal" and "/orders/[id]/lines" are declared but untitled; "/orders/[id]" is a grandchild;
+  // "/archive" is titled but has no page to link to.
   expect(sidebarLabels()).toEqual([
     "Home",
     "Dashboard",
@@ -124,6 +129,22 @@ it("derives the sidebar from the route tree, dropping plumbing entries", () => {
     "Inventory",
     "Settings",
   ]);
+});
+
+it("leaves out a titled entry with no page of its own, in every form", async () => {
+  render(Harness, { routing: routingAt("/archive/[year]", { year: "2024" }), width: NARROW });
+
+  const hrefs = () =>
+    [...document.querySelectorAll<HTMLAnchorElement>(".plinth-shell a")].map((link) =>
+      link.getAttribute("href"),
+    );
+
+  expect(sidebarLabels()).not.toContain("Archive");
+  expect(barLabels()).not.toContain("Archive");
+  await page.getByRole("button", { name: "More" }).click();
+  await expect.poll(sheetLinks).not.toHaveLength(0);
+  expect(sheetLinks().map((link) => link.textContent?.trim())).not.toContain("Archive");
+  expect(hrefs()).not.toContain("/archive");
 });
 
 it("drops an entry the user context gates out", () => {

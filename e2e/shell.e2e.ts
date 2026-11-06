@@ -204,7 +204,11 @@ test("renders the breadcrumb trail of the current match", async ({ page }) => {
   const crumbs = page.locator("[data-testid='crumbs'] .crumb");
   await expect(crumbs).toHaveText(["Home", "Orders", "Order #7841", "Line 3"]);
 
-  // "/orders" has no page of its own, so it is text; the last crumb is never a link.
-  await expect(page.locator("[data-testid='crumbs'] a")).toHaveText(["Home", "Order #7841"]);
+  // Every ancestor has a page of its own, so each one links; the last crumb never does.
+  await expect(page.locator("[data-testid='crumbs'] a")).toHaveText([
+    "Home",
+    "Orders",
+    "Order #7841",
+  ]);
   await expect(page.locator("[data-testid='crumbs'] [aria-current='page']")).toHaveText("Line 3");
 });

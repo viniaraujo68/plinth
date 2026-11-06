@@ -87,14 +87,14 @@
   const routing = getRoutingContext();
   const user = getUserContext();
 
-  const titled = (route: ResolvedRoute) => route.meta.title !== undefined;
+  const listed = (route: ResolvedRoute) => route.meta.title !== undefined && route.navigable;
 
   /**
    * Home is the header entry, apart from the list — derived, never re-declared. The root is a
    * prefix of every route id, so it rides the trail whenever anything matched at all; on a 404
    * there is no trail and the header falls back to the brand alone.
    */
-  const home = $derived(routing.matched.find((route) => route.routeId === "/" && titled(route)));
+  const home = $derived(routing.matched.find((route) => route.routeId === "/" && listed(route)));
 
   /**
    * The role gate `ScopedComponent` applies, applied here instead — one step earlier, because the
@@ -105,7 +105,7 @@
   const items = $derived(
     routing
       .children("/")
-      .filter((route) => titled(route) && user.hasAnyRole(route.meta.requiredRoles ?? [])),
+      .filter((route) => listed(route) && user.hasAnyRole(route.meta.requiredRoles ?? [])),
   );
 
   /**
@@ -224,8 +224,8 @@ no resize listener and no `matchMedia`, so nothing flashes the wrong layout on t
 and because the root is its own container, the shell can be dropped into a narrow box to render its
 mobile form on a desktop, which is exactly what the showcase does.
 
-Entries come from `routing.children("/")`, minus plumbing (no `title`) and minus anything the user
-context gates out. Home, when declared, is derived off the trail and rendered as the sidebar's
+Entries come from `routing.children("/")`, minus plumbing (no `title`), minus any route with no page
+of its own to link to, and minus anything the user context gates out. Home, when declared, is derived off the trail and rendered as the sidebar's
 header entry and as the bottom bar's first item. It is current on the exact root and nowhere else —
 every route is below it — while every other entry is current for its whole subtree, so exactly one
 entry is ever marked, in either form.

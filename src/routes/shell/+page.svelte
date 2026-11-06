@@ -219,9 +219,10 @@
     <p class="max-w-2xl text-sm text-base-content/70">
       The same trail the frames above render inside their content area, and the same source: the
       titled entries of <code class="kbd kbd-sm">routing.matched</code>. Plumbing steps — the
-      <code class="kbd kbd-sm">/orders/[id]/lines</code> segment, which exists only so the line page
-      can resolve — never appear. <code class="kbd kbd-sm">/orders</code> has no page of its own, so it
-      renders as text rather than a link.
+      <code class="kbd kbd-sm">/orders/[id]/lines</code> segment, which exists only so the line page can
+      resolve — never appear. A titled section with no page of its own would stay in the trail as text
+      rather than a link; the shell leaves such a section out of its navigation altogether, since an entry
+      there that goes nowhere is a broken link.
     </p>
     <div class="rounded-box border border-base-content/10 bg-base-200/40 p-4" data-testid="crumbs">
       <RoutingProvider routing={demoRouting}>

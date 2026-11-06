@@ -167,7 +167,9 @@ without configuration; anything else goes through `AppShell`'s `icon` snippet.
 
 `ThemeController` is a hidden checkbox that must be mounted exactly once, unconditionally — it is
 what CSS keys the theme on, and every other picker in the app just writes `preference` on the
-theme context. `AppShell` fills its parent, so give it one with a height.
+theme context. `AppShell` fills its parent, so give it one with a height. Its navigation lists the
+titled first-level routes that have a page of their own; a titled route with no page stays a heading
+in the breadcrumb trail and is left out of the navigation, which has nothing to link it to.
 
 An app that cannot render the controller in the right state on the server — a prerendered site, a
 client-only app — usually stamps `data-theme="plinth-light"` or `data-theme="plinth-dark"` on
