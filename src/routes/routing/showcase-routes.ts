@@ -25,6 +25,7 @@ export const showcaseRoutes: RoutingConfig<RouteId> = {
     "/components/error-display": { title: "ErrorDisplay" },
     "/components/error-page": { title: "ErrorPage" },
     "/components/json-input": { title: "JsonInput" },
+    "/components/json-view": { title: "JsonView" },
     "/components/listbox": { title: "Listbox" },
     "/components/loading-button": { title: "LoadingButton" },
     "/components/logo": { title: "Logo" },
