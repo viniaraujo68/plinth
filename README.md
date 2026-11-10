@@ -251,6 +251,19 @@ arrangement across reloads. `createFormatters` decides the
 locale once, and `createHttpClient` takes the three things that actually differ between apps — the
 base URL, how auth is injected, and how the backend spells an error body.
 
+Work the reader waits on goes through **`toast.promise`**: a spinning `loading` toast that turns into
+a success or an error in place once the work settles. It never rejects — it resolves to the value,
+or to `undefined` on failure — and hands the failure to `onerror`, or to `reportError` when none is
+given, the same rule `AsyncButton` follows. `toast.update(id, patch)` changes a live toast in place.
+
+```ts
+const saved = await toast.promise(api.post("/orders", draft), {
+  loading: "Saving…",
+  success: (order) => `Order ${order.id} saved.`,
+  error: (error) => errorMessage(error),
+});
+```
+
 ## Entry points
 
 | Import                             | What it carries                                                                                              |
@@ -263,7 +276,7 @@ base URL, how auth is injected, and how the backend spells an error body.
 | `@viniaraujo68/plinth/confirm`     | `confirm`, `Confirmer`, the challenge helpers                                                                |
 | `@viniaraujo68/plinth/shell`       | `AppShell`, `TopBar`, `Breadcrumbs`, `NavigationProgress`                                                    |
 | `@viniaraujo68/plinth/table`       | `DataTable`, the sorting and column-layout functions behind it, `competitionRanks`, the sort ↔ URL helpers   |
-| `@viniaraujo68/plinth/toast`       | The toast queue and its host                                                                                 |
+| `@viniaraujo68/plinth/toast`       | The toast queue, `toast.loading`, `toast.promise`, `toast.update`, and its host                              |
 | `@viniaraujo68/plinth/routing`     | `RoutingConfig`, `RoutingContext`, `resolvePathname`, `withSearchParams`, `safeNext`, `loginUrl`, `withNext` |
 | `@viniaraujo68/plinth/user`        | `UserContext`, `ScopedComponent`, the anonymous default                                                      |
 | `@viniaraujo68/plinth/http`        | `createHttpClient`, `ApiError`, `errorMessage`, `errorStatus`                                                |

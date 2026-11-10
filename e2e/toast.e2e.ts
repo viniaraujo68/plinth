@@ -76,3 +76,26 @@ test("stacks toasts inside a labelled polite live region on the body", async ({ 
   await page.getByTestId("fire-sticky").click();
   await expect(region.getByTestId("toast")).toHaveCount(1);
 });
+
+test("turns a promise's spinner into its outcome in place", async ({ page }) => {
+  await page.getByTestId("fire-promise-success").click();
+  const toast = page.getByTestId("toast");
+  await expect(toast).toHaveAttribute("data-variant", "loading");
+  await expect(toast).toContainText("Exporting rows…");
+
+  await expect(toast).toHaveAttribute("data-variant", "success");
+  await expect(toast).toContainText("Exported 42 rows.");
+  await expect(toast).toHaveCount(1);
+  await expect(page.getByTestId("promise-result")).toHaveText("42");
+});
+
+test("resolves a failed promise to undefined and shows the error in place", async ({ page }) => {
+  await page.getByTestId("fire-promise-error").click();
+  const toast = page.getByTestId("toast");
+  await expect(toast).toHaveAttribute("data-variant", "loading");
+
+  await expect(toast).toHaveAttribute("data-variant", "error");
+  await expect(toast).toContainText("The export service timed out.");
+  await expect(page.getByTestId("promise-result")).toHaveText("undefined");
+  await expect(page.getByTestId("promise-failures")).toHaveText("1");
+});

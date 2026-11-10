@@ -65,6 +65,52 @@
     const id = toast.info("Publishing…", { duration: Number.POSITIVE_INFINITY });
     setTimeout(() => toast.success("Published.", { id }), 1200);
   };
+
+  const settleAfter = <T,>(ms: number, outcome: () => T): Promise<T> =>
+    new Promise((resolve, reject) => {
+      setTimeout(() => {
+        try {
+          resolve(outcome());
+        } catch (failure) {
+          reject(failure);
+        }
+      }, ms);
+    });
+
+  let lastResult = $state("nothing yet");
+  let handledFailures = $state(0);
+
+  const firePromise = async (succeed: boolean) => {
+    const result = await toast.promise(
+      () =>
+        settleAfter(1500, () => {
+          if (!succeed) throw new Error("The export service timed out.");
+          return 42;
+        }),
+      {
+        loading: "Exporting rows…",
+        success: (rows) => `Exported ${rows} rows.`,
+        error: (failure) => (failure instanceof Error ? failure.message : "Export failed."),
+      },
+      { onerror: () => (handledFailures += 1) },
+    );
+    lastResult = result === undefined ? "undefined" : String(result);
+  };
+
+  const fireProgress = () => {
+    const id = toast.loading("Uploading 3 files…", { description: "0 of 3 done" });
+    [1, 2, 3].forEach((done) =>
+      setTimeout(() => {
+        if (done < 3) toast.update(id, { description: `${done} of 3 done` });
+        else
+          toast.update(id, {
+            variant: "success",
+            message: "Uploaded 3 files.",
+            description: undefined,
+          });
+      }, done * 800),
+    );
+  };
 </script>
 
 <main class="mx-auto flex w-full max-w-4xl flex-col gap-12 p-6 sm:p-10">
@@ -133,6 +179,54 @@
     <p class="text-xs text-base-content/50">
       The queue caps at five: fire more and the oldest gives way, because a stack taller than the
       viewport hides the newest message.
+    </p>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
+      Loading and promises
+    </h2>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      A <code class="kbd kbd-sm">loading</code> toast spins, never times out and cannot be dismissed
+      unless asked to. <code class="kbd kbd-sm">toast.promise</code> shows one for as long as the
+      work runs, then turns the same toast into a success or an error. It never rejects: it resolves
+      to the value, or to <code class="kbd kbd-sm">undefined</code> on failure, and hands the
+      failure to
+      <code class="kbd kbd-sm">onerror</code> — or to <code class="kbd kbd-sm">reportError</code> when
+      none is given.
+    </p>
+    <div class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="btn btn-sm"
+        data-testid="fire-promise-success"
+        onclick={() => firePromise(true)}
+      >
+        Promise that succeeds
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm"
+        data-testid="fire-promise-error"
+        onclick={() => firePromise(false)}
+      >
+        Promise that fails
+      </button>
+      <button type="button" class="btn btn-sm" data-testid="fire-progress" onclick={fireProgress}>
+        Loading with progress
+      </button>
+    </div>
+    <p class="text-sm text-base-content/60">
+      Last result: <code class="kbd kbd-sm" data-testid="promise-result">{lastResult}</code>.
+      Failures handed to <code class="kbd kbd-sm">onerror</code>:
+      <span class="badge badge-soft badge-primary" data-testid="promise-failures"
+        >{handledFailures}</span
+      >
+    </p>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      "Loading with progress" drives one toast through <code class="kbd kbd-sm">toast.update</code>:
+      the description changes in place, and switching the variant to success hands it that variant's
+      countdown and dismiss button.
     </p>
   </section>
 
