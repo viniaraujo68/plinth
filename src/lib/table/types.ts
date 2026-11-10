@@ -77,7 +77,60 @@ export interface Column<T> {
    * `$derived` and the distinction stops mattering.
    */
   cell?: Snippet<[T, number]>;
+  filter?: ColumnFilter<T>;
 }
+
+export type TextOperator = "contains" | "eq";
+
+export type NumberOperator = "gte" | "gt" | "lte" | "lt" | "eq";
+
+export type ChoiceOperator = "in";
+
+export type FilterOperator = TextOperator | NumberOperator | ChoiceOperator;
+
+export interface FilterOption {
+  value: string;
+  label: string;
+}
+
+interface FilterBase<T> {
+  value?: (row: T) => unknown;
+}
+
+export interface TextFilter<T> extends FilterBase<T> {
+  kind: "text";
+  operators?: readonly TextOperator[];
+}
+
+export interface NumberFilter<T> extends FilterBase<T> {
+  kind: "number";
+  operators?: readonly NumberOperator[];
+  min?: number;
+  max?: number;
+  step?: number;
+  format?: (value: number) => string;
+}
+
+export interface ChoiceFilter<T> extends FilterBase<T> {
+  kind: "choice";
+  options: readonly FilterOption[];
+}
+
+export type ColumnFilter<T> = TextFilter<T> | NumberFilter<T> | ChoiceFilter<T>;
+
+export type FilterRule =
+  | { key: string; operator: TextOperator; value: string }
+  | { key: string; operator: NumberOperator; value: number }
+  | { key: string; operator: ChoiceOperator; value: string[] };
+
+export type FilterCombinator = "and" | "or";
+
+export interface FilterGroup {
+  combinator: FilterCombinator;
+  children: FilterNode[];
+}
+
+export type FilterNode = FilterRule | FilterGroup;
 
 /**
  * The part of a table the reader arranges: which columns show, in what order, and how wide the

@@ -44,6 +44,7 @@ export const showcaseRoutes: RoutingConfig<RouteId> = {
     "/routing": { title: "Routing", icon: "icon-[lucide--route]" },
     "/shell": { title: "Shell", icon: "icon-[lucide--layout-dashboard]" },
     "/table": { title: "DataTable", icon: "icon-[lucide--table]" },
+    "/table/filters": { title: "Filtering and paging" },
     "/user": { title: "User", icon: "icon-[lucide--user-round]" },
   },
 

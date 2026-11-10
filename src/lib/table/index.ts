@@ -1,8 +1,55 @@
 // A sortable table that turns into cards on a narrow screen, whose columns the reader can show,
-// hide, reorder and resize, and the pure functions behind it. Not a data grid: no filtering, no
-// virtualization, no saved views. `@viniaraujo68/plinth/table`.
+// hide, reorder, resize and filter, optionally paged, and the pure functions behind it. Not a data
+// grid: no virtualization, no saved views. `@viniaraujo68/plinth/table`.
 export { default as DataTable } from "./DataTable.svelte";
-export type { Column, ColumnState, SortDirection, SortState, SortValue } from "./types.js";
+export { default as FilterBar } from "./FilterBar.svelte";
+export { DEFAULT_FILTER_LABELS, type FilterLabels } from "./filter-labels.js";
+export type {
+  ChoiceFilter,
+  ChoiceOperator,
+  Column,
+  ColumnFilter,
+  ColumnState,
+  FilterCombinator,
+  FilterGroup,
+  FilterNode,
+  FilterOperator,
+  FilterOption,
+  FilterRule,
+  NumberFilter,
+  NumberOperator,
+  SortDirection,
+  SortState,
+  SortValue,
+  TextFilter,
+  TextOperator,
+} from "./types.js";
+export {
+  addNode,
+  emptyFilter,
+  filterableColumns,
+  filterFromParams,
+  filterRows,
+  filterRules,
+  filterToParams,
+  filterValue,
+  findRule,
+  isFilterEmpty,
+  isGroup,
+  isRuleActive,
+  nodeAt,
+  normalizeFilter,
+  NUMBER_OPERATORS,
+  operatorsOf,
+  removeNode,
+  removeRule,
+  replaceNode,
+  setCombinator,
+  setRule,
+  TEXT_OPERATORS,
+  type FilterableColumn,
+  type NodePath,
+} from "./filter.js";
 export {
   ariaSort,
   cellText,

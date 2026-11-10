@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
   import SegmentedControl from "$lib/components/SegmentedControl.svelte";
   import { createFormatters } from "$lib/formatters.js";
   import { DataTable, type Column, type ColumnState, type SortState } from "$lib/table/index.js";
@@ -145,8 +146,10 @@
     <p class="max-w-2xl text-base-content/70">
       When a table asks for it, the reader can arrange the columns too: show, hide and reorder them
       from a menu, drag a header's edge to resize one, and find the table the way they left it after
-      a reload. It stays short of a data grid — no filtering, no virtualization, no saved views; a
-      table that needs those needs a different component.
+      a reload. Columns can declare a filter and the table can page its rows — both on
+      <a class="link" href={resolve("/table/filters")}>their own page</a>. It stays short of a data
+      grid — no virtualization, no saved views; a table that needs those needs a different
+      component.
     </p>
   </header>
 
