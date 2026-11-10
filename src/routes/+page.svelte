@@ -59,6 +59,10 @@
     { path: "@viniaraujo68/plinth/http", summary: "createHttpClient and the typed ApiError." },
     { path: "@viniaraujo68/plinth/formatters", summary: "createFormatters, over Intl." },
     { path: "@viniaraujo68/plinth/i18n", summary: "createI18n, t() and the LocaleToggle." },
+    {
+      path: "@viniaraujo68/plinth/virtual",
+      summary: "Virtualizer, VirtualList, WindowedData and DataList.",
+    },
   ];
 
   const INSTALL = "npm i github:viniaraujo68/plinth";
