@@ -21,6 +21,7 @@ export {
   type PaginatorLabels,
 } from "./Paginator.svelte";
 export { default as RefreshButton } from "./RefreshButton.svelte";
+export { default as RequestErrorDisplay } from "./RequestErrorDisplay.svelte";
 export { default as SegmentedControl } from "./SegmentedControl.svelte";
 export { default as Select } from "./Select.svelte";
 export { default as Skeleton } from "./Skeleton.svelte";
@@ -62,6 +63,12 @@ export {
 } from "./json-text.js";
 
 export { DEFAULT_JSON_VIEW_LABELS, type JsonViewLabels } from "./json-view.js";
+
+export {
+  DEFAULT_REQUEST_ERROR_COPY,
+  type RequestErrorCopy,
+  type RequestErrorLabels,
+} from "./request-error.js";
 
 // The option type a caller of `SegmentedControl` writes its list against.
 export type { SegmentedOption } from "./segmented.js";

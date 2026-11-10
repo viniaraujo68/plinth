@@ -33,6 +33,7 @@ export const showcaseRoutes: RoutingConfig<RouteId> = {
     "/components/multi-select": { title: "MultiSelect" },
     "/components/paginator": { title: "Paginator" },
     "/components/refresh-button": { title: "RefreshButton" },
+    "/components/request-error-display": { title: "RequestErrorDisplay" },
     "/components/select": { title: "Select" },
     "/components/skeleton": { title: "Skeleton" },
     "/components/sortable": { title: "Sortable" },

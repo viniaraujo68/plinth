@@ -25,3 +25,17 @@ it("takes the wording the app wants", async () => {
   await expect.element(page.getByRole("alert")).toHaveTextContent("Report unavailable");
   await expect.element(page.getByRole("alert")).toHaveTextContent("The export service is offline.");
 });
+
+it("takes the eyebrow and the retry label the app wants", async () => {
+  render(ErrorDisplay, { reset: vi.fn(), eyebrow: "Erro", retryLabel: "Tentar novamente" });
+
+  await expect.element(page.getByRole("alert")).toHaveTextContent("Erro");
+  await expect.element(page.getByRole("button", { name: "Tentar novamente" })).toBeVisible();
+});
+
+it("drops the eyebrow when given an empty one", async () => {
+  render(ErrorDisplay, { eyebrow: "" });
+
+  await expect.element(page.getByRole("alert")).toBeVisible();
+  expect(document.querySelector('[role="alert"] .uppercase')).toBeNull();
+});

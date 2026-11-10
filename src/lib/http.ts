@@ -200,3 +200,33 @@ export const errorMessage = (error: unknown): string =>
 export const errorStatus = (error: unknown): number =>
   error instanceof ApiError ? error.status : 0;
 
+export type RequestErrorKind =
+  "offline" | "unauthorized" | "forbidden" | "not-found" | "server" | "unknown";
+
+const NETWORK_FAILURE =
+  /failed to fetch|networkerror|load failed|fetch failed|network request failed|network connection|internet connection/i;
+
+const statusOf = (error: unknown): number | undefined => {
+  const status = asRecord(error)?.status;
+  return typeof status === "number" ? status : undefined;
+};
+
+const isNetworkFailure = (error: unknown, online: boolean | undefined): boolean => {
+  const record = asRecord(error);
+  if (record?.name !== "TypeError") return false;
+  if (online === false) return true;
+  return typeof record.message === "string" && NETWORK_FAILURE.test(record.message);
+};
+
+export const classifyError = (
+  error: unknown,
+  online: boolean | undefined = typeof navigator === "undefined" ? undefined : navigator.onLine,
+): RequestErrorKind => {
+  const status = statusOf(error);
+  if (status === 401) return "unauthorized";
+  if (status === 403) return "forbidden";
+  if (status === 404) return "not-found";
+  if (status !== undefined && status >= 500 && status <= 599) return "server";
+  if (status === undefined && isNetworkFailure(error, online)) return "offline";
+  return "unknown";
+};

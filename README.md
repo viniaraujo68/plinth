@@ -264,6 +264,11 @@ const saved = await toast.promise(api.post("/orders", draft), {
 });
 ```
 
+A request that failed in the page rather than in a toast renders **`RequestErrorDisplay`**, which
+sorts the error with **`classifyError`** — offline, unauthorized, forbidden, not found, server or
+unknown — and gives each kind its own icon and wording, all of it overridable through `labels`. It
+never rethrows, so an `{:catch error}` branch that renders it is safe on the server too.
+
 ## Entry points
 
 | Import                             | What it carries                                                                                              |
@@ -279,7 +284,7 @@ const saved = await toast.promise(api.post("/orders", draft), {
 | `@viniaraujo68/plinth/toast`       | The toast queue, `toast.loading`, `toast.promise`, `toast.update`, and its host                              |
 | `@viniaraujo68/plinth/routing`     | `RoutingConfig`, `RoutingContext`, `resolvePathname`, `withSearchParams`, `safeNext`, `loginUrl`, `withNext` |
 | `@viniaraujo68/plinth/user`        | `UserContext`, `ScopedComponent`, the anonymous default                                                      |
-| `@viniaraujo68/plinth/http`        | `createHttpClient`, `ApiError`, `errorMessage`, `errorStatus`                                                |
+| `@viniaraujo68/plinth/http`        | `createHttpClient`, `ApiError`, `errorMessage`, `errorStatus`, `classifyError`                               |
 | `@viniaraujo68/plinth/formatters`  | `createFormatters`, over `Intl`                                                                              |
 | `@viniaraujo68/plinth/i18n`        | `createI18n`, `LocaleToggle`, the interpolation and plural helpers                                           |
 | `@viniaraujo68/plinth/virtual`     | `Virtualizer`, `VirtualList`, `WindowedData`, `WindowedVirtualizer`, `DataList`                              |
@@ -287,7 +292,7 @@ const saved = await toast.promise(api.post("/orders", draft), {
 
 The components entry point ships `AsyncButton`, `Combobox`, `Copyable`, `DateRangePicker`,
 `Dialog`, `DragHandle`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `JsonInput`, `JsonView`, `Listbox`, `LoadingButton`, `Logo`,
-`Modal`, `MultiSelect`, `Paginator`, `RefreshButton`, `SegmentedControl`, `Select`, `Skeleton`, `Tabs`,
+`Modal`, `MultiSelect`, `Paginator`, `RefreshButton`, `RequestErrorDisplay`, `SegmentedControl`, `Select`, `Skeleton`, `Tabs`,
 `VirtualJsonView`
 and `Tooltip`. Every one of them has a page in the showcase.
 It also exports the mark's outline as data — `PICK_PATH` and `PICK_CLIP_PATH` — for anything
