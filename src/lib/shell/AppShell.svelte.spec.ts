@@ -264,6 +264,34 @@ it("starts collapsed when storage says so", () => {
   expect(shell().classList.contains("collapsed")).toBe(true);
 });
 
+it("fits the navigation inside the collapsed rail, with nothing to scroll sideways", () => {
+  // What every app on plinth has and this page does not: Tailwind's preflight, which makes every
+  // box border-box, and a theme. The rail's border line is mixed from the theme's content colour,
+  // so without one the whole border declaration is invalid and the rail has no border at all.
+  // Together they are what takes that 1px border out of the collapsed width.
+  const preflight = document.createElement("style");
+  preflight.textContent =
+    "*, ::before, ::after { box-sizing: border-box; } :root { --color-base-content: #000; }";
+  document.head.append(preflight);
+  localStorage.setItem(STORAGE_KEY, "true");
+
+  try {
+    render(Harness, { routing: routingAt("/dashboard"), width: WIDE, storageKey: STORAGE_KEY });
+
+    // The nav scrolls vertically, which makes any horizontal overflow scrollable too. A single
+    // pixel of icon column past the rail draws a sideways scrollbar under the icons wherever
+    // scrollbars are not overlays.
+    const nav = document.querySelector<HTMLElement>(".shell-sidebar .sidebar-nav")!;
+    const inside = nav.getBoundingClientRect().left + nav.clientWidth;
+    const icons = [...nav.querySelectorAll<HTMLElement>(".nav-icon")];
+    expect(icons.length).toBeGreaterThan(0);
+    for (const icon of icons)
+      expect(icon.getBoundingClientRect().right).toBeLessThanOrEqual(inside);
+  } finally {
+    preflight.remove();
+  }
+});
+
 it("does not touch storage when persistence is turned off", async () => {
   render(Harness, { routing: routingAt("/dashboard"), width: WIDE, storageKey: null });
 

@@ -610,8 +610,10 @@ shell rather than to the window, and the content area reserves its height plus
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    /* The icon column is exactly the collapsed width, so collapsing moves nothing. */
-    width: var(--plinth-sidebar-collapsed-width);
+    /* The icon column is exactly what the collapsed rail has inside its 1px border, so collapsing
+       moves nothing. The full collapsed width would overhang that border by a pixel, which the
+       nav, scrolling vertically, turns into a sideways scrollbar under the icons. */
+    width: calc(var(--plinth-sidebar-collapsed-width) - 1px);
     font-size: 1.25rem;
   }
 
