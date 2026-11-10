@@ -1,7 +1,11 @@
 <script lang="ts" generics="T">
   import type { Snippet } from "svelte";
   import type { ClassValue } from "svelte/elements";
+  import Paginator, { type PaginatorLabels } from "../components/Paginator.svelte";
   import ColumnMenu from "./ColumnMenu.svelte";
+  import Skeleton from "../components/Skeleton.svelte";
+  import FilterBar from "./FilterBar.svelte";
+  import type { FilterLabels } from "./filter-labels.js";
   import {
     columnWidth,
     isColumnResizable,
@@ -11,8 +15,9 @@
     visibleColumns,
     writeColumnState,
   } from "./columns.js";
+  import { emptyFilter, filterableColumns, filterRows } from "./filter.js";
   import { ariaSort, cellText, nextSort, sortRows } from "./sort.js";
-  import type { Column, ColumnState, SortState } from "./types.js";
+  import type { Column, ColumnState, FilterGroup, SortState } from "./types.js";
 
   interface Props {
     rows: readonly T[];
@@ -92,6 +97,22 @@
     moveColumnLabel?: (column: Column<T>, direction: "up" | "down") => string;
     /** Names a column's resize handle for a screen reader. */
     resizeLabel?: (column: Column<T>) => string;
+    filters?: FilterGroup;
+    filterBar?: boolean;
+    filterGroups?: boolean;
+    filterLabels?: Partial<FilterLabels>;
+    loading?: boolean;
+    loadingRows?: number;
+    loadingLabel?: string;
+    error?: unknown;
+    errorState?: Snippet<[unknown, (() => void) | undefined]>;
+    errorLabel?: string;
+    retryLabel?: string;
+    onRetry?: () => void;
+    pageSize?: number;
+    page?: number;
+    pageSizes?: number[];
+    paginatorLabels?: Partial<PaginatorLabels>;
   }
 
   let {
@@ -114,17 +135,61 @@
     resetColumnsLabel = "Reset columns",
     moveColumnLabel = (column, direction) => `Move ${column.label} ${direction}`,
     resizeLabel = (column) => `Resize ${column.label}`,
+    filters = $bindable(emptyFilter()),
+    filterBar = true,
+    filterGroups = true,
+    loading = false,
+    loadingRows = 5,
+    loadingLabel = "Loading…",
+    error,
+    errorState,
+    errorLabel = "The rows could not be loaded.",
+    retryLabel = "Try again",
+    onRetry,
+    filterLabels,
+    pageSize = $bindable(),
+    page = $bindable(1),
+    pageSizes,
+    paginatorLabels,
   }: Props = $props();
+
+  const filtered = $derived(filterRows(rows, columns, filters));
 
   const sorted = $derived.by(() => {
     const column = columns.find((candidate) => candidate.key === sort?.key);
-    if (!sort || !column) return rows;
-    return sortRows(rows, column, sort.direction, locale);
+    if (!sort || !column) return filtered;
+    return sortRows(filtered, column, sort.direction, locale);
   });
+
+  const totalPages = $derived(
+    pageSize === undefined ? 1 : Math.max(1, Math.ceil(sorted.length / pageSize)),
+  );
+  const currentPage = $derived(Math.min(Math.max(1, Math.floor(page)), totalPages));
+  const offset = $derived(pageSize === undefined ? 0 : (currentPage - 1) * pageSize);
+  const visible = $derived(
+    pageSize === undefined ? sorted : sorted.slice(offset, offset + pageSize),
+  );
+
+  const showFilterBar = $derived(filterBar && filterableColumns(columns).length > 0);
+
+  const failed = $derived(error !== undefined && error !== null && error !== false);
+  const placeholders = $derived(
+    loading && !failed && visible.length === 0 ? Math.max(1, loadingRows) : 0,
+  );
+
+  const onFiltersChange = (next: FilterGroup) => {
+    filters = next;
+    page = 1;
+  };
+
+  const onPageSizeChange = (size: number) => {
+    pageSize = size;
+    page = 1;
+  };
 
   const shown = $derived(visibleColumns(columns, columnState));
   const sized = $derived(shown.some((column) => columnWidth(column, columnState) !== undefined));
-  const hasBar = $derived(toolbar !== undefined || columnsLabel !== undefined);
+  const hasBar = $derived(toolbar !== undefined || columnsLabel !== undefined || showFilterBar);
 
   let restored = $state(false);
 
@@ -246,8 +311,13 @@ part — `hideable`, `hiddenByDefault`, `resizable`, `minWidth`. The arrangement
 release neither loses a stored layout nor ends up somewhere nobody put it. Sorting by a column the
 reader hid keeps working: the order is about the rows, not about what is on screen.
 
-It stays short of a data grid — no filtering, no virtualization, no saved views. A table that
-needs those needs a different component.
+Columns that declare a `filter` get a chip bar in the table's bar, bound through `filters`; the
+rules are applied before the sort, and the same rules drive `filterRows` for a caller that filters
+outside the table. `pageSize` pages the filtered, sorted rows with a `Paginator` under the table,
+and the position handed to `cell` and `card` stays the row's place in the whole order.
+
+It stays short of a data grid — no virtualization, no saved views. A table that needs those needs a
+different component.
 
 ```svelte
 <DataTable
@@ -290,6 +360,16 @@ needs those needs a different component.
     {#if toolbar}
       <div class="plinth-table-toolbar">{@render toolbar()}</div>
     {/if}
+    {#if showFilterBar}
+      <FilterBar
+        class="plinth-table-filters"
+        {columns}
+        filter={filters}
+        onchange={onFiltersChange}
+        groups={filterGroups}
+        labels={filterLabels}
+      />
+    {/if}
     {#if columnsLabel !== undefined}
       <div class="plinth-table-columns">
         <ColumnMenu
@@ -305,12 +385,16 @@ needs those needs a different component.
   </div>
 {/if}
 
-<div class="plinth-table-wrap">
+<div class="plinth-table-wrap" class:plinth-refreshing={loading && !failed && visible.length > 0}>
+  {#if loading && !failed}
+    <div class="plinth-table-progress" role="progressbar" aria-label={loadingLabel}></div>
+  {/if}
   <table
     class={["plinth-table table", className]}
     class:has-card={card !== undefined}
     class:plinth-sized={sized}
     aria-label={label}
+    aria-busy={loading}
   >
     <thead>
       <tr>
@@ -354,14 +438,40 @@ needs those needs a different component.
     </thead>
 
     <tbody>
-      {#if sorted.length === 0}
+      {#if failed}
+        <tr>
+          <td class="plinth-failed" colspan={shown.length}>
+            {#if errorState}
+              {@render errorState(error, onRetry)}
+            {:else}
+              <div class="plinth-failed-body" role="alert">
+                <span>{errorLabel}</span>
+                {#if onRetry}
+                  <button type="button" class="btn btn-sm" onclick={onRetry}>{retryLabel}</button>
+                {/if}
+              </div>
+            {/if}
+          </td>
+        </tr>
+      {:else if placeholders > 0}
+        {#each { length: placeholders }, slot (slot)}
+          <tr class="plinth-placeholder" aria-hidden="true">
+            {#each shown as column (column.key)}
+              <td data-align={alignOf(column)} class="plinth-cell">
+                <Skeleton class="plinth-placeholder-bar" />
+              </td>
+            {/each}
+          </tr>
+        {/each}
+      {:else if visible.length === 0}
         <tr>
           <td class="plinth-empty" colspan={shown.length}>
             {#if empty}{@render empty()}{:else}No data{/if}
           </td>
         </tr>
       {:else}
-        {#each sorted as row, index (rowKey(row))}
+        {#each visible as row, position (rowKey(row))}
+          {@const index = offset + position}
           <!-- A row is not an interactive element, and dressing it as one would cost the grid
                semantics that make the table navigable in the first place. When a click handler is
                given the row takes focus and answers Enter and Space, which is the reachable part
@@ -400,8 +510,23 @@ needs those needs a different component.
   </table>
 </div>
 
+{#if pageSize !== undefined && sorted.length > 0 && !failed}
+  <Paginator
+    class="plinth-table-paginator"
+    pageNumber={currentPage}
+    {pageSize}
+    {pageSizes}
+    {totalPages}
+    totalItems={sorted.length}
+    onPageChange={(next) => (page = next)}
+    {onPageSizeChange}
+    labels={paginatorLabels}
+  />
+{/if}
+
 <style>
   .plinth-table-wrap {
+    position: relative;
     /* The whole breakpoint. Querying the container rather than the viewport is also what lets the
        table be dropped into a narrow box and render its card form on a desktop, which is how the
        showcase demonstrates both at once and how a test reaches either. */
@@ -425,6 +550,16 @@ needs those needs a different component.
   /* The menu keeps the far end of the bar even when there is no toolbar to push it there. */
   .plinth-table-columns {
     margin-left: auto;
+  }
+
+  :global(.plinth-table-filters) {
+    flex: 1 1 16rem;
+  }
+
+  :global(.plinth-table-paginator) {
+    margin-top: 0.75rem;
+    color: color-mix(in oklch, var(--color-base-content) 70%, transparent);
+    font-size: 0.8125rem;
   }
 
   /* A table with a dragged column is as wide as its columns add up to, rather than as wide as its
@@ -517,6 +652,61 @@ needs those needs a different component.
 
   .plinth-clickable {
     cursor: pointer;
+  }
+
+  .plinth-table-progress {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 1;
+    height: 2px;
+    overflow: hidden;
+    background: color-mix(in oklch, var(--color-primary) 15%, transparent);
+  }
+
+  .plinth-table-progress::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 35%;
+    background: var(--color-primary);
+    animation: plinth-table-progress 1.1s ease-in-out infinite;
+  }
+
+  @keyframes plinth-table-progress {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
+
+  .plinth-refreshing tbody {
+    opacity: 0.55;
+    transition: opacity 150ms;
+  }
+
+  :global(.plinth-placeholder-bar) {
+    display: inline-block;
+    width: 70%;
+    height: 0.85rem;
+  }
+
+  .plinth-placeholder td[data-align="right"] :global(.plinth-placeholder-bar) {
+    width: 45%;
+  }
+
+  .plinth-failed {
+    padding: 2rem 1rem;
+  }
+
+  .plinth-failed-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    color: color-mix(in oklch, var(--color-base-content) 70%, transparent);
+    text-align: center;
   }
 
   .plinth-empty {
