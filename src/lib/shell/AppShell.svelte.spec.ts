@@ -725,3 +725,279 @@ it("leaves the scroll to the browser when the link carries a fragment", async ()
   source.goTo("/customers#orders", "/customers");
   await expect.poll(() => content().scrollTop).toBe(900);
 });
+
+const grouped: RoutingConfig = {
+  meta: {
+    "/": { title: "Home", icon: "i-home" },
+    "/dashboard": { title: "Dashboard", icon: "i-gauge" },
+    "/settings": { title: "Settings", icon: "i-settings" },
+    "/settings/profile": { title: "Profile" },
+    "/settings/billing": { title: "Billing", requiredRoles: ["billing"] },
+    "/settings/[tab]": { title: ({ params }) => `Tab ${params.tab}` },
+    "/settings/internal": {},
+    "/reports": { title: "Reports", icon: "i-chart" },
+    "/reports/sales": { title: "Sales", requiredRoles: ["reports:read"] },
+    "/reports/stock": { title: "Stock", requiredRoles: ["reports:read"] },
+    "/admin": { title: "Admin", icon: "i-shield" },
+    "/admin/users": { title: "Users", requiredRoles: ["admin"] },
+    "/orders": { title: "Orders", icon: "i-receipt" },
+    "/orders/[id]": { title: ({ params }) => `Order ${params.id}` },
+  },
+  pages: {
+    "/src/routes/+page.svelte": {},
+    "/src/routes/dashboard/+page.svelte": {},
+    "/src/routes/settings/+page.svelte": {},
+    "/src/routes/settings/profile/+page.svelte": {},
+    "/src/routes/settings/billing/+page.svelte": {},
+    "/src/routes/settings/[tab]/+page.svelte": {},
+    "/src/routes/settings/internal/+page.svelte": {},
+    "/src/routes/reports/sales/+page.svelte": {},
+    "/src/routes/reports/stock/+page.svelte": {},
+    "/src/routes/admin/+page.svelte": {},
+    "/src/routes/admin/users/+page.svelte": {},
+    "/src/routes/orders/+page.svelte": {},
+    "/src/routes/orders/[id]/+page.svelte": {},
+  },
+};
+
+const groupedAt = (id: string | null, params?: Record<string, string>) =>
+  new RoutingContext(grouped, sourceAt(id, params));
+
+const everyRole = () => new TestUser({ roles: ["billing", "reports:read"] });
+
+const groupHeader = (label: string) =>
+  [...document.querySelectorAll<HTMLButtonElement>(".shell-sidebar .nav-group")].find(
+    (button) => button.textContent?.trim() === label,
+  );
+const groupHeaders = () =>
+  [...document.querySelectorAll<HTMLButtonElement>(".shell-sidebar .nav-group")].map(
+    (button) => button.textContent?.trim() ?? "",
+  );
+const foldOf = (header: HTMLButtonElement) =>
+  document.getElementById(header.getAttribute("aria-controls") ?? "")!;
+const foldLabels = (header: HTMLButtonElement) =>
+  [...foldOf(header).querySelectorAll("a")].map((link) => link.textContent?.trim() ?? "");
+const topLevelLabels = () =>
+  [...document.querySelectorAll<HTMLElement>(".shell-sidebar .sidebar-nav > ul > li")].map(
+    (item) => item.querySelector(".nav-link")?.textContent?.trim() ?? "",
+  );
+const sheetHeadings = () =>
+  [...document.querySelectorAll<HTMLElement>(".plinth-sheet .sheet-heading")].map(
+    (heading) => heading.textContent?.trim() ?? "",
+  );
+
+it("renders a route with titled, static, navigable children as a disclosure", () => {
+  render(Harness, { routing: groupedAt("/dashboard"), width: WIDE, user: everyRole() });
+
+  expect(topLevelLabels()).toEqual(["Dashboard", "Settings", "Reports", "Admin", "Orders"]);
+  expect(groupHeaders()).toEqual(["Settings", "Reports"]);
+
+  const settings = groupHeader("Settings")!;
+  expect(settings.tagName).toBe("BUTTON");
+  expect(settings.getAttribute("aria-expanded")).toBe("false");
+  expect(settings.querySelector(".nav-chevron")).not.toBeNull();
+  expect(foldLabels(settings)).toEqual(["Overview", "Profile", "Billing"]);
+  expect(foldLabels(groupHeader("Reports")!)).toEqual(["Sales", "Stock"]);
+});
+
+it("points aria-controls at a fold id with no route slashes in it", () => {
+  render(Harness, { routing: groupedAt("/dashboard"), width: WIDE, user: everyRole() });
+
+  for (const label of ["Settings", "Reports"]) {
+    const controls = groupHeader(label)!.getAttribute("aria-controls")!;
+    expect(controls).not.toContain("/");
+    expect(document.getElementById(controls)).not.toBeNull();
+  }
+  expect(groupHeader("Settings")!.getAttribute("aria-controls")).not.toBe(
+    groupHeader("Reports")!.getAttribute("aria-controls"),
+  );
+});
+
+it("opens and closes a group from its header, keeping a closed fold out of the tab order", async () => {
+  render(Harness, { routing: groupedAt("/dashboard"), width: WIDE, user: everyRole() });
+
+  const settings = groupHeader("Settings")!;
+  expect(foldOf(settings).inert).toBe(true);
+
+  await page.getByRole("button", { name: "Settings" }).click();
+
+  await expect.poll(() => settings.getAttribute("aria-expanded")).toBe("true");
+  expect(foldOf(settings).inert).toBe(false);
+  expect(foldOf(settings).classList.contains("open")).toBe(true);
+
+  await page.getByRole("button", { name: "Settings" }).click();
+
+  await expect.poll(() => settings.getAttribute("aria-expanded")).toBe("false");
+  expect(foldOf(settings).inert).toBe(true);
+});
+
+it("opens the group the current page sits in and marks the page, not the header", () => {
+  render(Harness, { routing: groupedAt("/settings/profile"), width: WIDE, user: everyRole() });
+
+  const settings = groupHeader("Settings")!;
+  expect(settings.getAttribute("aria-expanded")).toBe("true");
+  expect(settings.classList.contains("has-current")).toBe(true);
+  expect(settings.hasAttribute("aria-current")).toBe(false);
+  expect(currentLabels()).toEqual(["Profile"]);
+  expect(groupHeader("Reports")!.getAttribute("aria-expanded")).toBe("false");
+});
+
+it("marks the overview on the group's own page and on its dynamic children", () => {
+  const { unmount } = render(Harness, {
+    routing: groupedAt("/settings"),
+    width: WIDE,
+    user: everyRole(),
+  });
+  expect(currentLabels()).toEqual(["Overview"]);
+  unmount();
+
+  render(Harness, {
+    routing: groupedAt("/settings/[tab]", { tab: "advanced" }),
+    width: WIDE,
+    user: everyRole(),
+  });
+  expect(currentLabels()).toEqual(["Overview"]);
+});
+
+it("keeps an auto-opened group open after leaving it, until the user closes it", async () => {
+  const source = new MovingSource();
+  source.goTo("/settings/profile", "/settings/profile");
+  render(Harness, {
+    routing: new RoutingContext(grouped, source),
+    width: WIDE,
+    user: everyRole(),
+  });
+
+  const settings = groupHeader("Settings")!;
+  expect(settings.getAttribute("aria-expanded")).toBe("true");
+
+  source.goTo("/dashboard", "/dashboard");
+  await expect.poll(() => currentLabels()).toEqual(["Dashboard"]);
+  expect(settings.getAttribute("aria-expanded")).toBe("true");
+
+  await page.getByRole("button", { name: "Settings" }).click();
+  await expect.poll(() => settings.getAttribute("aria-expanded")).toBe("false");
+
+  source.goTo("/settings/billing", "/settings/billing");
+  await expect.poll(() => settings.getAttribute("aria-expanded")).toBe("true");
+});
+
+it("filters a group's children through the role gate", () => {
+  render(Harness, { routing: groupedAt("/dashboard"), width: WIDE, user: new TestUser() });
+
+  expect(foldLabels(groupHeader("Settings")!)).toEqual(["Overview", "Profile"]);
+});
+
+it("falls back to a link, or to nothing, once every child is out of scope", () => {
+  render(Harness, { routing: groupedAt("/dashboard"), width: WIDE, user: new TestUser() });
+
+  expect(groupHeaders()).toEqual(["Settings"]);
+  expect(topLevelLabels()).toEqual(["Dashboard", "Settings", "Admin", "Orders"]);
+  const admin = sidebarLinks().find((link) => link.textContent?.trim() === "Admin");
+  expect(admin?.tagName).toBe("A");
+});
+
+it("brings a group back as soon as a child comes into scope", async () => {
+  const user = new TestUser();
+  render(Harness, { routing: groupedAt("/dashboard"), width: WIDE, user });
+
+  expect(groupHeaders()).toEqual(["Settings"]);
+
+  user.roles = ["reports:read"];
+
+  await expect.poll(groupHeaders).toEqual(["Settings", "Reports"]);
+});
+
+it("hides folds in the collapsed rail and expands the sidebar onto the group when clicked", async () => {
+  localStorage.setItem(STORAGE_KEY, "true");
+  render(Harness, {
+    routing: groupedAt("/dashboard"),
+    width: WIDE,
+    user: everyRole(),
+    storageKey: STORAGE_KEY,
+  });
+
+  const settings = groupHeader("Settings")!;
+  expect(shell().classList.contains("collapsed")).toBe(true);
+  expect(settings.getAttribute("aria-expanded")).toBe("false");
+  expect(getComputedStyle(foldOf(settings)).display).toBe("none");
+
+  settings.click();
+
+  await expect.poll(() => shell().classList.contains("collapsed")).toBe(false);
+  expect(settings.getAttribute("aria-expanded")).toBe("true");
+  expect(getComputedStyle(foldOf(settings)).display).toBe("grid");
+});
+
+it("gives a navigable group a bar slot and a page-less one none", () => {
+  render(Harness, { routing: groupedAt("/dashboard"), width: NARROW, user: everyRole() });
+
+  expect(barLabels()).toEqual(["Home", "Dashboard", "Settings", "Admin", "More"]);
+});
+
+it("lists every group's children in the sheet under a heading, in route order", async () => {
+  render(Harness, { routing: groupedAt("/dashboard"), width: NARROW, user: everyRole() });
+
+  await page.getByRole("button", { name: "More" }).click();
+
+  await expect
+    .poll(() => sheetLinks().map((link) => link.textContent?.trim()))
+    .toEqual(["Profile", "Billing", "Sales", "Stock", "Orders"]);
+  expect(sheetHeadings()).toEqual(["Settings", "Reports"]);
+  const list = document.querySelector<HTMLElement>(
+    `.plinth-sheet [aria-labelledby="${document.querySelector(".plinth-sheet .sheet-heading")!.id}"]`,
+  );
+  expect(list?.querySelectorAll("a")).toHaveLength(2);
+});
+
+it("puts an overflowed group's own page at the head of its sheet section", async () => {
+  render(Harness, {
+    routing: groupedAt("/dashboard"),
+    width: NARROW,
+    user: everyRole(),
+    bottomBarSlots: 3,
+  });
+
+  expect(barLabels()).toEqual(["Home", "Dashboard", "More"]);
+  await page.getByRole("button", { name: "More" }).click();
+
+  await expect
+    .poll(() => sheetLinks().map((link) => link.textContent?.trim()))
+    .toEqual(["Overview", "Profile", "Billing", "Sales", "Stock", "Admin", "Orders"]);
+});
+
+it("marks the group's section in the bar and the page in the sheet", async () => {
+  render(Harness, { routing: groupedAt("/settings/billing"), width: NARROW, user: everyRole() });
+
+  expect(barCurrentLabels()).toEqual(["Settings"]);
+  await page.getByRole("button", { name: "More" }).click();
+
+  await expect.poll(sheetCurrentLabels).toEqual(["Billing"]);
+});
+
+it("closes the sheet when a group's child is chosen", async () => {
+  render(Harness, { routing: groupedAt("/dashboard"), width: NARROW, user: everyRole() });
+
+  await page.getByRole("button", { name: "More" }).click();
+  await expect.poll(() => sheetLinks().length).toBe(5);
+
+  sheetLinks()
+    .find((link) => link.textContent?.trim() === "Sales")!
+    .addEventListener("click", (event) => event.preventDefault());
+  await page.getByRole("link", { name: "Sales" }).click();
+
+  await expect
+    .poll(() => document.querySelector<HTMLDialogElement>(".plinth-sheet")?.open ?? false)
+    .toBe(false);
+});
+
+it("takes the overview row's label from a prop", () => {
+  render(Harness, {
+    routing: groupedAt("/dashboard"),
+    width: WIDE,
+    user: everyRole(),
+    overviewLabel: "Visão geral",
+  });
+
+  expect(foldLabels(groupHeader("Settings")!)[0]).toBe("Visão geral");
+});

@@ -18,6 +18,7 @@
     /** A stand-in for the language or theme toggle an app drops into the footer slot. */
     withFooter?: boolean;
     tallBody?: boolean;
+    overviewLabel?: string;
   }
 
   const {
@@ -30,6 +31,7 @@
     withBrand = false,
     withFooter = false,
     tallBody = false,
+    overviewLabel,
   }: Props = $props();
 
   let footerClicks = $state(0);
@@ -45,6 +47,7 @@
   <AppShell
     {bottomBarSlots}
     {storageKey}
+    {overviewLabel}
     brand={withBrand ? brand : undefined}
     footer={withFooter ? footer : undefined}
     icon={customIcons ? icon : undefined}

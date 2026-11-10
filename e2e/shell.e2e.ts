@@ -226,3 +226,60 @@ test("renders the breadcrumb trail of the current match", async ({ page }) => {
   ]);
   await expect(page.locator("[data-testid='crumbs'] [aria-current='page']")).toHaveText("Line 3");
 });
+
+const groupsWide = "[data-testid='frame-groups-wide']";
+const groupsMobile = "[data-testid='frame-groups-mobile']";
+
+test("folds a route's children into a group that opens on the current page", async ({ page }) => {
+  await page.goto("/shell");
+
+  const settings = page.locator(`${groupsWide} .nav-group`, { hasText: "Settings" });
+  const reports = page.locator(`${groupsWide} .nav-group`, { hasText: "Reports" });
+  await expect(settings).toHaveAttribute("aria-expanded", "true");
+  await expect(reports).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator(`${groupsWide} .shell-sidebar [aria-current='page']`)).toHaveText(
+    "Billing",
+  );
+
+  await reports.click();
+
+  await expect(reports).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator(`${groupsWide}`).getByRole("link", { name: "Sales" })).toBeVisible();
+});
+
+test("puts a group's children in the sheet under its heading", async ({ page }) => {
+  await page.goto("/shell");
+
+  await expect(page.locator(`${groupsMobile} .bar-link`)).toHaveText([
+    "Home",
+    "Dashboard",
+    "Orders",
+    "Customers",
+    "More",
+  ]);
+
+  await page.locator(`${groupsMobile} .bar-link`, { hasText: "More" }).click();
+
+  const sheet = page.locator(`${groupsMobile} .plinth-sheet`);
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator(".sheet-heading")).toHaveText(["Reports", "Settings"]);
+  await expect(sheet.locator("a")).toHaveText([
+    "Sales",
+    "Stock",
+    "Overview",
+    "Profile",
+    "Billing",
+    "Members",
+  ]);
+  await expect(sheet.locator("[aria-current='page']")).toHaveText("Billing");
+});
+
+test("drops a group whose children are all gated out", async ({ page }) => {
+  await page.goto("/shell");
+
+  await expect(page.locator(`${groupsWide} .nav-group`)).toHaveText(["Reports", "Settings"]);
+
+  await page.getByTestId("toggle-role").click();
+
+  await expect(page.locator(`${groupsWide} .nav-group`)).toHaveText(["Settings"]);
+});
