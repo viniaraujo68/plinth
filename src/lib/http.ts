@@ -44,12 +44,16 @@ export interface HttpClientOptions {
   parseError?: ErrorMessageParser;
 }
 
+export interface RequestOptions {
+  signal?: AbortSignal;
+}
+
 export interface HttpClient {
-  get: <T = unknown>(path: string) => Promise<T>;
-  post: <T = unknown>(path: string, body?: unknown) => Promise<T>;
-  put: <T = unknown>(path: string, body?: unknown) => Promise<T>;
-  patch: <T = unknown>(path: string, body?: unknown) => Promise<T>;
-  del: <T = unknown>(path: string) => Promise<T>;
+  get: <T = unknown>(path: string, options?: RequestOptions) => Promise<T>;
+  post: <T = unknown>(path: string, body?: unknown, options?: RequestOptions) => Promise<T>;
+  put: <T = unknown>(path: string, body?: unknown, options?: RequestOptions) => Promise<T>;
+  patch: <T = unknown>(path: string, body?: unknown, options?: RequestOptions) => Promise<T>;
+  del: <T = unknown>(path: string, options?: RequestOptions) => Promise<T>;
 }
 
 const joinUrl = (baseUrl: string, path: string): string => {
@@ -113,7 +117,12 @@ export const createHttpClient = ({
   auth,
   parseError,
 }: HttpClientOptions): HttpClient => {
-  const request = async <T>(method: string, path: string, body?: unknown): Promise<T> => {
+  const request = async <T>(
+    method: string,
+    path: string,
+    body?: unknown,
+    options: RequestOptions = {},
+  ): Promise<T> => {
     const headers: Record<string, string> = {};
     // GET and DELETE carry no body, and a `Content-Type` on them makes some CORS setups
     // preflight a request that would otherwise be simple.
@@ -130,6 +139,7 @@ export const createHttpClient = ({
       headers,
       credentials,
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal: options.signal,
     });
 
     // Read as text first: 204 and most DELETEs answer with nothing at all, and `response.json()`
@@ -163,11 +173,15 @@ export const createHttpClient = ({
   // A body always goes out, even when the caller passes none — a bodyless POST is a 422 against a
   // FastAPI endpoint that declares a model, and `{}` is the harmless stand-in both references use.
   return {
-    get: <T>(path: string) => request<T>("GET", path),
-    post: <T>(path: string, body?: unknown) => request<T>("POST", path, body ?? {}),
-    put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body ?? {}),
-    patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, body ?? {}),
-    del: <T>(path: string) => request<T>("DELETE", path),
+    get: <T>(path: string, options?: RequestOptions) => request<T>("GET", path, undefined, options),
+    post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
+      request<T>("POST", path, body ?? {}, options),
+    put: <T>(path: string, body?: unknown, options?: RequestOptions) =>
+      request<T>("PUT", path, body ?? {}, options),
+    patch: <T>(path: string, body?: unknown, options?: RequestOptions) =>
+      request<T>("PATCH", path, body ?? {}, options),
+    del: <T>(path: string, options?: RequestOptions) =>
+      request<T>("DELETE", path, undefined, options),
   };
 };
 
@@ -185,3 +199,4 @@ export const errorMessage = (error: unknown): string =>
  */
 export const errorStatus = (error: unknown): number =>
   error instanceof ApiError ? error.status : 0;
+

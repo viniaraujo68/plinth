@@ -261,3 +261,36 @@ it("names the error class so it survives a log", () => {
   expect(error.code).toBe("expired_token");
   expect(new ApiError(401, "unauthorized").code).toBeUndefined();
 });
+
+it("hands the caller's abort signal to fetch on every method", async () => {
+  const spy = stubFetch(() => json(200, {}));
+  const api = createHttpClient({ baseUrl: "/api" });
+  const { signal } = new AbortController();
+
+  await api.get("/a", { signal });
+  await api.post("/a", { x: 1 }, { signal });
+  await api.put("/a", undefined, { signal });
+  await api.patch("/a", {}, { signal });
+  await api.del("/a", { signal });
+
+  expect(spy.mock.calls.map(([, init]) => init.signal)).toEqual(Array(5).fill(signal));
+});
+
+it("rejects with the abort reason once the signal aborts", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+        }),
+    ),
+  );
+  const api = createHttpClient({ baseUrl: "/api" });
+  const controller = new AbortController();
+
+  const pending = api.get("/slow", { signal: controller.signal });
+  controller.abort();
+
+  await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+});
