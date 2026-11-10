@@ -100,6 +100,11 @@
       summary: "Manual reload, an auto-refresh schedule and the age of what is on screen.",
     },
     {
+      href: resolve("/components/request-error-display"),
+      name: "RequestErrorDisplay",
+      summary: "A failed request, told apart: offline, signed out, forbidden, missing or down.",
+    },
+    {
       href: resolve("/components/segmented-control"),
       name: "SegmentedControl",
       summary: "A row of exclusive buttons for a few views of the same thing.",
