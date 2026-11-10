@@ -46,6 +46,12 @@
       entry: "@viniaraujo68/plinth/virtual",
       summary: "Long lists that render only what is on screen, and a rolling window of paged data.",
     },
+    {
+      href: resolve("/url-state"),
+      name: "url-state",
+      entry: "@viniaraujo68/plinth/url-state",
+      summary: "Filters and paging kept in the URL: a draft, a committed state and its key.",
+    },
   ];
 </script>
 

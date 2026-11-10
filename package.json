@@ -104,6 +104,10 @@
       "types": "./dist/virtual/index.d.ts",
       "svelte": "./dist/virtual/index.js"
     },
+    "./url-state": {
+      "types": "./dist/url-state/index.d.ts",
+      "svelte": "./dist/url-state/index.js"
+    },
     "./package.json": "./package.json"
   },
   "peerDependencies": {

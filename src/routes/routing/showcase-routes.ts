@@ -47,6 +47,7 @@ export const showcaseRoutes: RoutingConfig<RouteId> = {
     "/table/filters": { title: "Filtering and paging" },
     "/user": { title: "User", icon: "icon-[lucide--user-round]" },
     "/virtual": { title: "Virtual", icon: "icon-[lucide--rows-3]" },
+    "/url-state": { title: "URL state", icon: "icon-[lucide--link]" },
   },
 
   // The glob has to be written here, in the app, and not inside the library: Vite rewrites the
