@@ -47,7 +47,7 @@ test("reaches every pattern demo from the patterns index", async ({ page }) => {
   await page.getByRole("link", { name: "Patterns", exact: true }).click();
 
   const links = page.getByTestId("pattern-link");
-  await expect(links).toHaveCount(6);
+  await expect(links).toHaveCount(7);
 
   await page.getByRole("link", { name: "formatters" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Formatters");

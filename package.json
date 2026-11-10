@@ -100,6 +100,10 @@
       "types": "./dist/i18n/index.d.ts",
       "svelte": "./dist/i18n/index.js"
     },
+    "./virtual": {
+      "types": "./dist/virtual/index.d.ts",
+      "svelte": "./dist/virtual/index.js"
+    },
     "./package.json": "./package.json"
   },
   "peerDependencies": {

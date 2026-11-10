@@ -269,6 +269,7 @@ base URL, how auth is injected, and how the backend spells an error body.
 | `@viniaraujo68/plinth/http`        | `createHttpClient`, `ApiError`, `errorMessage`, `errorStatus`                                                |
 | `@viniaraujo68/plinth/formatters`  | `createFormatters`, over `Intl`                                                                              |
 | `@viniaraujo68/plinth/i18n`        | `createI18n`, `LocaleToggle`, the interpolation and plural helpers                                           |
+| `@viniaraujo68/plinth/virtual`     | `Virtualizer`, `VirtualList`, `WindowedData`, `WindowedVirtualizer`, `DataList`                              |
 
 The components entry point ships `AsyncButton`, `Combobox`, `Copyable`, `DateRangePicker`,
 `Dialog`, `DragHandle`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `JsonInput`, `Listbox`, `LoadingButton`, `Logo`,

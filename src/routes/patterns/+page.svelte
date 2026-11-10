@@ -40,6 +40,12 @@
       entry: "@viniaraujo68/plinth/i18n",
       summary: "The app's strings in more than one language, and the toggle between them.",
     },
+    {
+      href: resolve("/virtual"),
+      name: "virtual",
+      entry: "@viniaraujo68/plinth/virtual",
+      summary: "Long lists that render only what is on screen, and a rolling window of paged data.",
+    },
   ];
 </script>
 

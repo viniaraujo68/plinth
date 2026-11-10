@@ -40,6 +40,7 @@
         resolve("/http"),
         resolve("/formatters"),
         resolve("/i18n"),
+        resolve("/virtual"),
       ],
     },
   ];
