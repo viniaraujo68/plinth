@@ -60,6 +60,11 @@
       summary: "A JSON text field that says whether it parses, and reindents on the way out.",
     },
     {
+      href: resolve("/components/json-view"),
+      name: "JsonView",
+      summary: "A read-only JSON tree that folds, searches inside folds and copies the real thing.",
+    },
+    {
       href: resolve("/components/listbox"),
       name: "Listbox",
       summary: "A list to pick one or several from in place, with an optional search.",

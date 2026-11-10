@@ -8,6 +8,8 @@ export { default as Dropdown } from "./Dropdown.svelte";
 export { default as ErrorDisplay } from "./ErrorDisplay.svelte";
 export { default as ErrorPage } from "./ErrorPage.svelte";
 export { default as JsonInput } from "./JsonInput.svelte";
+export { default as JsonView } from "./JsonView.svelte";
+export { default as VirtualJsonView } from "./VirtualJsonView.svelte";
 export { default as Listbox } from "./Listbox.svelte";
 export { default as LoadingButton } from "./LoadingButton.svelte";
 export { default as Logo } from "./Logo.svelte";
@@ -58,6 +60,8 @@ export {
   type JsonTextOptions,
   type JsonTextResult,
 } from "./json-text.js";
+
+export { DEFAULT_JSON_VIEW_LABELS, type JsonViewLabels } from "./json-view.js";
 
 // The option type a caller of `SegmentedControl` writes its list against.
 export type { SegmentedOption } from "./segmented.js";

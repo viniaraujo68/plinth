@@ -273,8 +273,9 @@ base URL, how auth is injected, and how the backend spells an error body.
 | `@viniaraujo68/plinth/url-state`   | `createUrlState`, `urlStore`, `SyncedState`, `createParamsCodec` and `param`, the codec contracts            |
 
 The components entry point ships `AsyncButton`, `Combobox`, `Copyable`, `DateRangePicker`,
-`Dialog`, `DragHandle`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `JsonInput`, `Listbox`, `LoadingButton`, `Logo`,
-`Modal`, `MultiSelect`, `Paginator`, `RefreshButton`, `SegmentedControl`, `Select`, `Skeleton`, `Tabs`
+`Dialog`, `DragHandle`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `JsonInput`, `JsonView`, `Listbox`, `LoadingButton`, `Logo`,
+`Modal`, `MultiSelect`, `Paginator`, `RefreshButton`, `SegmentedControl`, `Select`, `Skeleton`, `Tabs`,
+`VirtualJsonView`
 and `Tooltip`. Every one of them has a page in the showcase.
 It also exports the mark's outline as data — `PICK_PATH` and `PICK_CLIP_PATH` — for anything
 that wants the pick as a silhouette of its own. Not for avatars: the shell draws a profile picture as
@@ -290,6 +291,12 @@ tab ids predictable so the panel can name its tab through `aria-labelledby`.
 parses, shows the parser's message after the first blur, can reindent on blur, and sets the
 textarea's custom validity so a form will not submit a broken document. `parseJsonText` and
 `formatJsonText` are the same rules, for reading the text once it is sent.
+
+`JsonView` shows a value read-only, as `JSON.stringify(value, null, 2)` would print it: `toJSON` is
+honoured, so a `Date` shows as its ISO string, and a reference back to an ancestor shows a marker
+instead of recursing. Nodes fold one by one, all at once or from `collapseDepth` down; the search
+(Ctrl/Cmd+F while the viewer has the focus) reaches inside folds and unfolds what it lands on; and
+copying — the whole document or a selection — writes the expanded text, never the fold summaries.
 
 Two of those pick one thing from a list, and which one to reach for is decided by the length of
 the list rather than by a flag:
