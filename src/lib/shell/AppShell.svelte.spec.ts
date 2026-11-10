@@ -502,20 +502,6 @@ it("leaves the sheet's brand alone while the sidebar is remembered collapsed", a
   expect(getComputedStyle(sidebarBrand).justifyContent).toBe("center");
 });
 
-it("gives the sheet's avatar a clip definition of its own", async () => {
-  render(Harness, { routing: routingAt("/dashboard"), width: NARROW, user: new TestUser() });
-
-  await page.getByRole("button", { name: "More" }).click();
-
-  await expect.poll(() => document.querySelectorAll(".avatar-initials").length).toBe(2);
-
-  // Two copies of one block are in the document while the sheet is open, and a shared id would
-  // have made the second reference resolve against the first one's definition.
-  const ids = [...document.querySelectorAll("clipPath")].map((node) => node.id);
-  expect(ids).toHaveLength(2);
-  expect(new Set(ids).size).toBe(2);
-});
-
 it("keeps the sheet open when a footer control is used", async () => {
   render(Harness, { routing: routingAt("/dashboard"), width: NARROW, withFooter: true });
 
@@ -653,24 +639,15 @@ it("renders the name, the address and the initials of a signed-in user", async (
   expect(document.querySelector(".avatar-initials")?.textContent).toBe("AL");
 });
 
-it("cuts the avatar to the mark's silhouette rather than to a disc", () => {
+it("draws the avatar as a disc", () => {
   render(Harness, { routing: routingAt("/dashboard"), width: WIDE, user: new TestUser() });
 
   const avatar = document.querySelector<HTMLElement>(".avatar-initials")!;
-  const clip = getComputedStyle(avatar).clipPath;
 
-  // No radius left to round: the shape is the clip now, and a leftover circle would fight it.
-  expect(getComputedStyle(avatar).borderRadius).toBe("0px");
-
-  const id = /url\(["']?#(?<id>[^"')]+)/u.exec(clip)?.groups?.id;
-  expect(id).toBeDefined();
-
-  // The reference has to resolve inside the same tree the shell rendered, which is the half of
-  // this that a computed value alone cannot tell you.
-  const definition = document.getElementById(id!);
-  expect(definition?.tagName).toBe("clipPath");
-  // Normalised units are what let one declaration fit an avatar of any size.
-  expect(definition?.getAttribute("clipPathUnits")).toBe("objectBoundingBox");
+  // A profile picture reads as a person only when it is round; any other silhouette reads as a
+  // badge or a logo.
+  expect(getComputedStyle(avatar).borderRadius).toBe("9999px");
+  expect(getComputedStyle(avatar).clipPath).toBe("none");
 });
 
 it("hides the sign-out control when the context has nowhere to sign out to", () => {

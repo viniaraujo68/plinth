@@ -39,6 +39,7 @@
         resolve("/shell"),
         resolve("/http"),
         resolve("/formatters"),
+        resolve("/i18n"),
       ],
     },
   ];

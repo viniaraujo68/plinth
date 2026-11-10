@@ -1,12 +1,21 @@
 <script lang="ts">
   import { RoutingContext, type RoutingSource } from "$lib/routing.svelte.js";
-  import { Breadcrumbs } from "$lib/shell/index.js";
+  import { Breadcrumbs, NavigationProgress, TopBar } from "$lib/shell/index.js";
+  import { ThemeToggle } from "$lib/theme/index.js";
+  import UserProvider from "../user/UserProvider.svelte";
   import RoutingProvider from "../routing/RoutingProvider.svelte";
   import { DemoAccount } from "./demo-account.svelte.js";
   import { demoRoutes, type DemoId } from "./demo-routes.js";
   import ShellDemo from "./ShellDemo.svelte";
 
   const account = new DemoAccount();
+
+  // A navigation the demo pretends to make, slow enough to outlast the progress line's delay.
+  let navigating = $state(false);
+  const navigateSlowly = () => {
+    navigating = true;
+    setTimeout(() => (navigating = false), 1500);
+  };
 
   const DEMO_IDS: DemoId[] = [
     "/",
@@ -247,5 +256,73 @@
         ]}
       />
     </div>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">Top bar</h2>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      For an app with too little navigation to fill a sidebar — two or three pages and an account.
+      <code class="kbd kbd-sm">TopBar</code> puts the brand at the start and the app's controls at the
+      end and, once someone is signed in, their avatar, which opens an account menu: their name, the app's
+      own entries, and signing out. It reads the same user context as the frames above, so the buttons
+      there drive it too — sign out and the avatar goes; take away "Context can sign out" and so does
+      the entry.
+    </p>
+    <div
+      class="overflow-hidden rounded-box border border-base-content/15"
+      data-testid="frame-top-bar"
+    >
+      <UserProvider user={account}>
+        <TopBar menuLabel="Account menu" logoutLabel="Sign out">
+          {#snippet brand()}
+            <span class="font-semibold tracking-tight">Acme</span>
+          {/snippet}
+          {#snippet actions()}
+            {#if account.status !== "authenticated"}
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                onclick={() => (account.status = "authenticated")}
+              >
+                Sign in
+              </button>
+            {/if}
+            <ThemeToggle iconOnly />
+          {/snippet}
+          {#snippet menu()}
+            <li><a href="#top-bar-orders">Orders</a></li>
+            <li><a href="#top-bar-settings">Settings</a></li>
+          {/snippet}
+        </TopBar>
+        <p class="p-6 text-sm text-base-content/60">The page goes here, below the bar.</p>
+      </UserProvider>
+    </div>
+    <p class="max-w-2xl text-sm text-base-content/60">
+      Choosing an entry closes the menu, the app's entries included: the list delegates the click,
+      so an entry is a plain <code class="kbd kbd-sm">&lt;li&gt;&lt;a&gt;</code> with no handler of its
+      own. The avatar is a disc, always — a profile picture cut to any other shape reads as a badge.
+    </p>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
+      Navigation progress
+    </h2>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      A line sweeping across the top of the window while a navigation takes a while. It waits
+      <code class="kbd kbd-sm">delay</code> — 150ms — before showing, so the many navigations that
+      finish sooner never flash it. The library imports nothing from SvelteKit: the app hands it
+      <code class="kbd kbd-sm">navigating.to !== null</code>.
+    </p>
+    <button
+      type="button"
+      class="btn w-fit btn-sm"
+      data-testid="slow-navigation"
+      disabled={navigating}
+      onclick={navigateSlowly}
+    >
+      {navigating ? "Navigating…" : "Simulate a slow navigation"}
+    </button>
+    <NavigationProgress active={navigating} />
   </section>
 </main>

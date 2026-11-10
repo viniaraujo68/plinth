@@ -11,9 +11,8 @@
   ];
 </script>
 
-<!-- Defined once for the whole page, and referenced by every placeholder below that wants the
-     brand silhouette instead of a rectangle. The outline comes from the library rather than from a
-     copy of the curve pasted in here. -->
+<!-- The silhouette the "Shape" demo cuts a placeholder to. The outline comes from the library
+     rather than from a copy of the curve pasted in here. -->
 <svg class="absolute size-0" aria-hidden="true" focusable="false">
   <clipPath id="pick-mask" clipPathUnits="objectBoundingBox">
     <path d={PICK_CLIP_PATH} />
@@ -72,7 +71,7 @@
           class="size-10"
           rounded="none"
           style="clip-path: url(#pick-mask)"
-          data-testid="skeleton-avatar"
+          data-testid="skeleton-silhouette"
         />
         <figcaption class="font-mono text-xs text-base-content/50">clipped to the pick</figcaption>
       </figure>
@@ -103,12 +102,8 @@
     >
       {#if loading}
         <div class="flex items-center gap-3">
-          <Skeleton
-            class="size-10"
-            rounded="none"
-            style="clip-path: url(#pick-mask)"
-            data-testid="skeleton-avatar"
-          />
+          <!-- A profile picture stays a disc: cut to any other silhouette it reads as a badge. -->
+          <Skeleton class="size-10" rounded="full" data-testid="skeleton-avatar" />
           <div class="flex flex-1 flex-col gap-2">
             <Skeleton class="h-4 w-40" data-testid="skeleton-line" />
             <Skeleton class="h-3 w-56" data-testid="skeleton-line" />
@@ -125,8 +120,7 @@
       {:else}
         <div class="flex items-center gap-3">
           <span
-            class="grid size-10 place-items-center bg-primary text-xs font-medium text-primary-content"
-            style="clip-path: url(#pick-mask)"
+            class="grid size-10 place-items-center rounded-full bg-primary text-xs font-medium text-primary-content"
           >
             AL
           </span>

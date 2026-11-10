@@ -309,6 +309,10 @@ export const resolvePathname = (pathname: string): string =>
 
 export const [getRoutingContext, setRoutingContext] = createContext<RoutingContext>();
 
+// The `?next=` round trip of a sign-in page. Pure functions over strings, kept in their own module
+// so they can be read and tested without a routing context.
+export { loginUrl, safeNext, withNext, type LoginUrlOptions } from "./redirect.js";
+
 /**
  * A copy of `url` with some search parameters set and others removed — `null` or `undefined`
  * removes. It never edits the URL it was given, which is usually the page store's own and is read

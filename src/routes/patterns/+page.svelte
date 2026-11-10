@@ -20,7 +20,7 @@
       href: resolve("/shell"),
       name: "shell",
       entry: "@viniaraujo68/plinth/shell",
-      summary: "Sidebar, bottom bar and breadcrumbs, all fed by the routing declaration.",
+      summary: "Sidebar, bottom bar, top bar and breadcrumbs for the routed page.",
     },
     {
       href: resolve("/http"),
@@ -33,6 +33,12 @@
       name: "formatters",
       entry: "@viniaraujo68/plinth/formatters",
       summary: "Dates, money and numbers through Intl, with the locale decided once.",
+    },
+    {
+      href: resolve("/i18n"),
+      name: "i18n",
+      entry: "@viniaraujo68/plinth/i18n",
+      summary: "The app's strings in more than one language, and the toggle between them.",
     },
   ];
 </script>

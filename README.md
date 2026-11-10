@@ -253,28 +253,36 @@ base URL, how auth is injected, and how the backend spells an error body.
 
 ## Entry points
 
-| Import                             | What it carries                                                                                            |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `@viniaraujo68/plinth`             | `AsyncAction`, the error reporter, `LIBRARY_VERSION`                                                       |
-| `@viniaraujo68/plinth/theme`       | `ThemeContext`, `ThemeController`, `ThemeToggle`, the cookie helpers, `createCssColorReader`               |
-| `@viniaraujo68/plinth/theme.css`   | The stylesheet the tokens are declared in                                                                  |
-| `@viniaraujo68/plinth/attachments` | The `tooltip` attachment, usable on any tag, and `sortable`, which reorders a list from its drag handles   |
-| `@viniaraujo68/plinth/components`  | The primitives, the `DateRange` and option-matching helpers                                                |
-| `@viniaraujo68/plinth/confirm`     | `confirm`, `Confirmer`, the challenge helpers                                                              |
-| `@viniaraujo68/plinth/shell`       | `AppShell`, `Breadcrumbs`                                                                                  |
-| `@viniaraujo68/plinth/table`       | `DataTable`, the sorting and column-layout functions behind it, `competitionRanks`, the sort ↔ URL helpers |
-| `@viniaraujo68/plinth/toast`       | The toast queue and its host                                                                               |
-| `@viniaraujo68/plinth/routing`     | `RoutingConfig`, `RoutingContext`, `resolvePathname`, `withSearchParams`                                   |
-| `@viniaraujo68/plinth/user`        | `UserContext`, `ScopedComponent`, the anonymous default                                                    |
-| `@viniaraujo68/plinth/http`        | `createHttpClient`, `ApiError`, `errorMessage`, `errorStatus`                                              |
-| `@viniaraujo68/plinth/formatters`  | `createFormatters`, over `Intl`                                                                            |
+| Import                             | What it carries                                                                                              |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `@viniaraujo68/plinth`             | `AsyncAction`, the error reporter, `LIBRARY_VERSION`                                                         |
+| `@viniaraujo68/plinth/theme`       | `ThemeContext`, `ThemeController`, `ThemeToggle`, the cookie helpers, `createCssColorReader`                 |
+| `@viniaraujo68/plinth/theme.css`   | The stylesheet the tokens are declared in                                                                    |
+| `@viniaraujo68/plinth/attachments` | The `tooltip` attachment, usable on any tag, and `sortable`, which reorders a list from its drag handles     |
+| `@viniaraujo68/plinth/components`  | The primitives, the `DateRange` and option-matching helpers                                                  |
+| `@viniaraujo68/plinth/confirm`     | `confirm`, `Confirmer`, the challenge helpers                                                                |
+| `@viniaraujo68/plinth/shell`       | `AppShell`, `TopBar`, `Breadcrumbs`, `NavigationProgress`                                                    |
+| `@viniaraujo68/plinth/table`       | `DataTable`, the sorting and column-layout functions behind it, `competitionRanks`, the sort ↔ URL helpers   |
+| `@viniaraujo68/plinth/toast`       | The toast queue and its host                                                                                 |
+| `@viniaraujo68/plinth/routing`     | `RoutingConfig`, `RoutingContext`, `resolvePathname`, `withSearchParams`, `safeNext`, `loginUrl`, `withNext` |
+| `@viniaraujo68/plinth/user`        | `UserContext`, `ScopedComponent`, the anonymous default                                                      |
+| `@viniaraujo68/plinth/http`        | `createHttpClient`, `ApiError`, `errorMessage`, `errorStatus`                                                |
+| `@viniaraujo68/plinth/formatters`  | `createFormatters`, over `Intl`                                                                              |
+| `@viniaraujo68/plinth/i18n`        | `createI18n`, `LocaleToggle`, the interpolation and plural helpers                                           |
 
 The components entry point ships `AsyncButton`, `Combobox`, `Copyable`, `DateRangePicker`,
 `Dialog`, `DragHandle`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `JsonInput`, `Listbox`, `LoadingButton`, `Logo`,
-`Modal`, `MultiSelect`, `Paginator`, `RefreshButton`, `SegmentedControl`, `Select`, `Skeleton` and
-`Tooltip`. Every one of them has a page in the showcase.
+`Modal`, `MultiSelect`, `Paginator`, `RefreshButton`, `SegmentedControl`, `Select`, `Skeleton`, `Tabs`
+and `Tooltip`. Every one of them has a page in the showcase.
 It also exports the mark's outline as data — `PICK_PATH` and `PICK_CLIP_PATH` — for anything
-that wants the pick as a silhouette of its own.
+that wants the pick as a silhouette of its own. Not for avatars: the shell draws a profile picture as
+a disc, and an app's should be one too.
+
+**`Tabs`** switches what one panel shows: a `tablist` with a roving tabindex, where the arrow keys,
+Home and End move the selection and the selection follows the focus. It scrolls sideways on a phone
+instead of wrapping, fading at the edge while tabs are hidden past it. `value` is bindable; a page
+that keeps its section in the URL passes it in and navigates on `onchange`, and `idPrefix` makes the
+tab ids predictable so the panel can name its tab through `aria-labelledby`.
 
 `JsonInput` edits a JSON document as text: it reports through a bindable `invalid` whether the text
 parses, shows the parser's message after the first blur, can reindent on blur, and sets the
@@ -336,6 +344,69 @@ string has been typed, ends trimmed and nothing else folded — and focus opens 
 Enter confirms only once it matches. The library ships no translations, so `confirmLabel`,
 `cancelLabel`, `closeLabel` and `challengeLabel` on the host translate every confirm at once, and
 any call overrides them through its own options.
+
+## Top bar, progress line and the sign-in round trip
+
+`AppShell` is built for an app with a navigation to show. One with two or three pages and an
+account puts **`TopBar`** over the page instead: the brand at the start, the app's controls at the
+end, and — once the user context says someone is signed in — their avatar, opening an account menu
+with their name, the app's own `<li>` entries and signing out. Choosing an entry closes the menu,
+and `--plinth-top-bar-width` caps the bar's content to the width of the page under it.
+
+```svelte
+<TopBar menuLabel={t("nav.accountMenu")} logoutLabel={t("nav.logout")}>
+  {#snippet brand()}<a href="/">Acme</a>{/snippet}
+  {#snippet actions()}
+    <LocaleToggle {i18n} label={t("nav.language")} />
+    <ThemeToggle iconOnly />
+  {/snippet}
+  {#snippet menu()}<li><a href="/account">{t("nav.account")}</a></li>{/snippet}
+</TopBar>
+```
+
+**`NavigationProgress`** goes with either shell: a line across the top of the window while a
+navigation takes longer than `delay` (150ms). The library imports nothing from SvelteKit, so the app
+says when one is under way — `<NavigationProgress active={navigating.to !== null} />`.
+
+The routing entry point also carries the `?next=` round trip of a sign-in page. A guard sends a
+visitor to **`loginUrl(page.url)`** — `/login?next=/where/they/were`, path only, since the query
+string is where share tokens live. The sign-in page reads the parameter back through
+**`safeNext`**, which keeps it only if the browser would resolve it to the same site:
+`//evil.example`, `/\evil.example` and the spellings the URL parser turns into them come back
+`null`, so a crafted link cannot send someone who just typed their password elsewhere.
+**`withNext`** carries the same path across the link between sign-in and sign-up.
+
+## Languages
+
+`@viniaraujo68/plinth/i18n` is for the app's own text — the library still ships no translations,
+and its components keep taking every word through props. **`createI18n`** takes a flat dictionary
+per locale and returns the current locale as `$state`, a `t()` that reads it, and `tag`, the BCP 47
+tag for `Intl`:
+
+```ts
+// src/lib/i18n.svelte.ts
+import { createI18n } from "@viniaraujo68/plinth/i18n";
+import pt from "./i18n/pt.js";
+import en from "./i18n/en.js";
+
+export const i18n = createI18n({
+  dictionaries: { pt, en },
+  tags: { pt: "pt-BR", en: "en-US" },
+  fallback: "pt",
+  unmatched: "en",
+  storageKey: "acme.locale",
+});
+export const { t } = i18n;
+```
+
+`t("days", { count: 3 })` fills `{count}` and picks between a `{ one, other }` pair — exactly one
+takes `one`, everything else, zero included, takes `other`, which is not what CLDR says for
+Portuguese and is what its readers expect. A key missing from the current dictionary is read from the
+fallback one. The first visit starts on the browser's language, matched by language when the region
+differs, or on `unmatched` when nothing matches; a later one starts on the pick
+**`LocaleToggle`** remembered. Switching relabels `<html lang>` too. The server renders the fallback
+locale and never switches — the instance is shared by every request — and the browser corrects the
+text during hydration.
 
 ## Development
 

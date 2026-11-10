@@ -181,21 +181,35 @@ test("remembers the collapsed sidebar across a reload", async ({ page }) => {
   await expect(page.locator(`${wide} .plinth-shell`)).toHaveClass(/collapsed/);
 });
 
-test("gives each shell on the page its own copy of the avatar mask", async ({ page }) => {
+test("draws the signed-in user's avatar as a disc", async ({ page }) => {
   await page.goto("/shell");
 
   const avatar = page.locator(`${wide} .avatar-initials`);
   await expect(avatar).toHaveText("AL");
-  await expect(avatar).toHaveCSS("clip-path", /url\(/);
+  await expect(avatar).toHaveCSS("border-radius", "9999px");
+  await expect(avatar).toHaveCSS("clip-path", "none");
+});
 
-  // Two shells share this page, and a shared id would have pointed both at whichever definition
-  // the parser reached first — invisible here, and wrong the moment the two differ.
-  const masks = await page
-    .locator(".avatar-initials")
-    .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).clipPath));
+test("opens the top bar's account menu, closes it on a choice and signs out", async ({ page }) => {
+  await page.goto("/shell");
 
-  expect(masks).toHaveLength(2);
-  expect(new Set(masks).size).toBe(2);
+  const frame = page.getByTestId("frame-top-bar");
+  const trigger = frame.getByRole("button", { name: "Account menu" });
+  await expect(trigger).toBeVisible();
+
+  // The panel lives in the top layer, outside the frame, so it is found by its own class.
+  const orders = page.locator(".plinth-top-bar-menu").getByRole("link", { name: "Orders" });
+  await trigger.click();
+  await expect(orders).toBeVisible();
+  await orders.click();
+  await expect(orders).toBeHidden();
+
+  // The same context as the shell frames: signing out here signs them out too.
+  await trigger.click();
+  await page.locator(".plinth-top-bar-menu").getByRole("button", { name: "Sign out" }).click();
+  await expect(trigger).toBeHidden();
+  await expect(frame.getByRole("button", { name: "Sign in" })).toBeVisible();
+  await expect(page.locator(`${wide} .avatar-initials`)).toHaveCount(0);
 });
 
 test("renders the breadcrumb trail of the current match", async ({ page }) => {

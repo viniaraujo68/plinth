@@ -17,12 +17,12 @@ test("sweeps every placeholder on the page at the mark's tempo", async ({ page }
 test("follows a silhouette the caller cuts it to", async ({ page }) => {
   await page.goto("/components/skeleton");
 
-  const avatar = page.getByTestId("skeleton-avatar").first();
+  const silhouette = page.getByTestId("skeleton-silhouette");
 
-  await expect(avatar).toHaveCSS("clip-path", /url\(/);
-  await expect(avatar).toHaveCSS("border-radius", "0px");
+  await expect(silhouette).toHaveCSS("clip-path", /url\(/);
+  await expect(silhouette).toHaveCSS("border-radius", "0px");
   // The sweep is painted on the element itself, which is the only reason it survives the cut.
-  await expect(avatar).toHaveCSS("background-image", /linear-gradient/);
+  await expect(silhouette).toHaveCSS("background-image", /linear-gradient/);
 });
 
 // The one assertion the browser test suite cannot make on its own: vitest's runner has no hook for

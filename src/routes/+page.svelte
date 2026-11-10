@@ -39,19 +39,26 @@
       path: "@viniaraujo68/plinth/confirm",
       summary: "The destructive-action confirm and its host.",
     },
-    { path: "@viniaraujo68/plinth/shell", summary: "AppShell and Breadcrumbs." },
+    {
+      path: "@viniaraujo68/plinth/shell",
+      summary: "AppShell, TopBar, Breadcrumbs and NavigationProgress.",
+    },
     {
       path: "@viniaraujo68/plinth/table",
       summary: "DataTable and the sorting functions behind it.",
     },
     { path: "@viniaraujo68/plinth/toast", summary: "The toast queue and its host." },
-    { path: "@viniaraujo68/plinth/routing", summary: "RoutingConfig and RoutingContext." },
+    {
+      path: "@viniaraujo68/plinth/routing",
+      summary: "RoutingConfig, RoutingContext and the sign-in redirect helpers.",
+    },
     {
       path: "@viniaraujo68/plinth/user",
       summary: "UserContext, ScopedComponent, the anonymous default.",
     },
     { path: "@viniaraujo68/plinth/http", summary: "createHttpClient and the typed ApiError." },
     { path: "@viniaraujo68/plinth/formatters", summary: "createFormatters, over Intl." },
+    { path: "@viniaraujo68/plinth/i18n", summary: "createI18n, t() and the LocaleToggle." },
   ];
 
   const INSTALL = "npm i github:viniaraujo68/plinth";

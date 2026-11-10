@@ -18,12 +18,13 @@ export { default as RefreshButton } from "./RefreshButton.svelte";
 export { default as SegmentedControl } from "./SegmentedControl.svelte";
 export { default as Select } from "./Select.svelte";
 export { default as Skeleton } from "./Skeleton.svelte";
+export { default as Tabs } from "./Tabs.svelte";
 export { default as Tooltip } from "./Tooltip.svelte";
 
-// The mark's outline as data. `Logo` and the shell's avatar already read it from here, and an app
-// that wants the same silhouette -- a placeholder cut to the pick, an avatar of its own -- has no
-// other way to get it than copying the curve out of the library, which is how two versions of one
-// shape start existing.
+// The mark's outline as data. `Logo` already reads it from here, and an app that wants the same
+// silhouette -- a placeholder cut to the pick, a mark of its own -- has no other way to get it than
+// copying the curve out of the library, which is how two versions of one shape start existing.
+// Not for avatars: a profile picture cut to anything but a disc reads as a badge.
 export { PICK_CLIP_PATH, PICK_PATH } from "./pick.js";
 
 // The half of `date-range.js` a consumer of the picker has a use for: the two prop types, the
@@ -56,3 +57,6 @@ export {
 
 // The option type a caller of `SegmentedControl` writes its list against.
 export type { SegmentedOption } from "./segmented.js";
+
+// The item type a caller of `Tabs` writes its list against.
+export type { TabItem } from "./tabs.js";

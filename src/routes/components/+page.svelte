@@ -115,6 +115,11 @@
       summary: "Reorders a list from a drag handle, by pointer, touch or the arrow keys.",
     },
     {
+      href: resolve("/components/tabs"),
+      name: "Tabs",
+      summary: "A row of tabs that switches one panel, scrolling sideways on a phone.",
+    },
+    {
       href: resolve("/components/toast"),
       name: "Toast",
       summary: "A queue any module can push to, rendered by one host near the app root.",

@@ -13,7 +13,7 @@ test("reaches every component demo from the components index", async ({ page }) 
   await page.getByRole("link", { name: "Components", exact: true }).click();
 
   const links = page.getByTestId("demo-link");
-  await expect(links).toHaveCount(24);
+  await expect(links).toHaveCount(25);
 
   await page.getByRole("link", { name: "Modal" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Modal");
@@ -47,7 +47,7 @@ test("reaches every pattern demo from the patterns index", async ({ page }) => {
   await page.getByRole("link", { name: "Patterns", exact: true }).click();
 
   const links = page.getByTestId("pattern-link");
-  await expect(links).toHaveCount(5);
+  await expect(links).toHaveCount(6);
 
   await page.getByRole("link", { name: "formatters" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Formatters");
