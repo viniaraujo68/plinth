@@ -650,6 +650,21 @@ it("draws the avatar as a disc", () => {
   expect(getComputedStyle(avatar).clipPath).toBe("none");
 });
 
+it("centres the initials on their capitals rather than on the font's line box", () => {
+  render(Harness, { routing: routingAt("/dashboard"), width: WIDE, user: new TestUser() });
+
+  const disc = document.querySelector<HTMLElement>(".avatar-initials")!.getBoundingClientRect();
+  const text = document.querySelector<HTMLElement>(".avatar-initials-text")!;
+  const letters = text.getBoundingClientRect();
+
+  // Trimmed to cap height, the text box is shorter than the font size: it holds the capitals and
+  // nothing above or below them, so centring it centres what the eye sees.
+  expect(letters.height).toBeLessThan(parseFloat(getComputedStyle(text).fontSize));
+  expect(Math.abs(letters.top + letters.height / 2 - (disc.top + disc.height / 2))).toBeLessThan(
+    0.5,
+  );
+});
+
 it("hides the sign-out control when the context has nowhere to sign out to", () => {
   render(Harness, { routing: routingAt("/dashboard"), width: WIDE, user: new TestUser() });
 

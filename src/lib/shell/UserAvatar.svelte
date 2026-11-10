@@ -17,7 +17,9 @@ A signed-in user's initials on a disc. Hidden from assistive technology: every p
 also shows the name next to it, or labels the control it sits in, and initials read aloud as
 letters would only repeat that.
 -->
-<span class={["avatar-initials", className]} aria-hidden="true">{initials(name)}</span>
+<span class={["avatar-initials", className]} aria-hidden="true"
+  ><span class="avatar-initials-text">{initials(name)}</span></span
+>
 
 <style>
   .avatar-initials {
@@ -35,5 +37,14 @@ letters would only repeat that.
     font-size: 0.75rem;
     font-weight: 500;
     line-height: 1;
+  }
+
+  /* Centring the line box centres the font's ascent and descent, not the letters: capitals sit
+     above the baseline with nothing hanging below, so in a font like Segoe UI Variable they land a
+     pixel low on a 2rem disc. Trimmed to cap height and baseline, the box is the letters, and the
+     disc centres them whatever the font. The inner element is what gets trimmed, because the
+     property applies to block containers and the disc is a flex container. */
+  .avatar-initials-text {
+    text-box: trim-both cap alphabetic;
   }
 </style>
