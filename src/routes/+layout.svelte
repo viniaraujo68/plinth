@@ -41,6 +41,7 @@
         resolve("/formatters"),
         resolve("/i18n"),
         resolve("/virtual"),
+        resolve("/url-state"),
       ],
     },
   ];

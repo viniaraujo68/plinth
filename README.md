@@ -270,6 +270,7 @@ base URL, how auth is injected, and how the backend spells an error body.
 | `@viniaraujo68/plinth/formatters`  | `createFormatters`, over `Intl`                                                                              |
 | `@viniaraujo68/plinth/i18n`        | `createI18n`, `LocaleToggle`, the interpolation and plural helpers                                           |
 | `@viniaraujo68/plinth/virtual`     | `Virtualizer`, `VirtualList`, `WindowedData`, `WindowedVirtualizer`, `DataList`                              |
+| `@viniaraujo68/plinth/url-state`   | `createUrlState`, `urlStore`, `SyncedState`, `createParamsCodec` and `param`, the codec contracts            |
 
 The components entry point ships `AsyncButton`, `Combobox`, `Copyable`, `DateRangePicker`,
 `Dialog`, `DragHandle`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `JsonInput`, `Listbox`, `LoadingButton`, `Logo`,
@@ -408,6 +409,68 @@ differs, or on `unmatched` when nothing matches; a later one starts on the pick
 **`LocaleToggle`** remembered. Switching relabels `<html lang>` too. The server renders the fallback
 locale and never switches — the instance is shared by every request — and the browser corrects the
 text during hydration.
+
+## URL state
+
+`@viniaraujo68/plinth/url-state` keeps a screen's filters, sorting and paging in the query string,
+so a link reopens what its sender was looking at and the back button undoes a search. It is state,
+not a query layer: nothing in it fetches or caches.
+
+```svelte
+<script lang="ts">
+  import { createParamsCodec, createUrlState, param } from "@viniaraujo68/plinth/url-state";
+
+  const catalog = createParamsCodec({
+    q: param.string({ default: "" }),
+    sort: param.string({ oneOf: ["asc", "desc"], default: "asc" }),
+    tags: param.list(param.string()),
+    page: param.number({ default: 1, min: 1, integer: true }),
+  });
+
+  const filters = createUrlState(catalog, { resetOnCommit: ["page"] });
+</script>
+
+<input bind:value={filters.draft.q} />
+<button disabled={!filters.isDirty} onclick={filters.commit}>Apply</button>
+<button onclick={() => filters.update((s) => ({ ...s, page: s.page + 1 }))}>Next</button>
+```
+
+A form edits **`draft`**; **`commit()`** normalizes it into **`committed`** and writes the owned
+params to the URL, leaving every other param alone. **`update(fn)`** commits one change eagerly —
+a page turn — without dragging half-typed filters along; **`revert()`** drops the draft's edits and
+**`reset()`** returns both to the defaults. **`resetOnCommit`** names the fields that go back to
+their defaults whenever a commit changes anything else, which is what returns a new search to page 1.
+A URL change that does not change **`key()`** — a foreign param, a reorder — is ignored, so it never
+clobbers a draft; a real one, such as the back button, replaces both halves and calls `onSynced`.
+
+The handlers never throw on a hand-edited URL: a value they cannot read falls back to the field's
+default — `number` rejects `NaN` and empty values and honours `min`, `max` and `integer`, `boolean`
+takes only `"true"` and `"false"`, `date` reads `YYYY-MM-DD` as local midnight and refuses
+impossible days, and an invalid `Date` is never written. A value equal to its default stays out of
+the URL. `list` reads a repeated param, and its default is always the empty list.
+
+Every commit is a `goto` with focus and scroll kept, and pushes a history entry. **`replace`**
+rewrites the current entry instead — `true` for search-as-you-type, or a function of the previous
+and next owned params, where `changedParams` helps:
+`replace: (prev, next) => changedParams(prev, next).every((name) => name === "q")`. Several states
+on one page can commit in the same tick; the writes merge into one navigation.
+
+Create it while a component initializes: it follows the URL through an `$effect`. Effects do not
+run on the server, so a server-rendered or prerendered page renders the defaults and picks up the
+URL once it hydrates. A page whose first paint has to reflect the query string reads it in its own
+`load` and is not prerendered.
+
+`key()` is what a fetch is keyed by. With TanStack Query it goes straight into the key:
+
+```ts
+const books = createQuery(() => ({
+  queryKey: ["books", filters.key()],
+  queryFn: () => api.get(`/books?${catalog.serialize(filters.normalized())}`),
+}));
+```
+
+`SyncedState` works without the URL too, and takes any `ExternalStore` — `read`, `write` and a
+`subscribe` that must not call back synchronously — for state kept somewhere else.
 
 ## Development
 

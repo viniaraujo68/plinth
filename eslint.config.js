@@ -80,6 +80,10 @@ export default defineConfig(
     },
   },
   {
+    files: ["src/lib/url-state/url-store.svelte.ts"],
+    rules: { "svelte/no-navigation-without-resolve": ["error", { ignoreGoto: true }] },
+  },
+  {
     files: ["**/*.{test,spec,e2e}.{js,ts}"],
     extends: [ts.configs.disableTypeChecked],
   },

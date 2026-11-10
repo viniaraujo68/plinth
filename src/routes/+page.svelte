@@ -63,6 +63,10 @@
       path: "@viniaraujo68/plinth/virtual",
       summary: "Virtualizer, VirtualList, WindowedData and DataList.",
     },
+    {
+      path: "@viniaraujo68/plinth/url-state",
+      summary: "createUrlState, the params codec and SyncedState.",
+    },
   ];
 
   const INSTALL = "npm i github:viniaraujo68/plinth";
