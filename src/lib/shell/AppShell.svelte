@@ -51,6 +51,7 @@
     closeLabel?: string;
     /** Label of the sign-out control, which only appears when the user context can sign out. */
     logoutLabel?: string;
+    overviewLabel?: string;
   }
 
   /**
@@ -82,12 +83,23 @@
     moreLabel = "More",
     closeLabel = "Close",
     logoutLabel = "Sign out",
+    overviewLabel = "Overview",
   }: Props = $props();
+
+  const uid = $props.id();
 
   const routing = getRoutingContext();
   const user = getUserContext();
 
-  const listed = (route: ResolvedRoute) => route.meta.title !== undefined && route.navigable;
+  const titled = (route: ResolvedRoute) => route.meta.title !== undefined;
+  const listed = (route: ResolvedRoute) => titled(route) && route.navigable;
+  const inScope = (route: ResolvedRoute) => user.hasAnyRole(route.meta.requiredRoles ?? []);
+  const isStatic = (route: ResolvedRoute) => route.pathname === route.routeId;
+
+  interface NavEntry {
+    route: ResolvedRoute;
+    children: ResolvedRoute[];
+  }
 
   /**
    * Home is the header entry, apart from the list — derived, never re-declared. The root is a
@@ -102,10 +114,17 @@
    * overflow. Wrapping each item in the component would leave the slot arithmetic counting entries
    * the user never sees, and "More" opening onto an empty sheet.
    */
-  const items = $derived(
+  const entries: NavEntry[] = $derived(
     routing
       .children("/")
-      .filter((route) => listed(route) && user.hasAnyRole(route.meta.requiredRoles ?? [])),
+      .filter((route) => titled(route) && inScope(route))
+      .map((route) => ({
+        route,
+        children: routing
+          .children(route.routeId)
+          .filter((child) => listed(child) && isStatic(child) && inScope(child)),
+      }))
+      .filter((entry) => entry.route.navigable || entry.children.length > 0),
   );
 
   /**
@@ -121,6 +140,33 @@
     route.routeId === "/"
       ? routing.routeId === "/"
       : routing.matched.some((match) => match.routeId === route.routeId);
+
+  const isOverviewCurrent = (entry: NavEntry) =>
+    isCurrent(entry.route) && !entry.children.some(isCurrent);
+
+  let openGroups = $state<Record<string, boolean>>({});
+  const isOpen = (route: ResolvedRoute) => openGroups[route.routeId] ?? isCurrent(route);
+
+  const enteredGroup = $derived(
+    entries.find((entry) => entry.children.length > 0 && isCurrent(entry.route))?.route.routeId,
+  );
+
+  $effect(() => {
+    const id = enteredGroup;
+    if (id === undefined) return;
+    untrack(() => {
+      openGroups[id] = true;
+    });
+  });
+
+  const toggleGroup = (route: ResolvedRoute) => {
+    if (collapsed) {
+      collapsed = false;
+      openGroups[route.routeId] = true;
+      return;
+    }
+    openGroups[route.routeId] = !isOpen(route);
+  };
 
   let content: HTMLElement | undefined = $state();
   const offsets: Record<string, number> = {};
@@ -152,7 +198,11 @@
   });
 
   // Home leads the bottom bar rather than heading it: a bar has no header to put it in.
-  const barEntries = $derived(home ? [home, ...items] : items);
+  const navigableTopLevel = $derived(
+    entries.filter((entry) => entry.route.navigable).map((entry) => entry.route),
+  );
+  const barEntries = $derived(home ? [home, ...navigableTopLevel] : navigableTopLevel);
+  const hasGroups = $derived(entries.some((entry) => entry.children.length > 0));
   const slots = $derived(Math.max(1, bottomBarSlots));
 
   const signedInUser = $derived(user.status === "authenticated" ? user.data : null);
@@ -165,7 +215,7 @@
   const sheetChrome = $derived(
     brand !== undefined || footer !== undefined || signedInUser !== null,
   );
-  const showMore = $derived(barEntries.length > slots || sheetChrome);
+  const showMore = $derived(barEntries.length > slots || sheetChrome || hasGroups);
 
   /*
    * Slot arithmetic. `bottomBarSlots` caps what the bar renders, "More" counted among it, so the
@@ -184,6 +234,14 @@
   const navSlots = $derived(showMore ? slots - 1 : slots);
   const barItems = $derived(barEntries.slice(0, navSlots));
   const overflowItems = $derived(barEntries.slice(navSlots));
+  const overflowed = (route: ResolvedRoute) =>
+    overflowItems.some((item) => item.routeId === route.routeId);
+
+  const sheetEntries: NavEntry[] = $derived(
+    [...(home ? [{ route: home, children: [] }] : []), ...entries].filter(
+      (entry) => entry.children.length > 0 || overflowed(entry.route),
+    ),
+  );
 
   let sheet = $state<Dialog>();
 
@@ -209,14 +267,14 @@ and because the root is its own container, the shell can be dropped into a narro
 mobile form on a desktop, which is exactly what the showcase does.
 
 Entries come from `routing.children("/")`, minus plumbing (no `title`), minus any route with no page
-of its own to link to, and minus anything the user context gates out. Home, when declared, is derived off the trail and rendered as the sidebar's
+of its own to link to (unless it heads a group), and minus anything the user context gates out. Home, when declared, is derived off the trail and rendered as the sidebar's
 header entry and as the bottom bar's first item. It is current on the exact root and nowhere else —
 every route is below it — while every other entry is current for its whole subtree, so exactly one
 entry is ever marked, in either form.
 
 The bar form has no sidebar, and so no brand, no footer and no user block. All three move into the
 sheet behind the "More" item, which is therefore shown whenever there is anything to put there —
-overflowing entries, a `brand` snippet, a `footer` snippet or a signed-in user — and not only on an
+overflowing entries, a group's children, a `brand` snippet, a `footer` snippet or a signed-in user — and not only on an
 overflow. The sheet reads brand, then the entries that did not fit, then `footer`, then the user
 block with its sign-out control. Choosing an entry dismisses it; using a footer control does not.
 
@@ -285,17 +343,73 @@ shell rather than to the window, and the content area reserves its height plus
 
     <nav class="sidebar-nav" aria-label={navLabel}>
       <ul>
-        {#each items as item (item.routeId)}
+        {#each entries as entry, index (entry.route.routeId)}
+          {@const item = entry.route}
           <li>
-            <a
-              class="nav-link"
-              href={resolvePathname(item.pathname)}
-              aria-current={isCurrent(item) ? "page" : undefined}
-              {@attach tooltip(item.label, { disabled: !collapsed })}
-            >
-              <span class="nav-icon">{@render routeIcon(item)}</span>
-              <span class="nav-label collapsible">{item.label}</span>
-            </a>
+            {#if entry.children.length > 0}
+              {@const foldId = `${uid}-group-${index}`}
+              <button
+                type="button"
+                class={["nav-link nav-group", isCurrent(item) && "has-current"]}
+                aria-expanded={!collapsed && isOpen(item)}
+                aria-controls={foldId}
+                onclick={() => toggleGroup(item)}
+                {@attach tooltip(item.label, { disabled: !collapsed })}
+              >
+                <span class="nav-icon">{@render routeIcon(item)}</span>
+                <span class="nav-label collapsible">{item.label}</span>
+                <svg
+                  class="nav-chevron collapsible"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </button>
+              <div id={foldId} class={["nav-fold", isOpen(item) && "open"]} inert={!isOpen(item)}>
+                <div>
+                  <ul>
+                    {#if item.navigable}
+                      <li>
+                        <a
+                          class="nav-link nav-sublink"
+                          href={resolvePathname(item.pathname)}
+                          aria-current={isOverviewCurrent(entry) ? "page" : undefined}
+                        >
+                          <span class="nav-label">{overviewLabel}</span>
+                        </a>
+                      </li>
+                    {/if}
+                    {#each entry.children as child (child.routeId)}
+                      <li>
+                        <a
+                          class="nav-link nav-sublink"
+                          href={resolvePathname(child.pathname)}
+                          aria-current={isCurrent(child) ? "page" : undefined}
+                        >
+                          <span class="nav-label">{child.label}</span>
+                        </a>
+                      </li>
+                    {/each}
+                  </ul>
+                </div>
+              </div>
+            {:else}
+              <a
+                class="nav-link"
+                href={resolvePathname(item.pathname)}
+                aria-current={isCurrent(item) ? "page" : undefined}
+                {@attach tooltip(item.label, { disabled: !collapsed })}
+              >
+                <span class="nav-icon">{@render routeIcon(item)}</span>
+                <span class="nav-label collapsible">{item.label}</span>
+              </a>
+            {/if}
           </li>
         {/each}
       </ul>
@@ -371,20 +485,57 @@ shell rather than to the window, and the content area reserves its height plus
       </button>
     </div>
     <div class="sheet-body">
-      {#if overflowItems.length > 0}
+      {#if sheetEntries.length > 0}
         <ul class="sheet-list">
-          {#each overflowItems as item (item.routeId)}
-            <li>
-              <a
-                class="sheet-link"
-                href={resolvePathname(item.pathname)}
-                aria-current={isCurrent(item) ? "page" : undefined}
-                onclick={() => sheet?.close()}
-              >
-                <span class="nav-icon">{@render routeIcon(item)}</span>
-                <span>{item.label}</span>
-              </a>
-            </li>
+          {#each sheetEntries as entry, index (entry.route.routeId)}
+            {@const item = entry.route}
+            {#if entry.children.length > 0}
+              {@const headingId = `${uid}-sheet-group-${index}`}
+              <li class="sheet-group">
+                <p class="sheet-heading" id={headingId}>
+                  <span class="nav-icon">{@render routeIcon(item)}</span>
+                  <span>{item.label}</span>
+                </p>
+                <ul aria-labelledby={headingId}>
+                  {#if item.navigable && overflowed(item)}
+                    <li>
+                      <a
+                        class="sheet-link sheet-sublink"
+                        href={resolvePathname(item.pathname)}
+                        aria-current={isOverviewCurrent(entry) ? "page" : undefined}
+                        onclick={() => sheet?.close()}
+                      >
+                        {overviewLabel}
+                      </a>
+                    </li>
+                  {/if}
+                  {#each entry.children as child (child.routeId)}
+                    <li>
+                      <a
+                        class="sheet-link sheet-sublink"
+                        href={resolvePathname(child.pathname)}
+                        aria-current={isCurrent(child) ? "page" : undefined}
+                        onclick={() => sheet?.close()}
+                      >
+                        {child.label}
+                      </a>
+                    </li>
+                  {/each}
+                </ul>
+              </li>
+            {:else}
+              <li>
+                <a
+                  class="sheet-link"
+                  href={resolvePathname(item.pathname)}
+                  aria-current={isCurrent(item) ? "page" : undefined}
+                  onclick={() => sheet?.close()}
+                >
+                  <span class="nav-icon">{@render routeIcon(item)}</span>
+                  <span>{item.label}</span>
+                </a>
+              </li>
+            {/if}
           {/each}
         </ul>
       {/if}
@@ -611,6 +762,61 @@ shell rather than to the window, and the content area reserves its height plus
     color: var(--color-primary);
   }
 
+  .nav-group {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .nav-group.has-current {
+    color: var(--color-base-content);
+  }
+
+  .nav-group.has-current .nav-icon {
+    color: var(--color-primary);
+  }
+
+  .nav-chevron {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    margin-inline: auto 0.75rem;
+    transition: transform 200ms ease;
+  }
+
+  .nav-group[aria-expanded="true"] .nav-chevron {
+    transform: rotate(90deg);
+  }
+
+  .nav-fold {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 200ms ease;
+  }
+
+  .nav-fold.open {
+    grid-template-rows: 1fr;
+  }
+
+  .nav-fold > div {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .plinth-shell.collapsed .shell-sidebar .nav-fold {
+    display: none;
+  }
+
+  .nav-sublink {
+    height: 2.25rem;
+    padding-inline-start: calc(var(--plinth-sidebar-collapsed-width) - 1px);
+  }
+
   .sidebar-footer {
     border-top: 1px solid var(--plinth-shell-line);
   }
@@ -796,6 +1002,28 @@ shell rather than to the window, and the content area reserves its height plus
     background-color: var(--color-base-300);
   }
 
+  .sheet-group ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sheet-heading {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    margin: 0;
+    color: color-mix(in oklch, var(--color-base-content) 60%, transparent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .sheet-sublink {
+    padding-inline-start: calc(var(--plinth-sidebar-collapsed-width) - 1px);
+  }
+
   @container plinth-shell (min-width: 48rem) {
     .shell-sidebar {
       display: flex;
@@ -811,7 +1039,9 @@ shell rather than to the window, and the content area reserves its height plus
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .shell-sidebar {
+    .shell-sidebar,
+    .nav-chevron,
+    .nav-fold {
       transition: none;
     }
   }

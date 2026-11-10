@@ -169,6 +169,16 @@ theme context. `AppShell` fills its parent, so give it one with a height. Its na
 titled first-level routes that have a page of their own; a titled route with no page stays a heading
 in the breadcrumb trail and is left out of the navigation, which has nothing to link it to.
 
+One level of nesting is read off the same tree: a first-level route whose children are titled,
+static and have pages of their own becomes a **group**, a header that folds those children away.
+It opens by itself when the current page is inside it and then stays wherever the reader leaves it;
+the group's own page, when it has one, leads the fold under `overviewLabel` ("Overview"). Children
+go through the same role gate as everything else, and a group left with no children in scope falls
+back to a plain entry — or vanishes, when it has no page either. In the collapsed rail a group is
+its icon, and clicking it expands the sidebar onto the open group. On the bottom bar a group with a
+page takes a slot and links there, one without takes none, and every group's children go into the
+"More" sheet under its heading. Routes with no such children render exactly as before.
+
 An app that cannot render the controller in the right state on the server — a prerendered site, a
 client-only app — usually stamps `data-theme="plinth-light"` or `data-theme="plinth-dark"` on
 `<html>` from a head script, so the very first paint is already right. That stamp is a **seed for

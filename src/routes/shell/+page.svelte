@@ -6,6 +6,7 @@
   import RoutingProvider from "../routing/RoutingProvider.svelte";
   import { DemoAccount } from "./demo-account.svelte.js";
   import { demoRoutes, type DemoId } from "./demo-routes.js";
+  import { GROUPED_DEMO_IDS, groupedDemoRoutes, type GroupedDemoId } from "./grouped-routes.js";
   import ShellDemo from "./ShellDemo.svelte";
 
   const account = new DemoAccount();
@@ -65,6 +66,31 @@
       (route) => route.pathname === pathname,
     );
     if (match) demoRouteId = match.routeId as DemoId;
+  };
+
+  let groupedRouteId = $state<GroupedDemoId>("/settings/billing");
+
+  const groupedSource: RoutingSource = {
+    get route() {
+      return { id: groupedRouteId };
+    },
+    get params() {
+      return { id: "7841" };
+    },
+    get url() {
+      return new URL("https://acme.example/");
+    },
+  };
+
+  const groupedRouting = new RoutingContext(groupedDemoRoutes, groupedSource);
+
+  const goGrouped = (pathname: string) => {
+    const match = groupedRouting
+      .children("/")
+      .flatMap((route) => [route, ...groupedRouting.children(route.routeId)])
+      .concat(groupedRouting.matched)
+      .find((route) => route.pathname === pathname);
+    if (match) groupedRouteId = match.routeId as GroupedDemoId;
   };
 
   const toggleReports = () => {
@@ -218,6 +244,71 @@
       that did not fit, then the theme toggle, then Ada and her sign-out button. Cycle the theme
       from inside — the sheet stays put, because a setting is not somewhere you went. Choosing an
       entry is, so that dismisses it.
+    </p>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">Groups</h2>
+    <p class="max-w-2xl text-base-content/70">
+      A first-level route whose children are titled, static and have pages of their own becomes a
+      group: a header that folds its children away. A second fake app, declared the same way —
+      nothing about groups is configured, the shell reads them off the route tree. Settings has a
+      page of its own, which leads its fold as "Overview"; Reports has none, so it is only a
+      heading, and both its children are gated behind <code class="kbd kbd-sm">reports:read</code>:
+      take the role away above and the whole group goes, since a header over nothing is a dead end.
+    </p>
+
+    <label class="flex flex-col gap-1 text-sm">
+      <span class="text-base-content/60">Current route</span>
+      <select
+        class="select w-64 select-sm"
+        bind:value={groupedRouteId}
+        data-testid="grouped-route-select"
+      >
+        {#each GROUPED_DEMO_IDS as id (id)}
+          <option value={id}>{id}</option>
+        {/each}
+      </select>
+    </label>
+
+    <div class="flex flex-col gap-4">
+      <div
+        class="h-[30rem] flex-1 resize-x overflow-hidden rounded-box border border-base-content/15"
+        data-testid="frame-groups-wide"
+      >
+        <ShellDemo
+          routing={groupedRouting}
+          user={account}
+          navLabel="Grouped wide demo navigation"
+          storageKey={null}
+          onnavigate={goGrouped}
+        />
+      </div>
+      <div
+        class="h-[30rem] w-[375px] max-w-full shrink-0 overflow-hidden rounded-box border border-base-content/15"
+        data-testid="frame-groups-mobile"
+      >
+        <ShellDemo
+          routing={groupedRouting}
+          user={account}
+          navLabel="Grouped mobile demo navigation"
+          storageKey={null}
+          onnavigate={goGrouped}
+        />
+      </div>
+    </div>
+
+    <p class="max-w-2xl text-sm text-base-content/60">
+      A group opens by itself when the current page is inside it, then stays wherever the reader
+      leaves it. Collapse the sidebar and a group is just its icon, with its name as a tooltip;
+      clicking it expands the sidebar onto the open group, because a page-less group has nowhere to
+      link to and a row of children has no icons to show in a rail.
+    </p>
+    <p class="max-w-2xl text-sm text-base-content/60">
+      On the bar a group with a page takes a slot like any entry and links to that page; a group
+      without one takes none. Every group's children go into the sheet under a heading, in route
+      order, so "More" is always there when a group is. The bar marks the section you are in, the
+      sheet marks the page.
     </p>
   </section>
 
