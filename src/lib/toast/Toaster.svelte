@@ -52,11 +52,12 @@
     success: "alert-success",
     warning: "alert-warning",
     error: "alert-error",
+    loading: "",
   };
 
   // Inline paths rather than an icon font or an iconify plugin: the library must render correctly
   // in a consumer that installed nothing but the package. Variant is never signalled by color
-  // alone, which is what makes the four alerts distinguishable to a colorblind reader.
+  // alone, which is what makes the five alerts distinguishable to a colorblind reader.
   const VARIANT_ICONS: Record<ToastVariant, string[]> = {
     info: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18", "M12 16v-5", "M12 8h.01"],
     success: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18", "m8.5 12.4 2.4 2.4 4.6-5.2"],
@@ -66,7 +67,10 @@
       "M12 17h.01",
     ],
     error: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18", "m14.5 9.5-5 5", "m9.5 9.5 5 5"],
+    loading: ["M21 12a9 9 0 1 1-6.22-8.56"],
   };
+
+  const POLITE_VARIANTS: ToastVariant[] = ["info", "success", "loading"];
 
   const edgeOf = (value: ToastPosition) => {
     if (value.startsWith("top")) return "top";
@@ -171,7 +175,7 @@ It is `pointer-events: none` for that reason — an empty region must never swal
       ]}
       data-testid="toast"
       data-variant={toast.variant}
-      role={toast.variant === "info" || toast.variant === "success" ? "status" : "alert"}
+      role={POLITE_VARIANTS.includes(toast.variant) ? "status" : "alert"}
       aria-atomic="true"
       onmouseenter={() => resolvedManager.pause(toast.id)}
       onmouseleave={(event) => resumeUnlessStillHeld(toast.id, event)}
@@ -181,7 +185,7 @@ It is `pointer-events: none` for that reason — an empty region must never swal
       out:scale|global={{ start: 0.96, duration: 160 }}
     >
       <svg
-        class="size-5 shrink-0"
+        class={["size-5 shrink-0", toast.variant === "loading" && "animate-spin"]}
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

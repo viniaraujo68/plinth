@@ -1,5 +1,7 @@
+import { reportError } from "../error.js";
+
 /** Severity a toast carries. Maps to a daisyUI alert modifier and an icon in `Toaster`. */
-export type ToastVariant = "info" | "success" | "warning" | "error";
+export type ToastVariant = "info" | "success" | "warning" | "error" | "loading";
 
 /**
  * Where a `Toaster` anchors its stack. Mirrors daisyUI's two-axis toast placement, so the value
@@ -42,6 +44,32 @@ export interface ToastOptions {
   dismissible?: boolean;
 }
 
+export interface ToastUpdate {
+  message?: string;
+  variant?: ToastVariant;
+  description?: string;
+  duration?: number;
+  dismissible?: boolean;
+}
+
+export type ToastPromiseContent<T> = string | ((input: T) => string);
+
+export interface ToastPromiseMessages<T> {
+  loading: string;
+  success: ToastPromiseContent<T>;
+  error: ToastPromiseContent<unknown>;
+}
+
+type ToastPhaseOptions = Omit<ToastOptions, "id">;
+
+export interface ToastPromiseOptions {
+  id?: string;
+  loading?: ToastPhaseOptions;
+  success?: ToastPhaseOptions;
+  error?: ToastPhaseOptions;
+  onerror?: (error: unknown) => void;
+}
+
 export interface ToastManagerOptions {
   /**
    * How many toasts may be on screen at once; the oldest is dropped to make room. A cap exists
@@ -59,6 +87,7 @@ const DEFAULT_DURATIONS: Record<ToastVariant, number> = {
   success: 3000,
   warning: 5000,
   error: 5000,
+  loading: Number.POSITIVE_INFINITY,
 };
 
 const DEFAULT_LIMIT = 5;
@@ -80,6 +109,7 @@ interface DismissClock {
   /** `Date.now()` the running timeout fires at, or null while stopped. */
   deadline: number | null;
   paused: boolean;
+  run?: object;
 }
 
 /**
@@ -119,13 +149,15 @@ export class ToastManager {
       message,
       description: options.description,
       duration: options.duration ?? this.#durations[variant],
-      dismissible: options.dismissible ?? true,
+      dismissible: options.dismissible ?? variant !== "loading",
       createdAt: existing?.createdAt ?? Date.now(),
     };
 
     this.#upsert(next);
     this.#enforceLimit();
     this.#restartClock(next);
+    const clock = this.#clocks.get(id);
+    if (clock) clock.run = undefined;
     return id;
   };
 
@@ -135,6 +167,52 @@ export class ToastManager {
   warning = (message: string, options?: ToastOptions): string =>
     this.show(message, options, "warning");
   error = (message: string, options?: ToastOptions): string => this.show(message, options, "error");
+  loading = (message: string, options?: ToastOptions): string =>
+    this.show(message, options, "loading");
+
+  update = (id: string, patch: ToastUpdate): boolean => {
+    const existing = this.#toasts.find((toast) => toast.id === id);
+    if (!existing) return false;
+
+    const variant = patch.variant ?? existing.variant;
+    const variantChanged = variant !== existing.variant;
+    const next: Toast = {
+      ...existing,
+      variant,
+      message: patch.message ?? existing.message,
+      description: "description" in patch ? patch.description : existing.description,
+      duration: patch.duration ?? (variantChanged ? this.#durations[variant] : existing.duration),
+      dismissible:
+        patch.dismissible ?? (variantChanged ? variant !== "loading" : existing.dismissible),
+    };
+
+    this.#upsert(next);
+    this.#restartClock(next);
+    return true;
+  };
+
+  promise = async <T>(
+    input: Promise<T> | (() => Promise<T>),
+    messages: ToastPromiseMessages<T>,
+    options: ToastPromiseOptions = {},
+  ): Promise<T | undefined> => {
+    const id = this.show(messages.loading, { ...options.loading, id: options.id }, "loading");
+    const run = {};
+    const clock = this.#clocks.get(id);
+    if (clock) clock.run = run;
+
+    let value: T;
+    try {
+      value = await (typeof input === "function" ? input() : input);
+    } catch (failure) {
+      (options.onerror ?? reportError)(failure);
+      this.#settle(id, run, "error", messages.error, failure, options.error);
+      return undefined;
+    }
+
+    this.#settle(id, run, "success", messages.success, value, options.success);
+    return value;
+  };
 
   /** Remove one toast. Unknown ids are ignored, so a caller may dismiss twice. */
   dismiss = (id: string): void => {
@@ -174,6 +252,28 @@ export class ToastManager {
     this.#start(id);
   };
 
+  #settle<T>(
+    id: string,
+    run: object,
+    variant: ToastVariant,
+    content: ToastPromiseContent<T>,
+    input: T,
+    options: ToastPhaseOptions | undefined,
+  ): void {
+    if (this.#clocks.get(id)?.run !== run) return;
+
+    let message: string;
+    try {
+      message = typeof content === "function" ? content(input) : content;
+    } catch (failure) {
+      reportError(failure);
+      this.#remove(id);
+      return;
+    }
+
+    this.show(message, { ...options, id }, variant);
+  }
+
   #upsert(toast: Toast): void {
     const index = this.#toasts.findIndex((current) => current.id === toast.id);
     if (index === -1) this.#toasts.push(toast);
@@ -206,6 +306,7 @@ export class ToastManager {
       // a success) must stay frozen; starting a fresh countdown under the cursor would take the
       // message away without the reader ever leaving it.
       paused: previous?.paused ?? false,
+      run: previous?.run,
     });
 
     this.#start(toast.id);
@@ -253,6 +354,13 @@ export interface ToastApi {
   success: (message: string, options?: ToastOptions) => string;
   warning: (message: string, options?: ToastOptions) => string;
   error: (message: string, options?: ToastOptions) => string;
+  loading: (message: string, options?: ToastOptions) => string;
+  update: (id: string, patch: ToastUpdate) => boolean;
+  promise: <T>(
+    input: Promise<T> | (() => Promise<T>),
+    messages: ToastPromiseMessages<T>,
+    options?: ToastPromiseOptions,
+  ) => Promise<T | undefined>;
   dismiss: (id: string) => void;
   clear: () => void;
   pause: (id: string) => void;
@@ -272,6 +380,9 @@ export const toast: ToastApi = {
   success: (message, options) => getDefaultToastManager().success(message, options),
   warning: (message, options) => getDefaultToastManager().warning(message, options),
   error: (message, options) => getDefaultToastManager().error(message, options),
+  loading: (message, options) => getDefaultToastManager().loading(message, options),
+  update: (id, patch) => getDefaultToastManager().update(id, patch),
+  promise: (input, messages, options) => getDefaultToastManager().promise(input, messages, options),
   dismiss: (id) => getDefaultToastManager().dismiss(id),
   clear: () => getDefaultToastManager().clear(),
   pause: (id) => getDefaultToastManager().pause(id),

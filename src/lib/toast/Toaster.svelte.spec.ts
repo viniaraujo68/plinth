@@ -149,3 +149,40 @@ it("moves the stack back to the body when the modal closes", async () => {
     expect(region()?.parentElement).toBe(document.body);
   });
 });
+
+it("renders a loading toast politely, with a spinning icon and no dismiss button", async () => {
+  const manager = mount();
+
+  manager.loading("Uploading…");
+
+  const toast = page.getByTestId("toast");
+  await expect.element(toast).toHaveAttribute("data-variant", "loading");
+  await expect.element(toast).toHaveAttribute("role", "status");
+  expect(toast.element().querySelector("svg")?.classList.contains("animate-spin")).toBe(true);
+  expect(page.getByRole("button", { name: "Dismiss notification" }).elements()).toHaveLength(0);
+});
+
+it("transitions a promise's toast in place, on the same element", async () => {
+  const manager = mount();
+  let finish!: (value: string) => void;
+  const work = new Promise<string>((resolve) => {
+    finish = resolve;
+  });
+
+  const result = manager.promise(work, {
+    loading: "Publishing…",
+    success: (name) => `Published ${name}.`,
+    error: "Could not publish.",
+  });
+
+  await expect.element(page.getByText("Publishing…")).toBeInTheDocument();
+  const before = page.getByTestId("toast").element();
+
+  finish("the report");
+  await expect(result).resolves.toBe("the report");
+
+  await expect.element(page.getByText("Published the report.")).toBeInTheDocument();
+  expect(page.getByTestId("toast").elements()).toHaveLength(1);
+  expect(page.getByTestId("toast").element()).toBe(before);
+  await expect.element(page.getByTestId("toast")).toHaveAttribute("data-variant", "success");
+});
