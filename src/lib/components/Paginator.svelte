@@ -1,3 +1,23 @@
+<script lang="ts" module>
+  export interface PaginatorLabels {
+    navigation: string;
+    previous: string;
+    next: string;
+    page: (page: number) => string;
+    pageSize: string;
+    summary: (first: number, last: number, total: number) => string;
+  }
+
+  export const DEFAULT_PAGINATOR_LABELS: PaginatorLabels = {
+    navigation: "Pagination",
+    previous: "Previous page",
+    next: "Next page",
+    page: (page) => `Page ${page}`,
+    pageSize: "Items per page",
+    summary: (first, last, total) => `Showing ${first} to ${last} of ${total} items`,
+  };
+</script>
+
 <script lang="ts">
   import type { ClassValue } from "svelte/elements";
 
@@ -32,6 +52,7 @@
      * and the reset back to page 1, since a new size invalidates the old page arithmetic.
      */
     onPageSizeChange?: (size: number) => void;
+    labels?: Partial<PaginatorLabels>;
   } & (CountedPages | UncountedPages);
 
   let {
@@ -44,7 +65,10 @@
     totalPages,
     totalItems,
     hasNextPage,
+    labels,
   }: Props = $props();
+
+  const text = $derived({ ...DEFAULT_PAGINATOR_LABELS, ...labels });
 
   const range = (start: number, end: number): number[] =>
     Array.from({ length: Math.max(0, end - start + 1) }, (_, i) => start + i);
@@ -123,7 +147,7 @@ that means. Sizing is in `em`, so the whole strip scales with the font size arou
     class="btn h-[1.75em] min-w-[1.75em] px-2 tabular-nums btn-primary aria-[current=false]:btn-ghost"
     onclick={() => setPage(page)}
     aria-current={page === pageNumber}
-    aria-label={`Page ${page}`}
+    aria-label={text.page(page)}
   >
     {page}
   </button>
@@ -133,7 +157,7 @@ that means. Sizing is in `em`, so the whole strip scales with the font size arou
   <button
     type="button"
     class="btn size-[1.75em] btn-ghost px-1"
-    aria-label="Previous page"
+    aria-label={text.previous}
     disabled={pageNumber <= 1}
     onclick={() => setPage(pageNumber - 1)}
   >
@@ -153,7 +177,7 @@ that means. Sizing is in `em`, so the whole strip scales with the font size arou
   <button
     type="button"
     class="btn size-[1.75em] btn-ghost px-1"
-    aria-label="Next page"
+    aria-label={text.next}
     disabled={!canGoNext}
     onclick={() => setPage(pageNumber + 1)}
   >
@@ -162,19 +186,19 @@ that means. Sizing is in `em`, so the whole strip scales with the font size arou
 {/snippet}
 
 {#if totalItems === undefined || pageSize === undefined}
-  <nav class={["flex place-content-center gap-px", cls]} aria-label="Pagination">
+  <nav class={["flex place-content-center gap-px", cls]} aria-label={text.navigation}>
     {@render pageSelector()}
   </nav>
 {:else}
-  <nav class={["@container", cls]} aria-label="Pagination">
+  <nav class={["@container", cls]} aria-label={text.navigation}>
     <div class="grid items-center justify-items-center gap-1 @min-[45rem]:grid-cols-3">
       <!-- Narrow, the summary and the size picker fall below the buttons: the control the user
            came for stays at the top of the block rather than being pushed off by chrome. -->
       <div class="flex items-center gap-1 @max-[45rem]:order-last @min-[45rem]:mr-auto">
-        <span class="text-nowrap">Items per page:</span>
+        <span class="text-nowrap">{text.pageSize}:</span>
         <select
           class="select box-content w-[3ch] select-xs"
-          aria-label="Items per page"
+          aria-label={text.pageSize}
           value={pageSize}
           onchange={({ currentTarget }) => onPageSizeChange?.(Number(currentTarget.value))}
         >
@@ -185,7 +209,9 @@ that means. Sizing is in `em`, so the whole strip scales with the font size arou
       </div>
 
       <div class="text-center tabular-nums" data-testid="paginator-summary">
-        Showing {firstShown} to {lastShown} of {totalItems} items
+        {#if firstShown !== undefined && lastShown !== undefined}
+          {text.summary(firstShown, lastShown, totalItems)}
+        {/if}
       </div>
 
       <div class="flex items-center gap-px @max-[45rem]:order-first @min-[45rem]:ml-auto">
