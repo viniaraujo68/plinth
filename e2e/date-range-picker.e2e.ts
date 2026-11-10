@@ -78,3 +78,22 @@ test("seeds the custom fields from the range it was given", async ({ page }) => 
   await expect(demo.getByLabel("From")).toHaveValue(expected[0]);
   await expect(demo.getByLabel("To")).toHaveValue(expected[1]);
 });
+
+test("picks calendar days, with an open end, in date mode", async ({ page }) => {
+  await page.goto("/components/date-range-picker");
+  const demo = page.getByTestId("date-demo");
+
+  await expect(page.getByTestId("day-from")).toHaveText("(open)");
+  await expect(page.getByTestId("day-to")).toHaveText("(open)");
+
+  await demo.getByRole("button", { name: "Last month", exact: true }).click();
+  await expect(page.getByTestId("day-from")).toHaveText(/^\d{4}-\d{2}-01$/);
+  await expect(page.getByTestId("day-to")).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
+
+  await demo.getByRole("button", { name: "Custom", exact: true }).click();
+  await demo.getByLabel("From").fill("2026-03-01");
+  await demo.getByLabel("To").fill("");
+
+  await expect(page.getByTestId("day-from")).toHaveText("2026-03-01");
+  await expect(page.getByTestId("day-to")).toHaveText("(open)");
+});

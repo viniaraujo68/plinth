@@ -1,9 +1,16 @@
-import { expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
 import DateRangePicker from "./DateRangePicker.svelte";
 import Harness from "./DateRangePickerHarness.spec.svelte";
-import { isoToLocalInput, type DateRange } from "./date-range.js";
+import {
+  allTime,
+  isoToLocalInput,
+  lastMonth,
+  thisMonth,
+  toDay,
+  type DateRange,
+} from "./date-range.js";
 
 const button = (name: string) => page.getByRole("button", { name, exact: true });
 const fromField = () => page.getByLabelText("From");
@@ -210,4 +217,116 @@ it("words the out-of-order alert as it was told", async () => {
   await toField().fill("2026-01-02T02:00");
 
   await expect.element(page.getByRole("alert")).toHaveTextContent("The start has to come first.");
+});
+
+describe("in date mode", () => {
+  const presets = [allTime("All time"), thisMonth("This month"), lastMonth("Last month")];
+
+  const dated = async (props: Record<string, unknown> = {}) => {
+    const onchange = vi.fn();
+    render(DateRangePicker, { mode: "date", presets, onchange, reAnchorMs: 0, ...props });
+    await vi.waitFor(() => expect(onchange).toHaveBeenCalled());
+
+    return onchange;
+  };
+
+  const firstOfThisMonth = () => {
+    const now = new Date();
+    return toDay(new Date(now.getFullYear(), now.getMonth(), 1));
+  };
+
+  it("anchors a calendar preset as days, open where it has no end", async () => {
+    const onchange = await dated();
+
+    expect(lastEmit(onchange)).toEqual({ from: "", to: "" });
+
+    await button("This month").click();
+
+    await vi.waitFor(() =>
+      expect(lastEmit(onchange)).toEqual({ from: firstOfThisMonth(), to: "" }),
+    );
+  });
+
+  it("types days into date fields", async () => {
+    await dated();
+    await button("Custom").click();
+
+    await expect.element(fromField()).toHaveAttribute("type", "date");
+    await expect.element(toField()).toHaveAttribute("type", "date");
+  });
+
+  it("emits a pair with one end left open", async () => {
+    const onchange = await dated();
+    await button("Custom").click();
+
+    await fromField().fill("2026-03-01");
+    await toField().fill("");
+
+    await vi.waitFor(() => expect(lastEmit(onchange)).toEqual({ from: "2026-03-01", to: "" }));
+  });
+
+  it("keeps each field from crossing the other", async () => {
+    await dated();
+    await button("Custom").click();
+
+    await fromField().fill("2026-03-01");
+    await toField().fill("2026-03-20");
+
+    await expect.element(fromField()).toHaveAttribute("max", "2026-03-20");
+    await expect.element(toField()).toHaveAttribute("min", "2026-03-01");
+  });
+
+  it("flags a reversed pair of days and emits nothing for it", async () => {
+    const onchange = await dated();
+    await button("Custom").click();
+
+    await fromField().fill("2026-03-20");
+    await vi.waitFor(() => expect(lastEmit(onchange).from).toBe("2026-03-20"));
+    const before = onchange.mock.calls.length;
+
+    await toField().fill("2026-03-01");
+
+    await expect.element(page.getByRole("alert")).toBeVisible();
+    expect(onchange.mock.calls.length).toBe(before);
+  });
+
+  it("emits nothing for a year that is still being typed", async () => {
+    const onchange = await dated();
+    await button("Custom").click();
+    const before = onchange.mock.calls.length;
+
+    await fromField().fill("0202-03-01");
+
+    expect(onchange.mock.calls.length).toBe(before);
+    expect(page.getByRole("alert").elements()).toHaveLength(0);
+  });
+
+  // A page that mounts one picker per tab hands the last pair back on every remount.
+  it("opens on the preset a seeded pair stands for, without re-emitting it", async () => {
+    const onchange = vi.fn();
+    render(DateRangePicker, {
+      mode: "date",
+      presets,
+      onchange,
+      reAnchorMs: 0,
+      value: lastMonth("Last month").range(new Date()),
+    });
+
+    await expect.element(button("Last month")).toHaveAttribute("aria-pressed", "true");
+    expect(document.querySelector('input[type="date"]')).toBeNull();
+    expect(onchange).not.toHaveBeenCalled();
+  });
+
+  it("opens a seeded pair no preset names as custom, in the fields", async () => {
+    render(DateRangePicker, {
+      mode: "date",
+      presets,
+      reAnchorMs: 0,
+      value: { from: "2026-02-02", to: "2026-02-09" },
+    });
+
+    await expect.element(button("Custom")).toHaveAttribute("aria-pressed", "true");
+    await expect.element(fromField()).toHaveValue("2026-02-02");
+    await expect.element(toField()).toHaveValue("2026-02-09");
+  });
 });

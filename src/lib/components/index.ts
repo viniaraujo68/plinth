@@ -34,19 +34,27 @@ export { default as Tooltip } from "./Tooltip.svelte";
 // Not for avatars: a profile picture cut to anything but a disc reads as a badge.
 export { PICK_CLIP_PATH, PICK_PATH } from "./pick.js";
 
-// The half of `date-range.js` a consumer of the picker has a use for: the two prop types, the
-// preset list and the reserved id they are written against, and the three conversions anyone
-// pairing their own field with a `DateRange` has to repeat otherwise. The rest -- the selection
+// The half of `date-range.js` a consumer of the picker has a use for: the prop types, the preset
+// list, the calendar preset builders and the reserved id they are written against, and the
+// conversions anyone pairing their own field with a `DateRange` has to repeat otherwise. The rest -- the selection
 // anchor, the pair validator and the re-anchor clock -- is how the picker drives itself, and the
 // picker never emits a pair that would fail the validator.
 export {
+  allTime,
   buildRange,
   CUSTOM_PRESET_ID,
   DEFAULT_PRESETS,
   isoToLocalInput,
+  lastMonth,
+  lastMonths,
   localInputToIso,
+  thisMonth,
+  toDay,
+  type CalendarPreset,
   type DateRange,
+  type DateRangeMode,
   type DateRangePreset,
+  type DurationPreset,
 } from "./date-range.js";
 
 // The half of `select.ts` a consumer has a use for: the option type every caller of either

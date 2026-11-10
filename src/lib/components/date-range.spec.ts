@@ -8,6 +8,14 @@ import {
   isoToLocalInput,
   isValidRange,
   localInputToIso,
+  allTime,
+  isValidDayRange,
+  lastMonth,
+  lastMonths,
+  parseDay,
+  selectionFor,
+  thisMonth,
+  toDay,
   type DateRangePreset,
 } from "./date-range.js";
 
@@ -277,5 +285,118 @@ describe("createReAnchor", () => {
     vi.advanceTimersByTime(600_000);
 
     expect(onAnchor).not.toHaveBeenCalled();
+  });
+});
+
+describe("date mode", () => {
+  // Local noon, so no zone the suite might run in moves it to another day.
+  const MARCH_31 = new Date(2026, 2, 31, 12);
+  const JANUARY_15 = new Date(2026, 0, 15, 12);
+
+  it("writes a local day the way a date field holds it", () => {
+    expect(toDay(new Date(2026, 0, 2, 23, 59))).toBe("2026-01-02");
+  });
+
+  it("turns a duration into the days it touches", () => {
+    expect(
+      buildRange({ id: "7d", label: "7d", durationMs: 7 * 86_400_000 }, MARCH_31, "date"),
+    ).toEqual({
+      from: "2026-03-24",
+      to: "2026-03-31",
+    });
+  });
+
+  it("hands a calendar preset the current moment", () => {
+    const seen: Date[] = [];
+    const preset: DateRangePreset = {
+      id: "x",
+      label: "x",
+      range: (now) => {
+        seen.push(now);
+        return { from: "a", to: "b" };
+      },
+    };
+
+    expect(buildRange(preset, MARCH_31, "date")).toEqual({ from: "a", to: "b" });
+    expect(seen[0].getTime()).toBe(MARCH_31.getTime());
+  });
+
+  it("anchors a calendar preset in either mode", () => {
+    expect(anchorSelection("this-month", [thisMonth("This month")], MARCH_31)).toEqual({
+      from: "2026-03-01",
+      to: "",
+    });
+  });
+
+  it("builds this month open at the end", () => {
+    expect(thisMonth("This month").range(MARCH_31)).toEqual({ from: "2026-03-01", to: "" });
+  });
+
+  it("builds last month from its first day to its last, across a year", () => {
+    expect(lastMonth("Last month").range(MARCH_31)).toEqual({
+      from: "2026-02-01",
+      to: "2026-02-28",
+    });
+    expect(lastMonth("Last month").range(JANUARY_15)).toEqual({
+      from: "2025-12-01",
+      to: "2025-12-31",
+    });
+  });
+
+  it("goes back whole months, on the last day a shorter month has", () => {
+    expect(lastMonths(1, "1 month").range(MARCH_31)).toEqual({ from: "2026-02-28", to: "" });
+    expect(lastMonths(6, "6 months").range(MARCH_31)).toEqual({ from: "2025-09-30", to: "" });
+    expect(lastMonths(12, "12 months").range(JANUARY_15)).toEqual({ from: "2025-01-15", to: "" });
+  });
+
+  it("leaves both ends of all time open", () => {
+    expect(allTime("All time").range(MARCH_31)).toEqual({ from: "", to: "" });
+  });
+
+  it("gives each builder an id of its own unless told one", () => {
+    const ids = [
+      thisMonth("a"),
+      lastMonth("b"),
+      lastMonths(6, "c"),
+      lastMonths(12, "d"),
+      allTime("e"),
+    ];
+
+    expect(new Set(ids.map(({ id }) => id)).size).toBe(5);
+    expect(allTime("All", "all").id).toBe("all");
+  });
+
+  it("reads a date field as the day, an open end, or not a day yet", () => {
+    expect(parseDay("2026-03-01")).toBe("2026-03-01");
+    expect(parseDay("")).toBe("");
+    expect(parseDay(undefined)).toBe("");
+    expect(parseDay("2026-02-31")).toBeNull();
+    expect(parseDay("2026-3-1")).toBeNull();
+  });
+
+  // Chrome reports a value on each digit of a year being typed; none of them is the year meant.
+  it("treats a year still being typed as not a day", () => {
+    for (const partial of ["0002-03-01", "0020-03-01", "0202-03-01"])
+      expect(parseDay(partial)).toBeNull();
+  });
+
+  it("lets an open end through and stops a reversed pair", () => {
+    expect(isValidDayRange("2026-03-01", "")).toBe(true);
+    expect(isValidDayRange("", "2026-03-01")).toBe(true);
+    expect(isValidDayRange("", "")).toBe(true);
+    expect(isValidDayRange("2026-03-01", "2026-03-01")).toBe(true);
+    expect(isValidDayRange("2026-03-02", "2026-03-01")).toBe(false);
+  });
+
+  it("finds the preset a seeded pair stands for, or falls back to custom", () => {
+    const presets = [allTime("All"), thisMonth("This month"), lastMonth("Last month")];
+
+    expect(selectionFor({ from: "2026-02-01", to: "2026-02-28" }, presets, MARCH_31, "date")).toBe(
+      "last-month",
+    );
+    expect(selectionFor({ from: "", to: "" }, presets, MARCH_31, "date")).toBe("all-time");
+    expect(selectionFor({ from: "2026-02-02", to: "" }, presets, MARCH_31, "date")).toBe(
+      CUSTOM_PRESET_ID,
+    );
   });
 });

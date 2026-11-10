@@ -315,6 +315,14 @@ instead of wrapping, fading at the edge while tabs are hidden past it. `value` i
 that keeps its section in the URL passes it in and navigates on `onchange`, and `idPrefix` makes the
 tab ids predictable so the panel can name its tab through `aria-labelledby`.
 
+`DateRangePicker` picks a from/to pair from presets or two typed fields. By default it is a window
+of instants — presets are durations back from now ("24h"), the fields are local date-times and the
+pair goes out as UTC ISO strings. With `mode="date"` it is a span of calendar days: the fields are
+date fields, the pair is `YYYY-MM-DD`, and an empty end leaves that side open, so "since March" and
+"all time" are pairs too. Presets can follow the calendar instead of a duration — `thisMonth`,
+`lastMonth`, `lastMonths(n)` and `allTime` build the usual ones, and any `range(now)` function will
+do. Every preset re-anchors on a timer, and a picker handed a pair opens on the preset that names it.
+
 `JsonInput` edits a JSON document as text: it reports through a bindable `invalid` whether the text
 parses, shows the parser's message after the first blur, can reindent on blur, and sets the
 textarea's custom validity so a form will not submit a broken document. `parseJsonText` and

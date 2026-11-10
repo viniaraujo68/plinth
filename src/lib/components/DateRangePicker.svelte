@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import type { ClassValue } from "svelte/elements";
+  import SegmentedControl from "./SegmentedControl.svelte";
   import {
     anchorSelection,
     buildRange,
@@ -8,27 +9,38 @@
     CUSTOM_PRESET_ID,
     DEFAULT_PRESETS,
     isoToLocalInput,
+    isValidDayRange,
     isValidRange,
     localInputToIso,
+    parseDay,
+    selectionFor,
     type DateRange,
+    type DateRangeMode,
     type DateRangePreset,
   } from "./date-range.js";
 
   interface Props {
     class?: ClassValue;
     /**
-     * The selected window, as UTC ISO instants. Bindable, and also reported through
-     * {@link Props.onchange} — a consumer needs one or the other, never both.
+     * `"datetime"` (the default) picks a window of instants, emitted as UTC ISO strings, with
+     * date-and-time fields. `"date"` picks a span of calendar days, emitted as `YYYY-MM-DD`, with
+     * date fields either of which may stay empty to leave that side open.
+     */
+    mode?: DateRangeMode;
+    /**
+     * The selected window — UTC ISO instants, or days in `"date"` mode. Bindable, and also reported
+     * through {@link Props.onchange} — a consumer needs one or the other, never both.
      *
      * It is an output, not an input: a relative preset overwrites it on every anchor. Passing one
-     * in only seeds the picker, and only alongside `preset="custom"`.
+     * in only seeds the picker: it opens on the preset that names that window right now, or on
+     * custom with the pair in the fields.
      */
     value?: DateRange;
     /** The buttons offered. `id` may not be `"custom"`, which the picker reserves. */
     presets?: readonly DateRangePreset[];
     /**
-     * Which button starts selected — a preset id, or `"custom"`. Defaults to the first preset, or
-     * to custom when `value` was seeded without naming a preset.
+     * Which button starts selected — a preset id, or `"custom"`. Defaults to the preset matching a
+     * seeded `value`, to custom when none does, and to the first preset when there is no `value`.
      */
     preset?: string;
     /**
@@ -56,6 +68,7 @@
 
   let {
     class: cls,
+    mode = "datetime",
     value = $bindable(),
     presets = DEFAULT_PRESETS,
     preset,
@@ -76,7 +89,13 @@
   // The selection is the picker's own state rather than a bound prop: the pair is the entire
   // output, and a second bound value would be a second thing for a consumer to keep in step.
   let selection = $state(
-    untrack(() => preset ?? (value ? CUSTOM_PRESET_ID : (presets[0]?.id ?? CUSTOM_PRESET_ID))),
+    untrack(
+      () =>
+        preset ??
+        (value
+          ? selectionFor(value, presets, Date.now(), mode)
+          : (presets[0]?.id ?? CUSTOM_PRESET_ID)),
+    ),
   );
 
   // Wall-clock text for the two fields. Empty until custom mode is entered, because reading the
@@ -86,6 +105,12 @@
   let customTo = $state("");
 
   const isCustom = $derived(selection === CUSTOM_PRESET_ID);
+  const days = $derived(mode === "date");
+
+  const options = $derived([
+    ...presets.map(({ id, label }) => ({ id, label })),
+    { id: CUSTOM_PRESET_ID, label: customLabel },
+  ]);
 
   const emit = (next: DateRange) => {
     if (value?.from === next.from && value?.to === next.to) return;
@@ -95,17 +120,37 @@
   };
 
   const anchor = () => {
-    const next = anchorSelection(selection, presets, Date.now());
+    const next = anchorSelection(selection, presets, Date.now(), mode);
     if (next) emit(next);
   };
 
   const seedCustomFields = (range: DateRange | undefined) => {
-    customFrom = isoToLocalInput(range?.from) ?? "";
-    customTo = isoToLocalInput(range?.to) ?? "";
+    const toField = days ? parseDay : isoToLocalInput;
+    customFrom = toField(range?.from) ?? "";
+    customTo = toField(range?.to) ?? "";
+  };
+
+  /**
+   * The typed pair, read back: `undefined` while either field is not yet a value — half typed —
+   * and otherwise the pair with whether it is in order. In `"date"` mode an empty field is a value,
+   * an open end, where in `"datetime"` mode it is not yet one.
+   */
+  const typedPair = (): { range: DateRange; ordered: boolean } | undefined => {
+    if (days) {
+      const from = parseDay(customFrom);
+      const to = parseDay(customTo);
+      if (from === null || to === null) return undefined;
+      return { range: { from, to }, ordered: isValidDayRange(from, to) };
+    }
+
+    const from = localInputToIso(customFrom);
+    const to = localInputToIso(customTo);
+    if (from === null || to === null) return undefined;
+    return { range: { from, to }, ordered: isValidRange(from, to) };
   };
 
   const enterCustom = () => {
-    const current = value ?? (presets[0] ? buildRange(presets[0]) : undefined);
+    const current = value ?? (presets[0] ? buildRange(presets[0], Date.now(), mode) : undefined);
 
     seedCustomFields(current);
     selection = CUSTOM_PRESET_ID;
@@ -117,26 +162,25 @@
   };
 
   const commitCustom = () => {
-    const from = localInputToIso(customFrom);
-    const to = localInputToIso(customTo);
-
-    if (from === null || to === null || !isValidRange(from, to)) return;
-
-    emit({ from, to });
+    const pair = typedPair();
+    if (pair?.ordered) emit(pair.range);
   };
 
   const rangeError = $derived.by(() => {
     if (!isCustom) return null;
 
-    const from = localInputToIso(customFrom);
-    const to = localInputToIso(customTo);
-
     // A half-typed field is not yet wrong, so it says nothing rather than flashing an error at
     // someone who is still filling the form in.
-    if (from === null || to === null) return null;
+    const pair = typedPair();
+    if (pair === undefined) return null;
 
-    return isValidRange(from, to) ? null : invalidRangeLabel;
+    return pair.ordered ? null : invalidRangeLabel;
   });
+
+  const pick = (id: string) => {
+    if (id === CUSTOM_PRESET_ID) enterCustom();
+    else selection = id;
+  };
 
   $effect(() => {
     const intervalMs = reAnchorMs;
@@ -175,17 +219,21 @@
 
 <!--
 @component
-A from/to picker built as a plain form control: relative presets, a custom pair of local
-date-times, and `{ from, to }` as UTC ISO strings on the way out. It fetches nothing, knows no
-query parameter, and reads no URL — what the pair means is the consumer's business.
+A from/to picker built as a plain form control: presets, a custom pair the reader types, and
+`{ from, to }` on the way out. It fetches nothing, knows no query parameter, and reads no URL — what
+the pair means is the consumer's business.
 
-A relative preset re-anchors on a timer (`reAnchorMs`, 60s by default, `0` to disable), so a
-dashboard left open keeps sliding forward. The timer suspends while the tab is hidden and fires
-once on return. A custom range is never touched by it.
+It works in one of two modes. `"datetime"`, the default, is a window of instants: the custom
+fields are `<input type="datetime-local">`, wall-clock time in the viewer's own zone, while the
+emitted pair stays in UTC — the conversion runs to whole minutes in both directions; see
+`isoToLocalInput` / `localInputToIso`. `"date"` is a span of calendar days: the fields are
+`<input type="date">`, the pair is `YYYY-MM-DD`, and an empty end leaves that side open.
 
-The two custom fields are `<input type="datetime-local">`, which means they are wall-clock time in
-the viewer's own zone with no offset attached, while the emitted pair stays in UTC. The conversion
-runs to whole minutes in both directions; see `isoToLocalInput` / `localInputToIso`.
+A preset is a duration back from now ("24h") or a window computed from the calendar ("this month",
+built with `thisMonth`, `lastMonth`, `lastMonths` and `allTime`). Either re-anchors on a timer
+(`reAnchorMs`, 60s by default, `0` to disable), so a dashboard left open keeps sliding forward and
+"this month" turns into the next one. The timer suspends while the tab is hidden and fires once on
+return. A custom range is never touched by it.
 
 Every word it renders is a prop with an English default — `label`, `customLabel`, `fromLabel`,
 `toLabel` and `invalidRangeLabel` — because the library ships no translations. Only the wording
@@ -194,33 +242,19 @@ buttons are labelled by the list itself, through `DateRangePreset.label`.
 
 ```svelte
 <DateRangePicker bind:value={range} preset="24h" onchange={(r) => load(r)} />
+
+<DateRangePicker
+  mode="date"
+  presets={[allTime("All time"), thisMonth("This month"), lastMonth("Last month")]}
+  onchange={(r) => load(r)}
+/>
 ```
 -->
 
 <div class={["flex flex-wrap items-end gap-x-4 gap-y-3", cls]}>
-  <div class="join" role="group" aria-label={label}>
-    {#each presets as option (option.id)}
-      <button
-        type="button"
-        class="btn join-item min-h-11"
-        class:btn-primary={selection === option.id}
-        aria-pressed={selection === option.id}
-        onclick={() => (selection = option.id)}
-      >
-        {option.label}
-      </button>
-    {/each}
-
-    <button
-      type="button"
-      class="btn join-item min-h-11"
-      class:btn-primary={isCustom}
-      aria-pressed={isCustom}
-      onclick={enterCustom}
-    >
-      {customLabel}
-    </button>
-  </div>
+  <!-- A segmented control rather than a joined row: a calendar picker easily offers six windows,
+       and a joined row cannot wrap onto a second line at phone width. -->
+  <SegmentedControl {options} value={selection} {label} onchange={pick} />
 
   {#if isCustom}
     <div class="flex flex-wrap items-end gap-x-4 gap-y-3">
@@ -230,8 +264,9 @@ buttons are labelled by the list itself, through `DateRangePreset.label`.
           id={fromId}
           class="input min-h-11"
           class:input-error={rangeError !== null}
-          type="datetime-local"
+          type={days ? "date" : "datetime-local"}
           value={customFrom}
+          max={days && customTo ? customTo : undefined}
           aria-invalid={rangeError !== null}
           aria-describedby={rangeError === null ? undefined : errorId}
           oninput={({ currentTarget }) => {
@@ -247,8 +282,9 @@ buttons are labelled by the list itself, through `DateRangePreset.label`.
           id={toId}
           class="input min-h-11"
           class:input-error={rangeError !== null}
-          type="datetime-local"
+          type={days ? "date" : "datetime-local"}
           value={customTo}
+          min={days && customFrom ? customFrom : undefined}
           aria-invalid={rangeError !== null}
           aria-describedby={rangeError === null ? undefined : errorId}
           oninput={({ currentTarget }) => {

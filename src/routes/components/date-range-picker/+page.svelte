@@ -1,6 +1,13 @@
 <script lang="ts">
   import DateRangePicker from "$lib/components/DateRangePicker.svelte";
-  import { isoToLocalInput, type DateRange } from "$lib/components/date-range.js";
+  import {
+    allTime,
+    isoToLocalInput,
+    lastMonth,
+    lastMonths,
+    thisMonth,
+    type DateRange,
+  } from "$lib/components/date-range.js";
 
   // Short enough to watch. The component's own default is 60s, which is the right number for a
   // dashboard and the wrong one for a demo nobody would sit through.
@@ -59,16 +66,26 @@
     { id: "7d", label: "7 d", durationMs: 604_800_000 },
     { id: "30d", label: "30 d", durationMs: 2_592_000_000 },
   ];
+
+  const CALENDAR_PRESETS = [
+    allTime("All time"),
+    thisMonth("This month"),
+    lastMonth("Last month"),
+    lastMonths(6, "6 months"),
+    lastMonths(12, "12 months"),
+  ];
+
+  let dayRange = $state<DateRange>();
 </script>
 
 <main class="mx-auto flex w-full max-w-4xl flex-col gap-12 p-6 sm:p-10">
   <header class="flex flex-col gap-3">
     <h1 class="text-3xl font-semibold tracking-tight">DateRangePicker</h1>
     <p class="max-w-2xl text-base-content/70">
-      A form control and nothing more: relative presets, a custom pair of local date-times, and
-      <code class="kbd kbd-sm">{"{ from, to }"}</code> as UTC ISO strings on the way out. It fetches nothing,
-      serialises no query parameter and reads no URL — what the pair means is entirely the consumer's
-      business.
+      A form control and nothing more: presets, a custom pair the reader types, and
+      <code class="kbd kbd-sm">{"{ from, to }"}</code> on the way out — UTC ISO instants by default,
+      calendar days in <code class="kbd kbd-sm">mode="date"</code>. It fetches nothing, serialises
+      no query parameter and reads no URL — what the pair means is entirely the consumer's business.
     </p>
   </header>
 
@@ -134,6 +151,46 @@
       Custom re-emits the truncated pair rather than leaving the value a few seconds away from the fields
       showing it.
     </p>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
+      Calendar days
+    </h2>
+    <p class="max-w-2xl text-sm text-base-content/70">
+      With <code class="kbd kbd-sm">mode="date"</code> the picker works in days: the custom fields
+      are
+      <code class="kbd kbd-sm">&lt;input type="date"&gt;</code>, the pair is
+      <code class="kbd kbd-sm">YYYY-MM-DD</code> with no time and no zone, and an empty end leaves
+      that side open — leave "To" empty for "since then". The presets follow the calendar rather
+      than a duration, built with <code class="kbd kbd-sm">allTime</code>,
+      <code class="kbd kbd-sm">thisMonth</code>, <code class="kbd kbd-sm">lastMonth</code> and
+      <code class="kbd kbd-sm">lastMonths</code>; each is a
+      <code class="kbd kbd-sm">range(now)</code>
+      function, re-run on every anchor, so "This month" turns into the next one when the month does. Handed
+      a pair one of them names, the picker opens on that button.
+    </p>
+
+    <div class="card flex flex-col gap-5 rounded-box bg-base-200 p-4" data-testid="date-demo">
+      <DateRangePicker
+        bind:value={dayRange}
+        mode="date"
+        presets={CALENDAR_PRESETS}
+        label="Period"
+      />
+
+      <dl class="grid grid-cols-[auto_1fr] items-baseline gap-x-6 gap-y-2 text-sm">
+        <dt class="text-base-content/60">from</dt>
+        <dd class="font-mono tabular-nums" data-testid="day-from">
+          {dayRange === undefined ? "—" : dayRange.from || "(open)"}
+        </dd>
+
+        <dt class="text-base-content/60">to</dt>
+        <dd class="font-mono tabular-nums" data-testid="day-to">
+          {dayRange === undefined ? "—" : dayRange.to || "(open)"}
+        </dd>
+      </dl>
+    </div>
   </section>
 
   <section class="flex flex-col gap-4">
@@ -207,16 +264,17 @@
     <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">The rules</h2>
     <ul class="flex max-w-2xl list-disc flex-col gap-2 pl-5 text-sm text-base-content/70">
       <li>
-        <strong>Out goes a pair, and only a pair.</strong> Two UTC ISO strings, through
+        <strong>Out goes a pair, and only a pair.</strong> Two UTC ISO strings — two days in
+        <code class="kbd kbd-sm">mode="date"</code> — through
         <code class="kbd kbd-sm">bind:value</code>
         or <code class="kbd kbd-sm">onchange</code>. Strings rather than
         <code class="kbd kbd-sm">Date</code>s because the value's job is to travel: it survives JSON
         both ways and sorts with a plain comparison.
       </li>
       <li>
-        <strong>A relative preset owns the value.</strong> It overwrites it on every anchor, so a
-        range passed in only seeds the picker, and only alongside
-        <code class="kbd kbd-sm">preset="custom"</code>.
+        <strong>A preset owns the value.</strong> It overwrites it on every anchor, so a range passed
+        in only seeds the picker: it opens on the preset that names that window right now, or as custom
+        with the pair in the fields.
       </li>
       <li>
         <strong>The timer suspends with the tab.</strong> A hidden document stops the interval and coming
