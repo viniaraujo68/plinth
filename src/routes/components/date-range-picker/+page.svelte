@@ -195,14 +195,16 @@
 
   <section class="flex flex-col gap-4">
     <h2 class="text-xs font-medium tracking-[0.06em] text-base-content/50 uppercase">
-      Caption and size
+      Caption, size and label placement
     </h2>
     <p class="max-w-2xl text-sm text-base-content/70">
       <code class="kbd kbd-sm">caption</code> puts visible text before the presets, the way
       <code class="kbd kbd-sm">SegmentedControl</code> does, and
       <code class="kbd kbd-sm">size</code> sizes the presets and the typed fields together, so the
       fields sit on the same line as the buttons.
-      <code class="kbd kbd-sm">size="sm"</code> is for a toolbar or a card header.
+      <code class="kbd kbd-sm">size="sm"</code> is for a toolbar or a card header, and
+      <code class="kbd kbd-sm">fieldLabels="beside"</code> puts "From" and "To" before their fields, so
+      the whole picker stays one row.
     </p>
 
     <div class="card flex flex-col gap-5 rounded-box bg-base-200 p-4" data-testid="sized-demo">
@@ -222,6 +224,15 @@
         label="Report period, small"
         caption="Period:"
         size="sm"
+      />
+      <DateRangePicker
+        mode="date"
+        presets={CALENDAR_PRESETS}
+        preset="custom"
+        reAnchorMs={0}
+        label="Report period, labels beside"
+        caption="Period:"
+        fieldLabels="beside"
       />
     </div>
   </section>

@@ -73,6 +73,11 @@
      * `sm` is for a toolbar or a card header, where the default height would dominate.
      */
     size?: "sm" | "md";
+    /**
+     * Where the custom fields' labels sit: `"above"` stacks each one over its field, `"beside"`
+     * puts it before the field on the same line, so the whole picker can stay one row.
+     */
+    fieldLabels?: "above" | "beside";
     onchange?: (value: DateRange) => void;
   }
 
@@ -90,6 +95,7 @@
     invalidRangeLabel = "The start must not be after the end.",
     caption,
     size = "md",
+    fieldLabels = "above",
     onchange,
   }: Props = $props();
 
@@ -118,6 +124,9 @@
 
   const isCustom = $derived(selection === CUSTOM_PRESET_ID);
   const days = $derived(mode === "date");
+  const fieldWrapper = $derived(
+    fieldLabels === "beside" ? "flex items-center gap-2" : "flex flex-col gap-1",
+  );
 
   const options = $derived([
     ...presets.map(({ id, label }) => ({ id, label })),
@@ -270,7 +279,7 @@ buttons are labelled by the list itself, through `DateRangePreset.label`.
 
   {#if isCustom}
     <div class="flex flex-wrap items-end gap-x-4 gap-y-3">
-      <div class="flex flex-col gap-1">
+      <div class={fieldWrapper}>
         <label class="label text-xs" for={fromId}>{fromLabel}</label>
         <input
           id={fromId}
@@ -288,7 +297,7 @@ buttons are labelled by the list itself, through `DateRangePreset.label`.
         />
       </div>
 
-      <div class="flex flex-col gap-1">
+      <div class={fieldWrapper}>
         <label class="label text-xs" for={toId}>{toLabel}</label>
         <input
           id={toId}

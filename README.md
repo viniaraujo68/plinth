@@ -324,6 +324,7 @@ date fields, the pair is `YYYY-MM-DD`, and an empty end leaves that side open, s
 do. Every preset re-anchors on a timer, and a picker handed a pair opens on the preset that names it.
 `caption` puts visible text before the presets, as on `SegmentedControl`, and `size` (`sm` or `md`)
 sizes the presets and the typed fields together, so the fields line up with the buttons.
+`fieldLabels` puts the field labels `"above"` their fields (the default) or `"beside"` them.
 
 `JsonInput` edits a JSON document as text: it reports through a bindable `invalid` whether the text
 parses, shows the parser's message after the first blur, can reindent on blur, and sets the

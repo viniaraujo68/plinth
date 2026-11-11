@@ -242,6 +242,22 @@ it.each(["sm", "md"] as const)("lines the %s custom fields up with the presets",
   expect(field.bottom).toBeCloseTo(preset.bottom, 0);
 });
 
+it("puts the field labels beside the fields when told to", async () => {
+  await page.viewport(1280, 720);
+  render(DateRangePicker, { reAnchorMs: 0, fieldLabels: "beside" });
+
+  await button("Custom").click();
+  await expect.element(fromField()).toBeVisible();
+
+  const preset = button("Custom").element().getBoundingClientRect();
+  const field = fromField().element().getBoundingClientRect();
+  const label = page.getByText("From", { exact: true }).element().getBoundingClientRect();
+  expect(label.right).toBeLessThanOrEqual(field.left);
+  const middle = (box: DOMRect) => box.top + box.height / 2;
+  expect(Math.abs(middle(label) - middle(field))).toBeLessThanOrEqual(1);
+  expect(field.bottom).toBeCloseTo(preset.bottom, 0);
+});
+
 describe("in date mode", () => {
   const presets = [allTime("All time"), thisMonth("This month"), lastMonth("Last month")];
 
