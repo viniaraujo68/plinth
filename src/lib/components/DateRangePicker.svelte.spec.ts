@@ -12,6 +12,8 @@ import {
   type DateRange,
 } from "./date-range.js";
 
+import "../../routes/layout.css";
+
 const button = (name: string) => page.getByRole("button", { name, exact: true });
 const fromField = () => page.getByLabelText("From");
 const toField = () => page.getByLabelText("To");
