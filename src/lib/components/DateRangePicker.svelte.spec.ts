@@ -12,6 +12,8 @@ import {
   type DateRange,
 } from "./date-range.js";
 
+// The alignment tests measure the fields, and without the stylesheet an input is content-box:
+// its padding and border land outside its height, a box no consumer ever renders.
 import "../../routes/layout.css";
 
 const button = (name: string) => page.getByRole("button", { name, exact: true });

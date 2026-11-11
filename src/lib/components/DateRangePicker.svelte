@@ -63,7 +63,15 @@
     toLabel?: string;
     /** Shown, as an alert, while the typed pair is out of order. */
     invalidRangeLabel?: string;
+    /**
+     * Visible text before the presets — "Period:". Passed to the {@link SegmentedControl}, so it
+     * sits on the preset row; `label` stays the accessible name.
+     */
     caption?: string;
+    /**
+     * Sizes the presets and the custom fields together, so the fields line up with the buttons.
+     * `sm` is for a toolbar or a card header, where the default height would dominate.
+     */
     size?: "sm" | "md";
     onchange?: (value: DateRange) => void;
   }
@@ -306,9 +314,16 @@ buttons are labelled by the list itself, through `DateRangePreset.label`.
 </div>
 
 <style>
+  /* Chrome sizes a date field to its text alone, leaving no room for the padding and the picker
+     icon, which then covers the last digit. */
   .plinth-range-field {
     height: 2rem;
+    min-width: 9rem;
     font-size: 0.78rem;
+  }
+
+  .plinth-range-field[type="datetime-local"] {
+    min-width: 12.5rem;
   }
 
   [data-size="sm"] .plinth-range-field {
