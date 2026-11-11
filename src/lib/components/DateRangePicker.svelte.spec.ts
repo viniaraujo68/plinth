@@ -219,6 +219,25 @@ it("words the out-of-order alert as it was told", async () => {
   await expect.element(page.getByRole("alert")).toHaveTextContent("The start has to come first.");
 });
 
+it("shows the caption before the presets", async () => {
+  render(DateRangePicker, { reAnchorMs: 0, caption: "Period:" });
+
+  await expect.element(page.getByText("Period:", { exact: true })).toBeVisible();
+});
+
+it.each(["sm", "md"] as const)("lines the %s custom fields up with the presets", async (size) => {
+  await page.viewport(1280, 720);
+  render(DateRangePicker, { reAnchorMs: 0, size });
+
+  await button("Custom").click();
+  await expect.element(fromField()).toBeVisible();
+
+  const preset = button("Custom").element().getBoundingClientRect();
+  const field = fromField().element().getBoundingClientRect();
+  expect(field.height).toBeCloseTo(preset.height, 0);
+  expect(field.bottom).toBeCloseTo(preset.bottom, 0);
+});
+
 describe("in date mode", () => {
   const presets = [allTime("All time"), thisMonth("This month"), lastMonth("Last month")];
 

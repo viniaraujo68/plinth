@@ -63,6 +63,8 @@
     toLabel?: string;
     /** Shown, as an alert, while the typed pair is out of order. */
     invalidRangeLabel?: string;
+    caption?: string;
+    size?: "sm" | "md";
     onchange?: (value: DateRange) => void;
   }
 
@@ -78,6 +80,8 @@
     fromLabel = "From",
     toLabel = "To",
     invalidRangeLabel = "The start must not be after the end.",
+    caption,
+    size = "md",
     onchange,
   }: Props = $props();
 
@@ -251,10 +255,10 @@ buttons are labelled by the list itself, through `DateRangePreset.label`.
 ```
 -->
 
-<div class={["flex flex-wrap items-end gap-x-4 gap-y-3", cls]}>
+<div class={["flex flex-wrap items-end gap-x-4 gap-y-3", cls]} data-size={size}>
   <!-- A segmented control rather than a joined row: a calendar picker easily offers six windows,
        and a joined row cannot wrap onto a second line at phone width. -->
-  <SegmentedControl {options} value={selection} {label} onchange={pick} />
+  <SegmentedControl {options} value={selection} {label} {caption} {size} onchange={pick} />
 
   {#if isCustom}
     <div class="flex flex-wrap items-end gap-x-4 gap-y-3">
@@ -262,7 +266,7 @@ buttons are labelled by the list itself, through `DateRangePreset.label`.
         <label class="label text-xs" for={fromId}>{fromLabel}</label>
         <input
           id={fromId}
-          class="input min-h-11"
+          class="plinth-range-field input"
           class:input-error={rangeError !== null}
           type={days ? "date" : "datetime-local"}
           value={customFrom}
@@ -280,7 +284,7 @@ buttons are labelled by the list itself, through `DateRangePreset.label`.
         <label class="label text-xs" for={toId}>{toLabel}</label>
         <input
           id={toId}
-          class="input min-h-11"
+          class="plinth-range-field input"
           class:input-error={rangeError !== null}
           type={days ? "date" : "datetime-local"}
           value={customTo}
@@ -300,3 +304,21 @@ buttons are labelled by the list itself, through `DateRangePreset.label`.
     <p id={errorId} class="basis-full text-sm text-error" role="alert">{rangeError}</p>
   {/if}
 </div>
+
+<style>
+  .plinth-range-field {
+    height: 2rem;
+    font-size: 0.78rem;
+  }
+
+  [data-size="sm"] .plinth-range-field {
+    height: 1.625rem;
+    font-size: 0.7rem;
+  }
+
+  @media (max-width: 35rem) {
+    [data-size="md"] .plinth-range-field {
+      height: 2.5rem;
+    }
+  }
+</style>
