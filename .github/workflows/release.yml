@@ -6,6 +6,9 @@ on:
 
 permissions:
   contents: read
+  # Trusted publishing: npm trades the job's OIDC token for a publish right on this repo and this
+  # workflow alone, so no npm token is stored anywhere.
+  id-token: write
 
 jobs:
   publish:
@@ -13,13 +16,20 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # `registry-url` is what writes the .npmrc that `npm publish` authenticates against; without
-      # it NODE_AUTH_TOKEN is read by nothing and the publish fails as anonymous.
       - uses: actions/setup-node@v5
         with:
           node-version: 26
           cache: npm
-          registry-url: https://registry.npmjs.org
+
+      # npm publishes whatever package.json says, so a tag on the wrong commit would ship another
+      # version under this tag's name.
+      - name: Tag matches package.json
+        run: |
+          version=$(node -p 'require("./package.json").version')
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
 
       - run: npm ci
 
@@ -35,5 +45,3 @@ jobs:
 
       # `prepack` builds dist and runs publint, so the tarball is packed from a fresh build.
       - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
