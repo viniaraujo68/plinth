@@ -74,6 +74,44 @@ it("serializes a body and declares JSON on post, put and patch", async () => {
     expect(call[1].headers).toEqual({ "Content-Type": "application/json" });
 });
 
+it("sends a file as it is, leaving its content type to fetch", async () => {
+  const spy = stubFetch(() => json(200, { ok: true }));
+  const api = createHttpClient({ baseUrl: "/api" });
+  const photo = new Blob([new Uint8Array([0x52, 0x49, 0x46, 0x46])], { type: "image/webp" });
+
+  await api.put("/players/7/photo", photo);
+
+  const [, init] = spy.mock.calls[0];
+  expect(init.body).toBe(photo);
+  expect(init.headers).toEqual({});
+});
+
+it("sends a form as it is, so fetch can write its multipart boundary", async () => {
+  const spy = stubFetch(() => json(200, { ok: true }));
+  const api = createHttpClient({ baseUrl: "/api", auth: () => "secret" });
+  const form = new FormData();
+  form.set("source", "csv");
+
+  await api.post("/imports", form);
+
+  const [, init] = spy.mock.calls[0];
+  expect(init.body).toBe(form);
+  expect(init.headers).toEqual({ Authorization: "Bearer secret" });
+});
+
+it("reports a rejected upload as the same ApiError", async () => {
+  stubFetch(() => json(413, { detail: { code: "photo_too_large", message: "Too large." } }));
+  const api = createHttpClient({ baseUrl: "/api" });
+
+  const caught = await api
+    .put("/players/7/photo", new Blob(["x"]))
+    .catch((error: unknown) => error);
+
+  expect(caught).toBeInstanceOf(ApiError);
+  expect(errorStatus(caught)).toBe(413);
+  expect((caught as ApiError).code).toBe("photo_too_large");
+});
+
 it("sends an empty object when a bodied request is given no body", async () => {
   const spy = stubFetch(() => json(200, {}));
   const api = createHttpClient({ baseUrl: "/api" });

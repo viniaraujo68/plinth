@@ -3,7 +3,8 @@
  * those belong to whatever the app already uses (TanStack Query, a `load` function, a plain
  * `$effect`). What it does own is the part every hand-rolled client repeats — joining the base
  * URL, sending and reading JSON, injecting auth, and turning a failed response into one typed
- * error the whole app can catch.
+ * error the whole app can catch. A file or a form is the one body that is not JSON: it goes out as
+ * it is, so an upload shares the auth and the error handling instead of needing its own fetch.
  */
 
 /** A failed HTTP response, after the body has been read and reduced to a message. */
@@ -60,6 +61,12 @@ const joinUrl = (baseUrl: string, path: string): string => {
   const base = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
   return path.startsWith("/") ? `${base}${path}` : `${base}/${path}`;
 };
+
+// `JSON.stringify` turns either into `{}`, so without this check an upload would silently send an
+// empty object. Left to fetch, a blob declares its own type and a form gets its multipart boundary,
+// which a hand-set `Content-Type` would lose.
+const isRawBody = (body: unknown): body is Blob | FormData =>
+  body instanceof Blob || body instanceof FormData;
 
 const nonEmpty = (value: string | undefined): string | undefined => {
   const trimmed = value?.trim();
@@ -123,10 +130,11 @@ export const createHttpClient = ({
     body?: unknown,
     options: RequestOptions = {},
   ): Promise<T> => {
+    const raw = isRawBody(body);
     const headers: Record<string, string> = {};
     // GET and DELETE carry no body, and a `Content-Type` on them makes some CORS setups
     // preflight a request that would otherwise be simple.
-    if (body !== undefined) headers["Content-Type"] = "application/json";
+    if (body !== undefined && !raw) headers["Content-Type"] = "application/json";
     if (auth) {
       const token = await auth();
       // An empty token means "not signed in yet": sending `Bearer ` would turn a 401 the app can
@@ -138,7 +146,7 @@ export const createHttpClient = ({
       method,
       headers,
       credentials,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: raw || body === undefined ? body : JSON.stringify(body),
       signal: options.signal,
     });
 
