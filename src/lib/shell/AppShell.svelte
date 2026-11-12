@@ -9,7 +9,7 @@
   import { tooltip } from "../attachments/tooltip.js";
   import { getRoutingContext, resolvePathname, type ResolvedRoute } from "../routing.svelte.js";
   import { getUserContext, type UserData } from "../user/context.js";
-  import UserAvatar from "./UserAvatar.svelte";
+  import Avatar from "../components/Avatar.svelte";
 
   interface Props {
     /** The routed page. The shell owns the scroll container around it. */
@@ -557,7 +557,7 @@ shell rather than to the window, and the content area reserves its height plus
 
 {#snippet userBlock(data: UserData)}
   <div class="user-card">
-    <UserAvatar name={data.name} />
+    <Avatar name={data.name} />
     <span class="user-identity collapsible">
       <span class="user-name">{data.name}</span>
       <span class="user-email">{data.email}</span>

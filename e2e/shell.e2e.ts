@@ -184,7 +184,7 @@ test("remembers the collapsed sidebar across a reload", async ({ page }) => {
 test("draws the signed-in user's avatar as a disc", async ({ page }) => {
   await page.goto("/shell");
 
-  const avatar = page.locator(`${wide} .avatar-initials`);
+  const avatar = page.locator(`${wide} .plinth-avatar`);
   await expect(avatar).toHaveText("AL");
   await expect(avatar).toHaveCSS("border-radius", "9999px");
   await expect(avatar).toHaveCSS("clip-path", "none");
@@ -209,7 +209,7 @@ test("opens the top bar's account menu, closes it on a choice and signs out", as
   await page.locator(".plinth-top-bar-menu").getByRole("button", { name: "Sign out" }).click();
   await expect(trigger).toBeHidden();
   await expect(frame.getByRole("button", { name: "Sign in" })).toBeVisible();
-  await expect(page.locator(`${wide} .avatar-initials`)).toHaveCount(0);
+  await expect(page.locator(`${wide} .plinth-avatar`)).toHaveCount(0);
 });
 
 test("renders the breadcrumb trail of the current match", async ({ page }) => {

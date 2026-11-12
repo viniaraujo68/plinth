@@ -50,7 +50,7 @@ it("draws the signed-in user's initials on a disc", async () => {
   render(Harness, { user: userWith() });
 
   await expect.element(trigger()).toBeVisible();
-  const avatar = document.querySelector<HTMLElement>(".plinth-top-bar-account .avatar-initials")!;
+  const avatar = document.querySelector<HTMLElement>(".plinth-top-bar-account .plinth-avatar")!;
   expect(avatar.textContent).toBe("AL");
   expect(getComputedStyle(avatar).borderRadius).toBe("9999px");
 });

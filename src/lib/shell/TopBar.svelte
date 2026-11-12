@@ -3,7 +3,7 @@
   import type { ClassValue } from "svelte/elements";
   import Dropdown from "../components/Dropdown.svelte";
   import { getUserContext } from "../user/context.js";
-  import UserAvatar from "./UserAvatar.svelte";
+  import Avatar from "../components/Avatar.svelte";
 
   interface Props {
     /** The app's mark and name, at the start of the bar. Usually a link home. */
@@ -84,7 +84,7 @@ app uses — `--plinth-top-bar-width` caps the bar's content to match it.
           title={signedIn.name}
           panelClass="plinth-top-bar-menu dropdown rounded-box bg-base-100 p-2 shadow-lg"
         >
-          <UserAvatar name={signedIn.name} />
+          <Avatar name={signedIn.name} />
           {#snippet content()}
             <!-- The handler only reacts to a click that landed on a link or a button inside, and a
                  keyboard activates those with a click event of its own, so nothing is mouse-only. -->

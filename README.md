@@ -300,14 +300,14 @@ never rethrows, so an `{:catch error}` branch that renders it is safe on the ser
 | `@viniaraujo68/plinth/virtual`     | `Virtualizer`, `VirtualList`, `WindowedData`, `WindowedVirtualizer`, `DataList`                              |
 | `@viniaraujo68/plinth/url-state`   | `createUrlState`, `urlStore`, `SyncedState`, `createParamsCodec` and `param`, the codec contracts            |
 
-The components entry point ships `AsyncButton`, `Combobox`, `Copyable`, `DateRangePicker`,
+The components entry point ships `AsyncButton`, `Avatar`, `Combobox`, `Copyable`, `DateRangePicker`,
 `Dialog`, `DragHandle`, `Dropdown`, `ErrorDisplay`, `ErrorPage`, `JsonInput`, `JsonView`, `Listbox`, `LoadingButton`, `Logo`,
 `Modal`, `MultiSelect`, `Paginator`, `RefreshButton`, `RequestErrorDisplay`, `SegmentedControl`, `Select`, `Skeleton`, `Tabs`,
 `VirtualJsonView`
 and `Tooltip`. Every one of them has a page in the showcase.
 It also exports the mark's outline as data — `PICK_PATH` and `PICK_CLIP_PATH` — for anything
-that wants the pick as a silhouette of its own. Not for avatars: the shell draws a profile picture as
-a disc, and an app's should be one too.
+that wants the pick as a silhouette of its own. Not for avatars: a profile picture is a disc, which
+is what `Avatar` draws.
 
 **`Tabs`** switches what one panel shows: a `tablist` with a roving tabindex, where the arrow keys,
 Home and End move the selection and the selection follows the focus. It scrolls sideways on a phone

@@ -10,6 +10,11 @@
       summary: "A button that owns the promise its click returns, and its own failure.",
     },
     {
+      href: resolve("/components/avatar"),
+      name: "Avatar",
+      summary: "A person on a disc: their photo, or their initials when there is none.",
+    },
+    {
       href: resolve("/components/combobox"),
       name: "Combobox",
       summary: "A search field that is the control bar, over a list too long to point at.",

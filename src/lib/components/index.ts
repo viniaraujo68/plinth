@@ -1,4 +1,5 @@
 export { default as AsyncButton } from "./AsyncButton.svelte";
+export { default as Avatar } from "./Avatar.svelte";
 export { default as Combobox } from "./Combobox.svelte";
 export { default as Copyable } from "./Copyable.svelte";
 export { default as DateRangePicker } from "./DateRangePicker.svelte";
