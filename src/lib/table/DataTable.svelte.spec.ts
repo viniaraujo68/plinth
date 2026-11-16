@@ -150,6 +150,48 @@ it("keeps the sort headers reachable as pills in card form", async () => {
   expect(names()).toEqual(["TypeScript", "Rust", "Python"]);
 });
 
+it("trades the card-form pills for a sort menu when one is labelled", async () => {
+  render(Harness, { width: NARROW, sortMenuLabel: "Sort by" });
+
+  const head = document.querySelector<HTMLElement>("thead");
+  const menu = document.querySelector<HTMLElement>(".plinth-sort-menu");
+  expect(head && getComputedStyle(head).display).toBe("none");
+  expect(menu && getComputedStyle(menu).display).toBe("flex");
+
+  await page.getByRole("combobox", { name: "Sort by" }).click();
+  await page.getByRole("option", { name: "Year" }).click();
+
+  // A fresh numeric column opens on its largest value, as a header click would.
+  expect(names()).toEqual(["TypeScript", "Rust", "Python"]);
+  expect(sortState()).toBe("year:desc");
+
+  await page.getByRole("button", { name: "Descending" }).click();
+
+  expect(names()).toEqual(["Python", "Rust", "TypeScript"]);
+  expect(sortState()).toBe("year:asc");
+  await expect.element(page.getByRole("button", { name: "Ascending" })).toBeVisible();
+});
+
+it("leaves only sortable columns in the sort menu", async () => {
+  render(Harness, { width: NARROW, sortMenuLabel: "Sort by" });
+
+  await page.getByRole("combobox", { name: "Sort by" }).click();
+
+  const labels = [...document.querySelectorAll("[role='option']")].map((option) =>
+    option.textContent?.trim(),
+  );
+  expect(labels).toEqual(["Language", "Year", "Typing"]);
+});
+
+it("keeps the header row and hides the sort menu in table form", () => {
+  render(Harness, { sortMenuLabel: "Sort by" });
+
+  const head = document.querySelector<HTMLElement>("thead");
+  const menu = document.querySelector<HTMLElement>(".plinth-sort-menu");
+  expect(head && getComputedStyle(head).display).toBe("table-header-group");
+  expect(menu && getComputedStyle(menu).display).toBe("none");
+});
+
 it("swaps the label/value pairs for a card snippet when one is given", () => {
   render(Harness, { width: NARROW, withCard: true });
 

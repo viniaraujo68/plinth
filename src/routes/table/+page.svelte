@@ -91,6 +91,7 @@
   let sort = $state<SortState | undefined>({ key: "height", direction: "desc" });
   let selected = $state<Peak | undefined>();
   let useCardSnippet = $state(false);
+  let useSortMenu = $state(false);
 </script>
 
 {#snippet rank(_peak: Peak, index: number)}
@@ -229,6 +230,17 @@
       Use a <code class="kbd kbd-sm">card</code> snippet instead of label/value pairs
     </label>
 
+    <label class="flex w-fit items-center gap-2 text-sm">
+      <input
+        type="checkbox"
+        class="toggle toggle-sm"
+        data-testid="sort-menu"
+        bind:checked={useSortMenu}
+      />
+      Use <code class="kbd kbd-sm">sortMenuLabel</code> — one select and a direction button instead of
+      the pills
+    </label>
+
     <div
       class="w-[375px] max-w-full rounded-box border border-base-content/15 p-2"
       data-testid="narrow"
@@ -241,6 +253,7 @@
         label="Peaks, narrow"
         sortLabel={(column) => `Sort by ${column.label}`}
         card={useCardSnippet ? peakCard : undefined}
+        sortMenuLabel={useSortMenu ? "Sort by" : undefined}
       />
     </div>
   </section>

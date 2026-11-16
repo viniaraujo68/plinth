@@ -31,6 +31,7 @@
     storageKey?: string | null;
     initialColumnState?: ColumnState;
     withToolbar?: boolean;
+    sortMenuLabel?: string;
   }
 
   let {
@@ -46,6 +47,7 @@
     storageKey = null,
     initialColumnState,
     withToolbar = false,
+    sortMenuLabel,
   }: Props = $props();
 
   // Seeding state from a prop is the point here: the spec sets the starting order and then the
@@ -102,6 +104,7 @@ only the row and is still assignable to `cell`, while `rankCell` takes the posit
     {resizable}
     {storageKey}
     toolbar={withToolbar ? toolbarContent : undefined}
+    {sortMenuLabel}
   >
     {#snippet empty()}
       <span data-testid="empty">Nothing to show</span>

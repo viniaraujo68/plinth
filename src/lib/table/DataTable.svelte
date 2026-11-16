@@ -2,6 +2,7 @@
   import type { Snippet } from "svelte";
   import type { ClassValue } from "svelte/elements";
   import Paginator, { type PaginatorLabels } from "../components/Paginator.svelte";
+  import Select from "../components/Select.svelte";
   import ColumnMenu from "./ColumnMenu.svelte";
   import Skeleton from "../components/Skeleton.svelte";
   import FilterBar from "./FilterBar.svelte";
@@ -17,7 +18,7 @@
   } from "./columns.js";
   import { emptyFilter, filterableColumns, filterRows } from "./filter.js";
   import { ariaSort, cellText, nextSort, sortRows } from "./sort.js";
-  import type { Column, ColumnState, FilterGroup, SortState } from "./types.js";
+  import type { Column, ColumnState, FilterGroup, SortDirection, SortState } from "./types.js";
 
   interface Props {
     rows: readonly T[];
@@ -52,6 +53,15 @@
      * translations.
      */
     sortLabel?: (column: Column<T>) => string;
+    /**
+     * Replaces the card form's strip of sort pills with one control: a select of the sortable
+     * columns, named by this text, and a button beside it that flips the direction. A strip of a
+     * dozen pills pushes the first card below the fold on a phone; one select does not. Absent by
+     * default, which keeps the pills. Table form is untouched either way.
+     */
+    sortMenuLabel?: string;
+    /** Names the direction button of the sort menu for a screen reader, given the current direction. */
+    sortDirectionLabel?: (direction: SortDirection) => string;
     /**
      * Goes on the `<table>` itself, next to daisyUI's `table`. Density and zebra striping are
      * `table-sm` and `table-zebra` — classes the framework already has, so they are not re-exposed
@@ -126,6 +136,8 @@
     card,
     label,
     sortLabel,
+    sortMenuLabel,
+    sortDirectionLabel = (direction) => (direction === "asc" ? "Ascending" : "Descending"),
     class: className,
     toolbar,
     columnState = $bindable(),
@@ -266,6 +278,22 @@
   };
 
   const isSortable = (column: Column<T>) => column.sortable !== false;
+
+  const uid = $props.id();
+  const sortMenuId = `plinth-sort-menu-${uid}`;
+  const sortOptions = $derived(
+    columns.filter(isSortable).map((column) => ({ value: column.key, label: column.label })),
+  );
+
+  const pickSort = (key: string | null) => {
+    const column = columns.find((candidate) => candidate.key === key);
+    if (!column || column.key === sort?.key) return;
+    sort = nextSort(undefined, column);
+  };
+
+  const flipSort = () => {
+    if (sort) sort = { key: sort.key, direction: sort.direction === "asc" ? "desc" : "asc" };
+  };
   const alignOf = (column: Column<T>) => column.align ?? (column.numeric ? "right" : "left");
 
   const activate = (row: T) => onRowClick?.(row);
@@ -302,6 +330,10 @@ working unchanged.
 `sortLabel` names the sort control for a screen reader, from the column — "Sort by Elevation"
 rather than "Elevation" — on the header buttons and on the card-form pills alike, since they are
 the same element. Left out, the button is named by its own label.
+
+`sortMenuLabel` trades the card form's pills for a select of the sortable columns and a button
+that flips the direction — the shape for a table with more sortable columns than a phone can show
+as pills above the first card.
 
 The reader can arrange the columns, when the table asks for it. `columnsLabel` adds a menu that
 shows, hides and reorders them; `resizable` adds a drag handle to every header's edge; `storageKey`
@@ -389,9 +421,32 @@ different component.
   {#if loading && !failed}
     <div class="plinth-table-progress" role="progressbar" aria-label={loadingLabel}></div>
   {/if}
+  {#if sortMenuLabel !== undefined}
+    <div class="plinth-sort-menu">
+      <span id={sortMenuId} class="plinth-sort-menu-label">{sortMenuLabel}</span>
+      <Select
+        class="plinth-sort-select"
+        options={sortOptions}
+        value={sort?.key ?? null}
+        placeholder={sortMenuLabel}
+        aria-labelledby={sortMenuId}
+        onchange={pickSort}
+      />
+      <button
+        type="button"
+        class="plinth-sort-direction btn btn-square"
+        aria-label={sortDirectionLabel(sort?.direction ?? "desc")}
+        disabled={!sort}
+        onclick={flipSort}
+      >
+        <span aria-hidden="true">{sort?.direction === "asc" ? "↑" : "↓"}</span>
+      </button>
+    </div>
+  {/if}
   <table
     class={["plinth-table table", className]}
     class:has-card={card !== undefined}
+    class:plinth-menu-sorted={sortMenuLabel !== undefined}
     class:plinth-sized={sized}
     aria-label={label}
     aria-busy={loading}
@@ -719,6 +774,10 @@ different component.
     display: none;
   }
 
+  .plinth-sort-menu {
+    display: none;
+  }
+
   @container plinth-table (max-width: 40rem) {
     /* Widths are a table-form arrangement. A card has no columns to size, so the dragged widths
        step aside here and come back when the box widens again. */
@@ -788,6 +847,36 @@ different component.
     .plinth-head[aria-sort]:not([aria-sort="none"]) .plinth-sort {
       border-color: var(--color-primary);
       color: var(--color-primary);
+    }
+
+    /* With a sort menu the pills have nothing left to do; the menu above the cards replaces them. */
+    .plinth-menu-sorted thead {
+      display: none;
+    }
+
+    .plinth-sort-menu {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding-bottom: 0.75rem;
+    }
+
+    .plinth-sort-menu-label {
+      flex: none;
+      color: color-mix(in oklch, var(--color-base-content) 70%, transparent);
+      font-size: 0.875rem;
+    }
+
+    .plinth-sort-menu :global(.plinth-sort-select) {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    /* Square, and as tall as the select beside it: 44px, the touch target the pills had. */
+    .plinth-sort-direction {
+      flex: none;
+      width: 2.75rem;
+      height: 2.75rem;
     }
 
     .plinth-table tbody tr {
